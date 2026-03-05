@@ -12,3 +12,4 @@ data/
 .DS_Store
 *.pem
 npm-debug.log*
+.systemprompt
