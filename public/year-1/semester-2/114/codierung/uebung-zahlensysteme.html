@@ -172,8 +172,8 @@
     </table>
 
     <div class="btn-group">
-      <button class="btn btn-check" onclick="checkConversions()">Prüfen</button>
-      <button class="btn btn-reset" onclick="Worksheet.resetFields(['z1-hex','z1-oct','z1-bin','z2-dec','z2-hex','z2-oct','z3-dec','z3-oct','z3-bin','z4-dec','z4-hex','z4-oct','z5-dec','z5-hex','z5-bin'])">Zurücksetzen</button>
+      <button class="btn btn-check" id="btn-check-conv">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-conv">Zurücksetzen</button>
     </div>
     <div class="feedback" id="fb-conversions"></div>
   </div>
@@ -196,32 +196,36 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   Worksheet.init('114-codierung-uebung-zahlensysteme');
-});
 
-function checkConversions() {
-  Worksheet.checkFields([
-    // Zahl 1: Dec 183
-    { fieldId: 'z1-hex', expected: 'b7', hint: '183 = 11×16 + 7' },
-    { fieldId: 'z1-oct', expected: '267', hint: '183 = 2×64 + 6×8 + 7' },
-    { fieldId: 'z1-bin', expected: '10110111', hint: '183 = 128+32+16+4+2+1' },
-    // Zahl 2: Bin 10001101 = 141
-    { fieldId: 'z2-dec', expected: '141', hint: '128+8+4+1 = 141' },
-    { fieldId: 'z2-hex', expected: '8d', hint: '141 = 8×16 + 13' },
-    { fieldId: 'z2-oct', expected: '215', hint: '141 = 2×64 + 1×8 + 5' },
-    // Zahl 3: Hex 4B = 75
-    { fieldId: 'z3-dec', expected: '75', hint: '4×16 + 11 = 75' },
-    { fieldId: 'z3-oct', expected: '113', hint: '75 = 1×64 + 1×8 + 3' },
-    { fieldId: 'z3-bin', expected: '1001011', hint: '75 = 64+8+2+1' },
-    // Zahl 4: Bin 001111111110 = 1022
-    { fieldId: 'z4-dec', expected: '1022', hint: '512+256+128+64+32+16+8+4+2 = 1022' },
-    { fieldId: 'z4-hex', expected: '3fe', hint: '1022 = 3×256 + 15×16 + 14' },
-    { fieldId: 'z4-oct', expected: '1776', hint: '1022 = 1×512 + 7×64 + 7×8 + 6' },
-    // Zahl 5: Oct 4002 = 2050
-    { fieldId: 'z5-dec', expected: '2050', hint: '4×512 + 0×64 + 0×8 + 2 = 2050' },
-    { fieldId: 'z5-hex', expected: '802', hint: '2050 = 8×256 + 0×16 + 2' },
-    { fieldId: 'z5-bin', expected: '100000000010', hint: '2050 = 2048+2' },
-  ], 'fb-conversions');
-}
+  document.getElementById('btn-check-conv').addEventListener('click', () => {
+    Worksheet.checkFields([
+      // Zahl 1: Dec 183
+      { fieldId: 'z1-hex', expected: 'b7', hint: '183 = 11×16 + 7' },
+      { fieldId: 'z1-oct', expected: '267', hint: '183 = 2×64 + 6×8 + 7' },
+      { fieldId: 'z1-bin', expected: '10110111', hint: '183 = 128+32+16+4+2+1' },
+      // Zahl 2: Bin 10001101 = 141
+      { fieldId: 'z2-dec', expected: '141', hint: '128+8+4+1 = 141' },
+      { fieldId: 'z2-hex', expected: '8d', hint: '141 = 8×16 + 13' },
+      { fieldId: 'z2-oct', expected: '215', hint: '141 = 2×64 + 1×8 + 5' },
+      // Zahl 3: Hex 4B = 75
+      { fieldId: 'z3-dec', expected: '75', hint: '4×16 + 11 = 75' },
+      { fieldId: 'z3-oct', expected: '113', hint: '75 = 1×64 + 1×8 + 3' },
+      { fieldId: 'z3-bin', expected: '1001011', hint: '75 = 64+8+2+1' },
+      // Zahl 4: Bin 001111111110 = 1022
+      { fieldId: 'z4-dec', expected: '1022', hint: '512+256+128+64+32+16+8+4+2 = 1022' },
+      { fieldId: 'z4-hex', expected: '3fe', hint: '1022 = 3×256 + 15×16 + 14' },
+      { fieldId: 'z4-oct', expected: '1776', hint: '1022 = 1×512 + 7×64 + 7×8 + 6' },
+      // Zahl 5: Oct 4002 = 2050
+      { fieldId: 'z5-dec', expected: '2050', hint: '4×512 + 0×64 + 0×8 + 2 = 2050' },
+      { fieldId: 'z5-hex', expected: '802', hint: '2050 = 8×256 + 0×16 + 2' },
+      { fieldId: 'z5-bin', expected: '100000000010', hint: '2050 = 2048+2' },
+    ], 'fb-conversions');
+  });
+
+  document.getElementById('btn-reset-conv').addEventListener('click', () => {
+    Worksheet.resetFields(['z1-hex','z1-oct','z1-bin','z2-dec','z2-hex','z2-oct','z3-dec','z3-oct','z3-bin','z4-dec','z4-hex','z4-oct','z5-dec','z5-hex','z5-bin']);
+  });
+});
 </script>
 
 </body>
