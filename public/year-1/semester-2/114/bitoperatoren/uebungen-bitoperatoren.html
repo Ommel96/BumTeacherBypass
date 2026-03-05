@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Übungen Bitoperatoren -- Modul 114</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../../css/global.css">
+<link rel="stylesheet" href="../../../../css/worksheet.css">
+<style>
+  .op-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin: 1.5rem 0;
+  }
+  @media (max-width: 700px) {
+    .op-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .op-card {
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.4rem;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    background: var(--card);
+  }
+  .op-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 2;
+  }
+  .op-operator {
+    margin-right: auto;
+    font-weight: 600;
+  }
+  .op-line {
+    border-bottom: 2px solid var(--text);
+    margin: 0.2rem 0;
+  }
+  .op-result {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+  }
+  .op-result input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    background: var(--input-bg);
+    width: 100%;
+    text-align: right;
+  }
+  .op-result input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .hex-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin: 1.5rem 0;
+  }
+  @media (max-width: 700px) {
+    .hex-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .hex-card {
+    border: 1px solid var(--border);
+    padding: 1rem 1.2rem;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .hex-card input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    background: var(--input-bg);
+    width: 5rem;
+  }
+  .hex-card input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .led-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.3rem 0;
+  }
+  .led {
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid var(--text-muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .led.on {
+    background: var(--accent);
+    border-color: var(--accent-dark);
+  }
+  .led.off {
+    background: var(--border);
+  }
+  .led-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+  .led-table th {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  .led-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    font-size: 0.9rem;
+  }
+  .led-table td.mono-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .led-table input[type="text"] {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.35rem 0.5rem;
+    background: var(--input-bg);
+    width: 100%;
+    min-width: 6rem;
+  }
+  .led-table input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .led-table select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.35rem 0.5rem;
+    background: var(--input-bg);
+    cursor: pointer;
+  }
+  .led-table select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+</style>
+</head>
+<body>
+
+<main class="container">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../../../../index.html">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../../index.html">1. Lehrjahr</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../index.html">Semester 2</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../index.html">Modul 114</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="index.html">Bitoperatoren</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">Übungen Bitoperatoren</span>
+  </nav>
+
+  <div class="header">
+    <div class="header-label">Modul 114 -- Codieren</div>
+    <h1>Übungen Bitoperatoren</h1>
+    <div class="subtitle">Interaktives Arbeitsblatt 10.3.1 &middot; Quelle: bbw, P. Rutschmann</div>
+  </div>
+
+  <!-- Section 1: Arithmetische Addition (Binär) -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Arithmetische Addition (Binär)</h2>
+    </div>
+
+    <p class="task-description">Berechnen Sie die folgenden binären Additionen.</p>
+
+    <div class="op-grid">
+      <div class="op-card">
+        <div class="op-row"><span>00101111</span></div>
+        <div class="op-row"><span class="op-operator">+</span><span>01100111</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="add-bin-1"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>10110011</span></div>
+        <div class="op-row"><span class="op-operator">+</span><span>01101111</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="add-bin-2"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>01001001</span></div>
+        <div class="op-row"><span class="op-operator">+</span><span>00100110</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="add-bin-3"></div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-add-bin">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-add-bin">Zurücksetzen</button>
+    </div>
+    <div id="fb-add-bin" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 2: Arithmetische Addition (Hexadezimal) -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Arithmetische Addition (Hexadezimal)</h2>
+    </div>
+
+    <p class="task-description">Berechnen Sie die folgenden hexadezimalen Additionen.</p>
+
+    <div class="hex-grid">
+      <div class="hex-card">
+        <span>45</span>
+        <span>+</span>
+        <span>67</span>
+        <span>=</span>
+        <input type="text" id="add-hex-1">
+      </div>
+      <div class="hex-card">
+        <span>78</span>
+        <span>+</span>
+        <span>B2</span>
+        <span>=</span>
+        <input type="text" id="add-hex-2">
+      </div>
+      <div class="hex-card">
+        <span>83</span>
+        <span>+</span>
+        <span>A4</span>
+        <span>=</span>
+        <input type="text" id="add-hex-3">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-add-hex">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-add-hex">Zurücksetzen</button>
+    </div>
+    <div id="fb-add-hex" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 3: Arithmetische Subtraktion (Binär) -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Arithmetische Subtraktion (Binär)</h2>
+    </div>
+
+    <p class="task-description">Berechnen Sie die folgenden binären Subtraktionen.</p>
+
+    <div class="op-grid">
+      <div class="op-card">
+        <div class="op-row"><span>10111110</span></div>
+        <div class="op-row"><span class="op-operator">&minus;</span><span>10101111</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="sub-bin-1"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>11100111</span></div>
+        <div class="op-row"><span class="op-operator">&minus;</span><span>11001001</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="sub-bin-2"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>10110011</span></div>
+        <div class="op-row"><span class="op-operator">&minus;</span><span>00100110</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="sub-bin-3"></div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-sub-bin">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-sub-bin">Zurücksetzen</button>
+    </div>
+    <div id="fb-sub-bin" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 4: Arithmetische Subtraktion (Hexadezimal) -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Arithmetische Subtraktion (Hexadezimal)</h2>
+    </div>
+
+    <p class="task-description">Berechnen Sie die folgenden hexadezimalen Subtraktionen.</p>
+
+    <div class="hex-grid">
+      <div class="hex-card">
+        <span>A1</span>
+        <span>&minus;</span>
+        <span>34</span>
+        <span>=</span>
+        <input type="text" id="sub-hex-1">
+      </div>
+      <div class="hex-card">
+        <span>C3</span>
+        <span>&minus;</span>
+        <span>BB</span>
+        <span>=</span>
+        <input type="text" id="sub-hex-2">
+      </div>
+      <div class="hex-card">
+        <span>FF</span>
+        <span>&minus;</span>
+        <span>8A</span>
+        <span>=</span>
+        <input type="text" id="sub-hex-3">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-sub-hex">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-sub-hex">Zurücksetzen</button>
+    </div>
+    <div id="fb-sub-hex" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 5: Logisches AND (Binär + Hexadezimal) -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2>Logisches AND (Binär + Hexadezimal)</h2>
+    </div>
+
+    <h3>Binär</h3>
+
+    <div class="op-grid">
+      <div class="op-card">
+        <div class="op-row"><span>10101111</span></div>
+        <div class="op-row"><span class="op-operator">&amp;</span><span>10101111</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="and-bin-1"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>11100111</span></div>
+        <div class="op-row"><span class="op-operator">&amp;</span><span>11001001</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="and-bin-2"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>10110011</span></div>
+        <div class="op-row"><span class="op-operator">&amp;</span><span>00100110</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="and-bin-3"></div>
+      </div>
+    </div>
+
+    <h3>Hexadezimal</h3>
+
+    <div class="hex-grid">
+      <div class="hex-card">
+        <span>AF</span>
+        <span>&amp;</span>
+        <span>1C</span>
+        <span>=</span>
+        <input type="text" id="and-hex-1">
+      </div>
+      <div class="hex-card">
+        <span>48</span>
+        <span>&amp;</span>
+        <span>B3</span>
+        <span>=</span>
+        <input type="text" id="and-hex-2">
+      </div>
+      <div class="hex-card">
+        <span>78</span>
+        <span>&amp;</span>
+        <span>E5</span>
+        <span>=</span>
+        <input type="text" id="and-hex-3">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-and">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-and">Zurücksetzen</button>
+    </div>
+    <div id="fb-and" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 6: Logisches OR (Binär + Hexadezimal) -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <h2>Logisches OR (Binär + Hexadezimal)</h2>
+    </div>
+
+    <h3>Binär</h3>
+
+    <div class="op-grid">
+      <div class="op-card">
+        <div class="op-row"><span>10101111</span></div>
+        <div class="op-row"><span class="op-operator">|</span><span>10101111</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="or-bin-1"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>11100111</span></div>
+        <div class="op-row"><span class="op-operator">|</span><span>11001001</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="or-bin-2"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>10110011</span></div>
+        <div class="op-row"><span class="op-operator">|</span><span>00100110</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="or-bin-3"></div>
+      </div>
+    </div>
+
+    <h3>Hexadezimal</h3>
+
+    <div class="hex-grid">
+      <div class="hex-card">
+        <span>93</span>
+        <span>|</span>
+        <span>C4</span>
+        <span>=</span>
+        <input type="text" id="or-hex-1">
+      </div>
+      <div class="hex-card">
+        <span>F1</span>
+        <span>|</span>
+        <span>B7</span>
+        <span>=</span>
+        <input type="text" id="or-hex-2">
+      </div>
+      <div class="hex-card">
+        <span>36</span>
+        <span>|</span>
+        <span>84</span>
+        <span>=</span>
+        <input type="text" id="or-hex-3">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-or">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-or">Zurücksetzen</button>
+    </div>
+    <div id="fb-or" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 7: Logisches XOR (Binär + Hexadezimal) -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">7</div>
+      <h2>Logisches XOR (Binär + Hexadezimal)</h2>
+    </div>
+
+    <h3>Binär</h3>
+
+    <div class="op-grid">
+      <div class="op-card">
+        <div class="op-row"><span>10101111</span></div>
+        <div class="op-row"><span class="op-operator">^</span><span>10101111</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="xor-bin-1"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>11100111</span></div>
+        <div class="op-row"><span class="op-operator">^</span><span>11001001</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="xor-bin-2"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>10110011</span></div>
+        <div class="op-row"><span class="op-operator">^</span><span>00100110</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="xor-bin-3"></div>
+      </div>
+    </div>
+
+    <h3>Hexadezimal</h3>
+
+    <div class="hex-grid">
+      <div class="hex-card">
+        <span>45</span>
+        <span>^</span>
+        <span>E3</span>
+        <span>=</span>
+        <input type="text" id="xor-hex-1">
+      </div>
+      <div class="hex-card">
+        <span>DC</span>
+        <span>^</span>
+        <span>7B</span>
+        <span>=</span>
+        <input type="text" id="xor-hex-2">
+      </div>
+      <div class="hex-card">
+        <span>23</span>
+        <span>^</span>
+        <span>9A</span>
+        <span>=</span>
+        <input type="text" id="xor-hex-3">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-xor">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-xor">Zurücksetzen</button>
+    </div>
+    <div id="fb-xor" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 8: Shift-Operationen (Binär + Hexadezimal) -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">8</div>
+      <h2>Shift-Operationen (Binär + Hexadezimal)</h2>
+    </div>
+
+    <h3>Shift nach links (&lt;&lt;) &mdash; um 1 Position</h3>
+
+    <p class="task-description">Binär:</p>
+
+    <div class="op-grid">
+      <div class="op-card">
+        <div class="op-row"><span>10101111</span> <span>&lt;&lt;</span> <span>1</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="shl-bin-1"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>11001001</span> <span>&lt;&lt;</span> <span>1</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="shl-bin-2"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>00100110</span> <span>&lt;&lt;</span> <span>1</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="shl-bin-3"></div>
+      </div>
+    </div>
+
+    <p class="task-description">Hexadezimal (8-Bit Ergebnis):</p>
+
+    <div class="hex-grid">
+      <div class="hex-card">
+        <span>AF</span>
+        <span>&lt;&lt;</span>
+        <span>1</span>
+        <span>=</span>
+        <input type="text" id="shl-hex-1">
+      </div>
+      <div class="hex-card">
+        <span>48</span>
+        <span>&lt;&lt;</span>
+        <span>1</span>
+        <span>=</span>
+        <input type="text" id="shl-hex-2">
+      </div>
+      <div class="hex-card">
+        <span>78</span>
+        <span>&lt;&lt;</span>
+        <span>1</span>
+        <span>=</span>
+        <input type="text" id="shl-hex-3">
+      </div>
+    </div>
+
+    <h3>Shift nach rechts (&gt;&gt;) &mdash; um 1 Position</h3>
+
+    <p class="task-description">Binär:</p>
+
+    <div class="op-grid">
+      <div class="op-card">
+        <div class="op-row"><span>10101111</span> <span>&gt;&gt;</span> <span>1</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="shr-bin-1"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>11001001</span> <span>&gt;&gt;</span> <span>1</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="shr-bin-2"></div>
+      </div>
+      <div class="op-card">
+        <div class="op-row"><span>00100110</span> <span>&gt;&gt;</span> <span>1</span></div>
+        <div class="op-line"></div>
+        <div class="op-result"><input type="text" id="shr-bin-3"></div>
+      </div>
+    </div>
+
+    <p class="task-description">Hexadezimal:</p>
+
+    <div class="hex-grid">
+      <div class="hex-card">
+        <span>EE</span>
+        <span>&gt;&gt;</span>
+        <span>1</span>
+        <span>=</span>
+        <input type="text" id="shr-hex-1">
+      </div>
+      <div class="hex-card">
+        <span>57</span>
+        <span>&gt;&gt;</span>
+        <span>1</span>
+        <span>=</span>
+        <input type="text" id="shr-hex-2">
+      </div>
+      <div class="hex-card">
+        <span>A2</span>
+        <span>&gt;&gt;</span>
+        <span>1</span>
+        <span>=</span>
+        <input type="text" id="shr-hex-3">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-shift">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-shift">Zurücksetzen</button>
+    </div>
+    <div id="fb-shift" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 9: Lampensteuerung (LED Bit-Manipulation) -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">9</div>
+      <h2>Lampensteuerung (LED Bit-Manipulation)</h2>
+    </div>
+
+    <p>Gegeben sei eine LED-Reihe mit 8 LEDs. Jedes Bit im Byte steuert eine LED. Bit 0 = LED 1, Bit 7 = LED 8.</p>
+
+    <h3>LED einschalten (Bit setzen)</h3>
+    <p>Welches Bitmuster und welcher logische Operator schaltet die gewünschten LEDs ein, ohne die anderen zu verändern?</p>
+
+    <table class="led-table">
+      <thead>
+        <tr>
+          <th>Aufgabe</th>
+          <th>Istzustand</th>
+          <th>Bitmuster</th>
+          <th>Operator</th>
+          <th>Ergebnis</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>LED 1 ein</td>
+          <td class="mono-cell">10101100</td>
+          <td><input type="text" id="led-on-mask-1"></td>
+          <td>
+            <select id="led-on-op-1">
+              <option value="">--</option>
+              <option value="and">AND</option>
+              <option value="or">OR</option>
+              <option value="xor">XOR</option>
+            </select>
+          </td>
+          <td class="mono-cell">10101101</td>
+        </tr>
+        <tr>
+          <td>LED 3, 5 ein</td>
+          <td class="mono-cell">11000000</td>
+          <td><input type="text" id="led-on-mask-2"></td>
+          <td>
+            <select id="led-on-op-2">
+              <option value="">--</option>
+              <option value="and">AND</option>
+              <option value="or">OR</option>
+              <option value="xor">XOR</option>
+            </select>
+          </td>
+          <td><input type="text" id="led-on-result-2"></td>
+        </tr>
+        <tr>
+          <td>LED 4, 6, 7 ein</td>
+          <td class="mono-cell">00100110</td>
+          <td><input type="text" id="led-on-mask-3"></td>
+          <td>
+            <select id="led-on-op-3">
+              <option value="">--</option>
+              <option value="and">AND</option>
+              <option value="or">OR</option>
+              <option value="xor">XOR</option>
+            </select>
+          </td>
+          <td><input type="text" id="led-on-result-3"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>LED ausschalten (Bit löschen)</h3>
+    <p>Welches Bitmuster und welcher logische Operator schaltet die gewünschten LEDs aus?</p>
+
+    <table class="led-table">
+      <thead>
+        <tr>
+          <th>Aufgabe</th>
+          <th>Istzustand</th>
+          <th>Bitmuster</th>
+          <th>Operator</th>
+          <th>Ergebnis</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>LED 8 aus</td>
+          <td class="mono-cell">10101100</td>
+          <td><input type="text" id="led-off-mask-1"></td>
+          <td>
+            <select id="led-off-op-1">
+              <option value="">--</option>
+              <option value="and">AND</option>
+              <option value="or">OR</option>
+              <option value="xor">XOR</option>
+            </select>
+          </td>
+          <td class="mono-cell">00101100</td>
+        </tr>
+        <tr>
+          <td>LED 1, 3 aus</td>
+          <td class="mono-cell">11001111</td>
+          <td><input type="text" id="led-off-mask-2"></td>
+          <td>
+            <select id="led-off-op-2">
+              <option value="">--</option>
+              <option value="and">AND</option>
+              <option value="or">OR</option>
+              <option value="xor">XOR</option>
+            </select>
+          </td>
+          <td><input type="text" id="led-off-result-2"></td>
+        </tr>
+        <tr>
+          <td>LED 4, 5, 6 aus</td>
+          <td class="mono-cell">00110110</td>
+          <td><input type="text" id="led-off-mask-3"></td>
+          <td>
+            <select id="led-off-op-3">
+              <option value="">--</option>
+              <option value="and">AND</option>
+              <option value="or">OR</option>
+              <option value="xor">XOR</option>
+            </select>
+          </td>
+          <td><input type="text" id="led-off-result-3"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-led">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-led">Zurücksetzen</button>
+    </div>
+    <div id="fb-led" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+</main>
+
+<script src="../../../../js/worksheet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  Worksheet.init('114-bitoperatoren-uebungen');
+
+  // ── Section 1: Arithmetische Addition (Binär) ──
+  document.getElementById('btn-check-add-bin').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'add-bin-1', expected: '10010110' },
+      { fieldId: 'add-bin-2', expected: '100100010' },
+      { fieldId: 'add-bin-3', expected: '01101111' }
+    ], 'fb-add-bin');
+  });
+
+  document.getElementById('btn-reset-add-bin').addEventListener('click', () => {
+    Worksheet.resetFields(['add-bin-1', 'add-bin-2', 'add-bin-3']);
+  });
+
+  // ── Section 2: Arithmetische Addition (Hexadezimal) ──
+  document.getElementById('btn-check-add-hex').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'add-hex-1', expected: 'ac' },
+      { fieldId: 'add-hex-2', expected: '12a' },
+      { fieldId: 'add-hex-3', expected: '127' }
+    ], 'fb-add-hex');
+  });
+
+  document.getElementById('btn-reset-add-hex').addEventListener('click', () => {
+    Worksheet.resetFields(['add-hex-1', 'add-hex-2', 'add-hex-3']);
+  });
+
+  // ── Section 3: Arithmetische Subtraktion (Binär) ──
+  document.getElementById('btn-check-sub-bin').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'sub-bin-1', expected: '00001111' },
+      { fieldId: 'sub-bin-2', expected: '00011110' },
+      { fieldId: 'sub-bin-3', expected: '10001101' }
+    ], 'fb-sub-bin');
+  });
+
+  document.getElementById('btn-reset-sub-bin').addEventListener('click', () => {
+    Worksheet.resetFields(['sub-bin-1', 'sub-bin-2', 'sub-bin-3']);
+  });
+
+  // ── Section 4: Arithmetische Subtraktion (Hexadezimal) ──
+  document.getElementById('btn-check-sub-hex').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'sub-hex-1', expected: '6d' },
+      { fieldId: 'sub-hex-2', expected: '08', hint: 'Auch "8" ist korrekt.', opts: { normalize: true } },
+      { fieldId: 'sub-hex-3', expected: '75' }
+    ], 'fb-sub-hex');
+  });
+
+  document.getElementById('btn-reset-sub-hex').addEventListener('click', () => {
+    Worksheet.resetFields(['sub-hex-1', 'sub-hex-2', 'sub-hex-3']);
+  });
+
+  // ── Section 5: Logisches AND ──
+  document.getElementById('btn-check-and').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'and-bin-1', expected: '10101111' },
+      { fieldId: 'and-bin-2', expected: '11000001' },
+      { fieldId: 'and-bin-3', expected: '00100010' },
+      { fieldId: 'and-hex-1', expected: '0c' },
+      { fieldId: 'and-hex-2', expected: '00' },
+      { fieldId: 'and-hex-3', expected: '60' }
+    ], 'fb-and');
+  });
+
+  document.getElementById('btn-reset-and').addEventListener('click', () => {
+    Worksheet.resetFields([
+      'and-bin-1', 'and-bin-2', 'and-bin-3',
+      'and-hex-1', 'and-hex-2', 'and-hex-3'
+    ]);
+  });
+
+  // ── Section 6: Logisches OR ──
+  document.getElementById('btn-check-or').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'or-bin-1', expected: '10101111' },
+      { fieldId: 'or-bin-2', expected: '11101111' },
+      { fieldId: 'or-bin-3', expected: '10110111' },
+      { fieldId: 'or-hex-1', expected: 'd7' },
+      { fieldId: 'or-hex-2', expected: 'f7' },
+      { fieldId: 'or-hex-3', expected: 'b6' }
+    ], 'fb-or');
+  });
+
+  document.getElementById('btn-reset-or').addEventListener('click', () => {
+    Worksheet.resetFields([
+      'or-bin-1', 'or-bin-2', 'or-bin-3',
+      'or-hex-1', 'or-hex-2', 'or-hex-3'
+    ]);
+  });
+
+  // ── Section 7: Logisches XOR ──
+  document.getElementById('btn-check-xor').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'xor-bin-1', expected: '00000000' },
+      { fieldId: 'xor-bin-2', expected: '00101110' },
+      { fieldId: 'xor-bin-3', expected: '10010101' },
+      { fieldId: 'xor-hex-1', expected: 'a6' },
+      { fieldId: 'xor-hex-2', expected: 'a7' },
+      { fieldId: 'xor-hex-3', expected: 'b9' }
+    ], 'fb-xor');
+  });
+
+  document.getElementById('btn-reset-xor').addEventListener('click', () => {
+    Worksheet.resetFields([
+      'xor-bin-1', 'xor-bin-2', 'xor-bin-3',
+      'xor-hex-1', 'xor-hex-2', 'xor-hex-3'
+    ]);
+  });
+
+  // ── Section 8: Shift-Operationen ──
+  document.getElementById('btn-check-shift').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'shl-bin-1', expected: '01011110', hint: 'MSB fällt weg bei 8-Bit.' },
+      { fieldId: 'shl-bin-2', expected: '10010010' },
+      { fieldId: 'shl-bin-3', expected: '01001100' },
+      { fieldId: 'shl-hex-1', expected: '5e', hint: '8-Bit Ergebnis.' },
+      { fieldId: 'shl-hex-2', expected: '90' },
+      { fieldId: 'shl-hex-3', expected: 'f0' },
+      { fieldId: 'shr-bin-1', expected: '01010111' },
+      { fieldId: 'shr-bin-2', expected: '01100100' },
+      { fieldId: 'shr-bin-3', expected: '00010011' },
+      { fieldId: 'shr-hex-1', expected: '77' },
+      { fieldId: 'shr-hex-2', expected: '2b' },
+      { fieldId: 'shr-hex-3', expected: '51' }
+    ], 'fb-shift');
+  });
+
+  document.getElementById('btn-reset-shift').addEventListener('click', () => {
+    Worksheet.resetFields([
+      'shl-bin-1', 'shl-bin-2', 'shl-bin-3',
+      'shl-hex-1', 'shl-hex-2', 'shl-hex-3',
+      'shr-bin-1', 'shr-bin-2', 'shr-bin-3',
+      'shr-hex-1', 'shr-hex-2', 'shr-hex-3'
+    ]);
+  });
+
+  // ── Section 9: Lampensteuerung (LED) ──
+  document.getElementById('btn-check-led').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'led-on-mask-1', expected: '00000001' },
+      { fieldId: 'led-on-op-1', expected: 'or' },
+      { fieldId: 'led-on-mask-2', expected: '00010100' },
+      { fieldId: 'led-on-op-2', expected: 'or' },
+      { fieldId: 'led-on-result-2', expected: '11010100' },
+      { fieldId: 'led-on-mask-3', expected: '01101000' },
+      { fieldId: 'led-on-op-3', expected: 'or' },
+      { fieldId: 'led-on-result-3', expected: '01101110' },
+      { fieldId: 'led-off-mask-1', expected: '01111111' },
+      { fieldId: 'led-off-op-1', expected: 'and' },
+      { fieldId: 'led-off-mask-2', expected: '11111010' },
+      { fieldId: 'led-off-op-2', expected: 'and' },
+      { fieldId: 'led-off-result-2', expected: '11001010' },
+      { fieldId: 'led-off-mask-3', expected: '11000111' },
+      { fieldId: 'led-off-op-3', expected: 'and' },
+      { fieldId: 'led-off-result-3', expected: '00000110' }
+    ], 'fb-led');
+  });
+
+  document.getElementById('btn-reset-led').addEventListener('click', () => {
+    Worksheet.resetFields([
+      'led-on-mask-1', 'led-on-op-1',
+      'led-on-mask-2', 'led-on-op-2', 'led-on-result-2',
+      'led-on-mask-3', 'led-on-op-3', 'led-on-result-3',
+      'led-off-mask-1', 'led-off-op-1',
+      'led-off-mask-2', 'led-off-op-2', 'led-off-result-2',
+      'led-off-mask-3', 'led-off-op-3', 'led-off-result-3'
+    ]);
+  });
+});
+</script>
+
+</body>
+</html>

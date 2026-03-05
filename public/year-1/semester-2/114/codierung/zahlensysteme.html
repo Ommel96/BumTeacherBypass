@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zahlensysteme -- Modul 114</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../../css/global.css">
+<link rel="stylesheet" href="../../../../css/worksheet.css">
+<style>
+  .mono-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .example-calc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    background: var(--accent-light);
+    padding: 0.8rem 1.2rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    line-height: 1.8;
+  }
+  .symbol-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+  .symbol-cell {
+    text-align: center;
+    background: var(--accent-light);
+    border-radius: 8px;
+    padding: 0.6rem 0.4rem;
+  }
+  .symbol-cell .roman {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent-dark);
+  }
+  .symbol-cell .arabic {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+  }
+  .rule-list {
+    margin: 1rem 0;
+    padding-left: 1.25rem;
+  }
+  .rule-list li {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .edit-table td.given-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(184,134,11,0.04);
+  }
+</style>
+</head>
+<body>
+
+<main class="container">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../../../../index.html">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../../index.html">1. Lehrjahr</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../index.html">Semester 2</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../index.html">Modul 114</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="index.html">Codierung</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">Zahlensysteme</span>
+  </nav>
+
+  <div class="header">
+    <div class="header-label">Modul 114 -- Codieren</div>
+    <h1>Zahlensysteme</h1>
+    <div class="subtitle">Interaktives Arbeitsblatt 10.2.1 &middot; Quelle: bbw, P. Rutschmann / R. Lanza</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- THEORIE                                     -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!-- Section i: Römisches Zahlensystem -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">i</div>
+      <h2>Römisches Zahlensystem</h2>
+    </div>
+
+    <p>Die römischen Zahlzeichen setzen sich aus sieben Grundsymbolen zusammen:</p>
+
+    <div class="symbol-grid">
+      <div class="symbol-cell">
+        <div class="roman">I</div>
+        <div class="arabic">1</div>
+      </div>
+      <div class="symbol-cell">
+        <div class="roman">V</div>
+        <div class="arabic">5</div>
+      </div>
+      <div class="symbol-cell">
+        <div class="roman">X</div>
+        <div class="arabic">10</div>
+      </div>
+      <div class="symbol-cell">
+        <div class="roman">L</div>
+        <div class="arabic">50</div>
+      </div>
+      <div class="symbol-cell">
+        <div class="roman">C</div>
+        <div class="arabic">100</div>
+      </div>
+      <div class="symbol-cell">
+        <div class="roman">D</div>
+        <div class="arabic">500</div>
+      </div>
+      <div class="symbol-cell">
+        <div class="roman">M</div>
+        <div class="arabic">1000</div>
+      </div>
+    </div>
+
+    <h3>Regeln</h3>
+    <ol class="rule-list">
+      <li>Die Zeichen werden von links nach rechts vom grössten zum kleinsten geschrieben und addiert.</li>
+      <li>I, X und C dürfen höchstens dreimal nebeneinander stehen.</li>
+      <li>V, L und D dürfen nur einmal nebeneinander stehen.</li>
+      <li>Steht ein kleineres Zeichen vor einem grösseren, wird es subtrahiert (Subtraktionsregel).</li>
+    </ol>
+
+    <h3>Beispiele</h3>
+    <div class="example-calc">
+      1973 = MCMLXXIII<br>
+      1992 = MCMXCII
+    </div>
+  </div>
+
+  <!-- Section ii: Zehnersystem -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">ii</div>
+      <h2>Zehnersystem (Dezimalsystem)</h2>
+    </div>
+
+    <p>Das Dezimalsystem ist das gebräuchlichste Zahlensystem. Es verwendet die <strong>Basis 10</strong> und die Ziffern <strong>0 bis 9</strong>.</p>
+
+    <h3>Stellenwerttabelle</h3>
+    <table class="code-table">
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>3</th>
+          <th>2</th>
+          <th>1</th>
+          <th>0</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Potenz</td>
+          <td class="code-cell">10&sup3;</td>
+          <td class="code-cell">10&sup2;</td>
+          <td class="code-cell">10&sup1;</td>
+          <td class="code-cell">10&sup0;</td>
+        </tr>
+        <tr>
+          <td>Stellenwert</td>
+          <td class="code-cell">1000</td>
+          <td class="code-cell">100</td>
+          <td class="code-cell">10</td>
+          <td class="code-cell">1</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Beispiel</h3>
+    <div class="example-calc">
+      2653 = 2&times;1000 + 6&times;100 + 5&times;10 + 3&times;1
+    </div>
+  </div>
+
+  <!-- Section iii: Binärsystem -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">iii</div>
+      <h2>Binärsystem (Dualsystem)</h2>
+    </div>
+
+    <p>Das Binärsystem ist die Grundlage der digitalen Datenverarbeitung. Es verwendet die <strong>Basis 2</strong> und die Ziffern <strong>0</strong> und <strong>1</strong>.</p>
+    <p>Binärzahlen werden mit einem nachgestellten <code>B</code> gekennzeichnet, z.&thinsp;B. <code>10100B</code>.</p>
+
+    <h3>Stellenwerttabelle</h3>
+    <table class="code-table">
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>7</th>
+          <th>6</th>
+          <th>5</th>
+          <th>4</th>
+          <th>3</th>
+          <th>2</th>
+          <th>1</th>
+          <th>0</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Potenz</td>
+          <td class="code-cell">2&sup7;</td>
+          <td class="code-cell">2&sup6;</td>
+          <td class="code-cell">2&sup5;</td>
+          <td class="code-cell">2&sup4;</td>
+          <td class="code-cell">2&sup3;</td>
+          <td class="code-cell">2&sup2;</td>
+          <td class="code-cell">2&sup1;</td>
+          <td class="code-cell">2&sup0;</td>
+        </tr>
+        <tr>
+          <td>Stellenwert</td>
+          <td class="code-cell">128</td>
+          <td class="code-cell">64</td>
+          <td class="code-cell">32</td>
+          <td class="code-cell">16</td>
+          <td class="code-cell">8</td>
+          <td class="code-cell">4</td>
+          <td class="code-cell">2</td>
+          <td class="code-cell">1</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Beispiel</h3>
+    <div class="example-calc">
+      10101B = 1&times;16 + 0&times;8 + 1&times;4 + 0&times;2 + 1&times;1 = 21
+    </div>
+  </div>
+
+  <!-- Section iv: Hexadezimalsystem -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">iv</div>
+      <h2>Hexadezimalsystem</h2>
+    </div>
+
+    <p>Das Hexadezimalsystem verwendet die <strong>Basis 16</strong> und die Ziffern <strong>0&ndash;9</strong> sowie die Buchstaben <strong>A&ndash;F</strong> (A=10, B=11, C=12, D=13, E=14, F=15).</p>
+    <p>Hexadezimalzahlen werden mit einem nachgestellten <code>H</code> oder dem Präfix <code>0x</code> gekennzeichnet, z.&thinsp;B. <code>0AFFEH</code>.</p>
+
+    <h3>Stellenwerttabelle</h3>
+    <table class="code-table">
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>3</th>
+          <th>2</th>
+          <th>1</th>
+          <th>0</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Potenz</td>
+          <td class="code-cell">16&sup3;</td>
+          <td class="code-cell">16&sup2;</td>
+          <td class="code-cell">16&sup1;</td>
+          <td class="code-cell">16&sup0;</td>
+        </tr>
+        <tr>
+          <td>Stellenwert</td>
+          <td class="code-cell">4096</td>
+          <td class="code-cell">256</td>
+          <td class="code-cell">16</td>
+          <td class="code-cell">1</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Beispiel</h3>
+    <div class="example-calc">
+      7DFH = 7&times;256 + 13&times;16 + 15&times;1 = 2015
+    </div>
+  </div>
+
+  <!-- Section v: Oktalsystem -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">v</div>
+      <h2>Oktalsystem</h2>
+    </div>
+
+    <p>Das Oktalsystem verwendet die <strong>Basis 8</strong> und die Ziffern <strong>0 bis 7</strong>.</p>
+    <p>Oktalzahlen werden mit einem nachgestellten <code>O</code> gekennzeichnet, z.&thinsp;B. <code>345O</code>.</p>
+
+    <h3>Stellenwerttabelle</h3>
+    <table class="code-table">
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>2</th>
+          <th>1</th>
+          <th>0</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Potenz</td>
+          <td class="code-cell">8&sup2;</td>
+          <td class="code-cell">8&sup1;</td>
+          <td class="code-cell">8&sup0;</td>
+        </tr>
+        <tr>
+          <td>Stellenwert</td>
+          <td class="code-cell">64</td>
+          <td class="code-cell">8</td>
+          <td class="code-cell">1</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Beispiel</h3>
+    <div class="example-calc">
+      755O = 7&times;64 + 5&times;8 + 5&times;1 = 493
+    </div>
+
+    <h3>Verwendung</h3>
+    <p>Das Oktalsystem wird unter anderem für <strong>Linux-Dateiberechtigungen</strong> verwendet: r=read (Lesen), w=write (Schreiben), x=execute (Ausführen). Zudem wird es bei <strong>Transponder-Codes</strong> in der Luftfahrt (Squawk) eingesetzt.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- AUFGABEN                                    -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!-- Section 1: Umrechnungstabelle 1 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Umrechnungstabelle 1</h2>
+    </div>
+
+    <p class="task-description">Ergänzen Sie die folgende Tabelle.</p>
+
+    <table class="edit-table">
+      <thead>
+        <tr>
+          <th>Dezimal</th>
+          <th>Hexadezimal</th>
+          <th>Oktal</th>
+          <th>Dual / Binär</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="given-cell">5</td>
+          <td><input type="text" id="t1-r1-hex"></td>
+          <td><input type="text" id="t1-r1-oct"></td>
+          <td><input type="text" id="t1-r1-bin"></td>
+        </tr>
+        <tr>
+          <td class="given-cell">15</td>
+          <td><input type="text" id="t1-r2-hex"></td>
+          <td><input type="text" id="t1-r2-oct"></td>
+          <td><input type="text" id="t1-r2-bin"></td>
+        </tr>
+        <tr>
+          <td class="given-cell">16</td>
+          <td><input type="text" id="t1-r3-hex"></td>
+          <td><input type="text" id="t1-r3-oct"></td>
+          <td><input type="text" id="t1-r3-bin"></td>
+        </tr>
+        <tr>
+          <td class="given-cell">65</td>
+          <td><input type="text" id="t1-r4-hex"></td>
+          <td><input type="text" id="t1-r4-oct"></td>
+          <td><input type="text" id="t1-r4-bin"></td>
+        </tr>
+        <tr>
+          <td class="given-cell">255</td>
+          <td><input type="text" id="t1-r5-hex"></td>
+          <td><input type="text" id="t1-r5-oct"></td>
+          <td><input type="text" id="t1-r5-bin"></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t1-r6-dec"></td>
+          <td class="given-cell">D05</td>
+          <td><input type="text" id="t1-r6-oct"></td>
+          <td><input type="text" id="t1-r6-bin"></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t1-r7-dec"></td>
+          <td class="given-cell">16</td>
+          <td><input type="text" id="t1-r7-oct"></td>
+          <td><input type="text" id="t1-r7-bin"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-t1">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-t1">Zurücksetzen</button>
+    </div>
+    <div id="fb-t1" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 2: Umrechnungstabelle 2 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Umrechnungstabelle 2</h2>
+    </div>
+
+    <p class="task-description">Ergänzen Sie die folgende Tabelle.</p>
+
+    <table class="edit-table">
+      <thead>
+        <tr>
+          <th>Dezimal</th>
+          <th>Hexadezimal</th>
+          <th>Oktal</th>
+          <th>Dual / Binär</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="given-cell">1234</td>
+          <td><input type="text" id="t2-r1-hex"></td>
+          <td><input type="text" id="t2-r1-oct"></td>
+          <td><input type="text" id="t2-r1-bin"></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r2-dec"></td>
+          <td class="given-cell">AA</td>
+          <td><input type="text" id="t2-r2-oct"></td>
+          <td><input type="text" id="t2-r2-bin"></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r3-dec"></td>
+          <td><input type="text" id="t2-r3-hex"></td>
+          <td><input type="text" id="t2-r3-oct"></td>
+          <td class="given-cell">10011</td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r4-dec"></td>
+          <td><input type="text" id="t2-r4-hex"></td>
+          <td class="given-cell">77</td>
+          <td><input type="text" id="t2-r4-bin"></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r5-dec"></td>
+          <td><input type="text" id="t2-r5-hex"></td>
+          <td class="given-cell">561</td>
+          <td><input type="text" id="t2-r5-bin"></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r6-dec"></td>
+          <td class="given-cell">111</td>
+          <td><input type="text" id="t2-r6-oct"></td>
+          <td><input type="text" id="t2-r6-bin"></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r7-dec"></td>
+          <td><input type="text" id="t2-r7-hex"></td>
+          <td><input type="text" id="t2-r7-oct"></td>
+          <td class="given-cell">10101011</td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r8-dec"></td>
+          <td><input type="text" id="t2-r8-hex"></td>
+          <td><input type="text" id="t2-r8-oct"></td>
+          <td class="given-cell">111111110</td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r9-dec"></td>
+          <td><input type="text" id="t2-r9-hex"></td>
+          <td><input type="text" id="t2-r9-oct"></td>
+          <td class="given-cell">10001000</td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r10-dec"></td>
+          <td><input type="text" id="t2-r10-hex"></td>
+          <td><input type="text" id="t2-r10-oct"></td>
+          <td class="given-cell">10011001</td>
+        </tr>
+        <tr>
+          <td><input type="text" id="t2-r11-dec"></td>
+          <td><input type="text" id="t2-r11-hex"></td>
+          <td><input type="text" id="t2-r11-oct"></td>
+          <td class="given-cell">1000000000000001</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-t2">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-t2">Zurücksetzen</button>
+    </div>
+    <div id="fb-t2" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 3: Linux Zugriffsrechte -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Linux Zugriffsrechte</h2>
+    </div>
+
+    <p class="task-description">Codieren Sie die Zugriffsrechte im Linux Filesystem.</p>
+
+    <div class="info-note">
+      <strong>Hinweis:</strong> Jede Berechtigung hat einen Zahlenwert: <code>r</code> = read (4), <code>w</code> = write (2), <code>x</code> = execute (1). Die Rechte werden für drei Gruppen vergeben: <strong>Owner</strong> (EigentümerIn), <strong>Group</strong> (Gruppe), <strong>Others</strong> (Andere). Die Summe jeder Gruppe ergibt eine Ziffer der dreistelligen Oktalzahl.
+    </div>
+
+    <table class="edit-table">
+      <thead>
+        <tr>
+          <th>Beschreibung</th>
+          <th>Oktalzahl</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label-cell">EigentümerIn darf alles, alle anderen nichts</td>
+          <td><input type="text" id="t3-r1-oct"></td>
+        </tr>
+        <tr>
+          <td class="label-cell">EigentümerIn darf alles, Gruppenmitglieder dürfen Dateien lesen</td>
+          <td><input type="text" id="t3-r2-oct"></td>
+        </tr>
+        <tr>
+          <td class="label-cell">EigentümerIn darf alles, Gruppenmitglieder dürfen Dateien lesen und ausführen</td>
+          <td><input type="text" id="t3-r3-oct"></td>
+        </tr>
+        <tr>
+          <td class="label-cell">Alle dürfen alles</td>
+          <td><input type="text" id="t3-r4-oct"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-t3">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-t3">Zurücksetzen</button>
+    </div>
+    <div id="fb-t3" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Section 4: Excel Formeln -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Excel Formeln</h2>
+    </div>
+
+    <p class="task-description">Suchen und notieren Sie die Formeln, berechnen Sie das Resultat mit Excel.</p>
+
+    <table class="edit-table">
+      <thead>
+        <tr>
+          <th>Ausgang</th>
+          <th>Zielsystem</th>
+          <th>Formel</th>
+          <th>Resultat</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="given-cell">2017</td>
+          <td class="given-cell">Römisch</td>
+          <td class="given-cell" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">=RÖMISCH(2017)</td>
+          <td class="given-cell">MMXVII</td>
+        </tr>
+        <tr>
+          <td class="given-cell">MMDCCVII</td>
+          <td class="given-cell">Arabisch</td>
+          <td><input type="text" id="t4-r2-formel"></td>
+          <td><input type="text" id="t4-r2-result"></td>
+        </tr>
+        <tr>
+          <td class="given-cell" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">FFFF2017 (hex)</td>
+          <td class="given-cell">Dezimal</td>
+          <td><input type="text" id="t4-r3-formel"></td>
+          <td><input type="text" id="t4-r3-result"></td>
+        </tr>
+        <tr>
+          <td class="given-cell" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">1A7 (hex)</td>
+          <td class="given-cell">Oktal</td>
+          <td><input type="text" id="t4-r4-formel"></td>
+          <td><input type="text" id="t4-r4-result"></td>
+        </tr>
+        <tr>
+          <td class="given-cell" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">1A7 (hex)</td>
+          <td class="given-cell">Binär</td>
+          <td><input type="text" id="t4-r5-formel"></td>
+          <td><input type="text" id="t4-r5-result"></td>
+        </tr>
+        <tr>
+          <td class="given-cell">149494</td>
+          <td class="given-cell">20er System</td>
+          <td><input type="text" id="t4-r6-formel"></td>
+          <td><input type="text" id="t4-r6-result"></td>
+        </tr>
+        <tr>
+          <td class="given-cell">ICH (base 20)</td>
+          <td class="given-cell">Dezimal</td>
+          <td><input type="text" id="t4-r7-formel"></td>
+          <td><input type="text" id="t4-r7-result"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <button class="hint-toggle" id="btn-hint-excel">Tipp anzeigen</button>
+    <div id="hint-excel" class="hint-content">
+      Nutze die Funktionssuchfunktion in Excel.
+    </div>
+  </div>
+
+</main>
+
+<script src="../../../../js/worksheet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  Worksheet.init('114-codierung-zahlensysteme');
+
+  // ── Section 1: Umrechnungstabelle 1 ──
+  document.getElementById('btn-check-t1').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 't1-r1-hex', expected: '5' },
+      { fieldId: 't1-r1-oct', expected: '5' },
+      { fieldId: 't1-r1-bin', expected: '101' },
+      { fieldId: 't1-r2-hex', expected: 'F' },
+      { fieldId: 't1-r2-oct', expected: '17' },
+      { fieldId: 't1-r2-bin', expected: '1111' },
+      { fieldId: 't1-r3-hex', expected: '10' },
+      { fieldId: 't1-r3-oct', expected: '20' },
+      { fieldId: 't1-r3-bin', expected: '10000' },
+      { fieldId: 't1-r4-hex', expected: '41' },
+      { fieldId: 't1-r4-oct', expected: '101' },
+      { fieldId: 't1-r4-bin', expected: '1000001' },
+      { fieldId: 't1-r5-hex', expected: 'FF' },
+      { fieldId: 't1-r5-oct', expected: '377' },
+      { fieldId: 't1-r5-bin', expected: '11111111' },
+      { fieldId: 't1-r6-dec', expected: '3333' },
+      { fieldId: 't1-r6-oct', expected: '6405' },
+      { fieldId: 't1-r6-bin', expected: '110100000101' },
+      { fieldId: 't1-r7-dec', expected: '22' },
+      { fieldId: 't1-r7-oct', expected: '26' },
+      { fieldId: 't1-r7-bin', expected: '10110' }
+    ], 'fb-t1');
+  });
+
+  document.getElementById('btn-reset-t1').addEventListener('click', () => {
+    Worksheet.resetFields([
+      't1-r1-hex','t1-r1-oct','t1-r1-bin',
+      't1-r2-hex','t1-r2-oct','t1-r2-bin',
+      't1-r3-hex','t1-r3-oct','t1-r3-bin',
+      't1-r4-hex','t1-r4-oct','t1-r4-bin',
+      't1-r5-hex','t1-r5-oct','t1-r5-bin',
+      't1-r6-dec','t1-r6-oct','t1-r6-bin',
+      't1-r7-dec','t1-r7-oct','t1-r7-bin'
+    ]);
+  });
+
+  // ── Section 2: Umrechnungstabelle 2 ──
+  document.getElementById('btn-check-t2').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 't2-r1-hex', expected: '4D2' },
+      { fieldId: 't2-r1-oct', expected: '2322' },
+      { fieldId: 't2-r1-bin', expected: '10011010010' },
+      { fieldId: 't2-r2-dec', expected: '170' },
+      { fieldId: 't2-r2-oct', expected: '252' },
+      { fieldId: 't2-r2-bin', expected: '10101010' },
+      { fieldId: 't2-r3-dec', expected: '19' },
+      { fieldId: 't2-r3-hex', expected: '13' },
+      { fieldId: 't2-r3-oct', expected: '23' },
+      { fieldId: 't2-r4-dec', expected: '63' },
+      { fieldId: 't2-r4-hex', expected: '3F' },
+      { fieldId: 't2-r4-bin', expected: '111111' },
+      { fieldId: 't2-r5-dec', expected: '369' },
+      { fieldId: 't2-r5-hex', expected: '171' },
+      { fieldId: 't2-r5-bin', expected: '101110001' },
+      { fieldId: 't2-r6-dec', expected: '273' },
+      { fieldId: 't2-r6-oct', expected: '421' },
+      { fieldId: 't2-r6-bin', expected: '100010001' },
+      { fieldId: 't2-r7-dec', expected: '171' },
+      { fieldId: 't2-r7-hex', expected: 'AB' },
+      { fieldId: 't2-r7-oct', expected: '253' },
+      { fieldId: 't2-r8-dec', expected: '510' },
+      { fieldId: 't2-r8-hex', expected: '1FE' },
+      { fieldId: 't2-r8-oct', expected: '776' },
+      { fieldId: 't2-r9-dec', expected: '136' },
+      { fieldId: 't2-r9-hex', expected: '88' },
+      { fieldId: 't2-r9-oct', expected: '210' },
+      { fieldId: 't2-r10-dec', expected: '153' },
+      { fieldId: 't2-r10-hex', expected: '99' },
+      { fieldId: 't2-r10-oct', expected: '231' },
+      { fieldId: 't2-r11-dec', expected: '32769' },
+      { fieldId: 't2-r11-hex', expected: '8001' },
+      { fieldId: 't2-r11-oct', expected: '100001' }
+    ], 'fb-t2');
+  });
+
+  document.getElementById('btn-reset-t2').addEventListener('click', () => {
+    Worksheet.resetFields([
+      't2-r1-hex','t2-r1-oct','t2-r1-bin',
+      't2-r2-dec','t2-r2-oct','t2-r2-bin',
+      't2-r3-dec','t2-r3-hex','t2-r3-oct',
+      't2-r4-dec','t2-r4-hex','t2-r4-bin',
+      't2-r5-dec','t2-r5-hex','t2-r5-bin',
+      't2-r6-dec','t2-r6-oct','t2-r6-bin',
+      't2-r7-dec','t2-r7-hex','t2-r7-oct',
+      't2-r8-dec','t2-r8-hex','t2-r8-oct',
+      't2-r9-dec','t2-r9-hex','t2-r9-oct',
+      't2-r10-dec','t2-r10-hex','t2-r10-oct',
+      't2-r11-dec','t2-r11-hex','t2-r11-oct'
+    ]);
+  });
+
+  // ── Section 3: Linux Zugriffsrechte ──
+  document.getElementById('btn-check-t3').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 't3-r1-oct', expected: '700' },
+      { fieldId: 't3-r2-oct', expected: '740' },
+      { fieldId: 't3-r3-oct', expected: '750' },
+      { fieldId: 't3-r4-oct', expected: '777' }
+    ], 'fb-t3');
+  });
+
+  document.getElementById('btn-reset-t3').addEventListener('click', () => {
+    Worksheet.resetFields(['t3-r1-oct','t3-r2-oct','t3-r3-oct','t3-r4-oct']);
+  });
+
+  // ── Section 4: Hint toggle ──
+  document.getElementById('btn-hint-excel').addEventListener('click', () => {
+    Worksheet.toggleHint('hint-excel');
+  });
+});
+</script>
+
+</body>
+</html>

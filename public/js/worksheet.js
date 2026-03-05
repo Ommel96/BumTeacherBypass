@@ -208,8 +208,8 @@ const Worksheet = (() => {
     let exp = expected;
 
     if (normalize) {
-      val = val.trim().toLowerCase().replace(/\s+/g, ' ');
-      exp = exp.trim().toLowerCase().replace(/\s+/g, ' ');
+      val = val.trim().toLowerCase().replace(/'/g, '').replace(/\s+/g, ' ');
+      exp = exp.trim().toLowerCase().replace(/'/g, '').replace(/\s+/g, ' ');
     }
 
     if (!val) {
@@ -253,8 +253,8 @@ const Worksheet = (() => {
       let exp = c.expected;
 
       if (normalize) {
-        val = val.trim().toLowerCase().replace(/\s+/g, ' ');
-        exp = exp.trim().toLowerCase().replace(/\s+/g, ' ');
+        val = val.trim().toLowerCase().replace(/'/g, '').replace(/\s+/g, ' ');
+        exp = exp.trim().toLowerCase().replace(/'/g, '').replace(/\s+/g, ' ');
       }
 
       if (!val) {

@@ -40,10 +40,15 @@ public/                            Static frontend (served by Express)
 └── year-1/semester-2/
     ├── 114/                       Module 114: Codieren / Komprimieren / Verschlüsseln
     │   ├── index.html             Module topics
-    │   └── codierung/
+    │   ├── codierung/
+    │   │   ├── index.html         Worksheet listing (3 worksheets)
+    │   │   ├── morse-code.html    Morse Code & Huffmann worksheet
+    │   │   ├── zahlensysteme.html 10.2.1 Number systems theory + exercises
+    │   │   ├── uebung-zahlensysteme.html  10.2.6 Conversion exercise
+    │   │   └── assets/            Extracted images
+    │   └── bitoperatoren/
     │       ├── index.html         Worksheet listing
-    │       ├── morse-code.html    Morse Code & Huffmann worksheet
-    │       └── assets/            Extracted images
+    │       └── uebungen-bitoperatoren.html  10.3.1 Bit operations
     └── 164/                       Module 164: Datenbanken erstellen und Daten einfügen
         ├── index.html             Module topics
         └── assoziationen/
@@ -216,6 +221,15 @@ Keep this updated when adding worksheets with solution checking.
 ### Module 114 — Morse Code
 - Decode answer: `chuck norris kann ein feuer entfachen, indem er zwei eiswuerfel aneinander reibt.`
   - "eiswuerfel" stays without umlaut — the morse alphabet has no ü
+
+### Module 114 — Zahlensysteme (10.2.1, 10.2.6)
+- All conversion answers are definitive — see `checkTable1()`, `checkTable2()`, `checkLinux()` in zahlensysteme.html
+- Exercise 10.2.6 answers: Zahl1(B7,267,10110111), Zahl2(141,8D,215), Zahl3(75,113,1001011), Zahl4(1022,3FE,1776), Zahl5(2050,802,100000000010)
+- Linux permissions: 700, 740, 750, 777
+
+### Module 114 — Bitoperatoren (10.3.1)
+- All arithmetic, logic, shift, and LED answers verified — see check functions in uebungen-bitoperatoren.html
+- LED einschalten uses OR, LED ausschalten uses AND
 
 ### Module 164 — UN/NN (12.1.2)
 | Relationship | FK NN | FK UN |

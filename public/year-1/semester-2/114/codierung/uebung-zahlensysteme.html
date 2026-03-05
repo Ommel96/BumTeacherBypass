@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Übung Zahlensysteme -- Modul 114</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../../css/global.css">
+<link rel="stylesheet" href="../../../../css/worksheet.css">
+<style>
+  .edit-table td code,
+  .edit-table th code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9em;
+  }
+  .edit-table input {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .power-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  .power-table th,
+  .power-table td {
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.6rem;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .power-table thead th {
+    background: var(--surface);
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<main class="container">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../../../../index.html">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../../index.html">1. Lehrjahr</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../index.html">Semester 2</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../index.html">Modul 114</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="index.html">Codierung</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">Übung Zahlensysteme</span>
+  </nav>
+
+  <div class="header">
+    <div class="header-label">Modul 114 -- Codieren</div>
+    <h1>Übung Zahlensysteme</h1>
+    <div class="subtitle">Interaktives Arbeitsblatt 10.2.6 &middot; Quelle: bbw, P. Rutschmann</div>
+  </div>
+
+  <!-- Hilfstabelle: 2er-Potenzen -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">i</div>
+      <h2>Hilfstabelle &mdash; 2er-Potenzen</h2>
+    </div>
+    <p style="margin-bottom: 0.75rem;">Erstelle zuerst die Hilfstabelle und notiere die 2er-Potenzen bis 512.</p>
+    <table class="power-table">
+      <thead>
+        <tr>
+          <th>Exponent</th>
+          <th>2<sup>0</sup></th>
+          <th>2<sup>1</sup></th>
+          <th>2<sup>2</sup></th>
+          <th>2<sup>3</sup></th>
+          <th>2<sup>4</sup></th>
+          <th>2<sup>5</sup></th>
+          <th>2<sup>6</sup></th>
+          <th>2<sup>7</sup></th>
+          <th>2<sup>8</sup></th>
+          <th>2<sup>9</sup></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-family: 'DM Sans', sans-serif; font-weight: 500;">Wert</td>
+          <td>1</td>
+          <td>2</td>
+          <td>4</td>
+          <td>8</td>
+          <td>16</td>
+          <td>32</td>
+          <td>64</td>
+          <td>128</td>
+          <td>256</td>
+          <td>512</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Aufgabe: Umrechnungstabelle -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Zahlensysteme umrechnen</h2>
+    </div>
+
+    <p style="margin-bottom: 0.5rem;">Von den Zahlen 1 bis 5 ist der Wert jeweils in einem Zahlensystem gegeben. Vervollständigen Sie die Tabelle um die fehlenden Werte.</p>
+
+    <button class="hint-toggle" onclick="Worksheet.toggleHint('hint-1')" aria-expanded="false">Hinweis anzeigen</button>
+    <div class="hint-content" id="hint-1">
+      <p>Wandle zuerst in Dezimal um, dann von Dezimal ins Zielsystem. Nutze die Hilfstabelle oben.</p>
+    </div>
+
+    <table class="edit-table" style="margin-top: 1rem;">
+      <thead>
+        <tr>
+          <th style="width: 60px;"></th>
+          <th>Dezimal</th>
+          <th>Hexadezimal</th>
+          <th>Oktal</th>
+          <th>Binär</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Zahl 1: Dezimal 183 gegeben -->
+        <tr>
+          <td class="label-cell">Zahl 1</td>
+          <td><code>183</code></td>
+          <td><input type="text" id="z1-hex" placeholder="Hex"></td>
+          <td><input type="text" id="z1-oct" placeholder="Oktal"></td>
+          <td><input type="text" id="z1-bin" placeholder="Binär"></td>
+        </tr>
+        <!-- Zahl 2: Binär 10001101 gegeben -->
+        <tr>
+          <td class="label-cell">Zahl 2</td>
+          <td><input type="text" id="z2-dec" placeholder="Dez"></td>
+          <td><input type="text" id="z2-hex" placeholder="Hex"></td>
+          <td><input type="text" id="z2-oct" placeholder="Oktal"></td>
+          <td><code>10001101</code></td>
+        </tr>
+        <!-- Zahl 3: Hex 4B gegeben -->
+        <tr>
+          <td class="label-cell">Zahl 3</td>
+          <td><input type="text" id="z3-dec" placeholder="Dez"></td>
+          <td><code>4B</code></td>
+          <td><input type="text" id="z3-oct" placeholder="Oktal"></td>
+          <td><input type="text" id="z3-bin" placeholder="Binär"></td>
+        </tr>
+        <!-- Zahl 4: Binär 001111111110 gegeben -->
+        <tr>
+          <td class="label-cell">Zahl 4</td>
+          <td><input type="text" id="z4-dec" placeholder="Dez"></td>
+          <td><input type="text" id="z4-hex" placeholder="Hex"></td>
+          <td><input type="text" id="z4-oct" placeholder="Oktal"></td>
+          <td><code>001111111110</code></td>
+        </tr>
+        <!-- Zahl 5: Oktal 4002 gegeben -->
+        <tr>
+          <td class="label-cell">Zahl 5</td>
+          <td><input type="text" id="z5-dec" placeholder="Dez"></td>
+          <td><input type="text" id="z5-hex" placeholder="Hex"></td>
+          <td><code>4002</code></td>
+          <td><input type="text" id="z5-bin" placeholder="Binär"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkConversions()">Prüfen</button>
+      <button class="btn btn-reset" onclick="Worksheet.resetFields(['z1-hex','z1-oct','z1-bin','z2-dec','z2-hex','z2-oct','z3-dec','z3-oct','z3-bin','z4-dec','z4-hex','z4-oct','z5-dec','z5-hex','z5-bin'])">Zurücksetzen</button>
+    </div>
+    <div class="feedback" id="fb-conversions"></div>
+  </div>
+
+  <!-- Notizen -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Notizen</h2>
+    </div>
+    <div class="input-group">
+      <label for="notizen">Halte hier deine Rechenwege oder Notizen fest:</label>
+      <textarea id="notizen" rows="8" placeholder="Notizen..."></textarea>
+    </div>
+  </div>
+
+</main>
+
+<script src="../../../../js/worksheet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  Worksheet.init('114-codierung-uebung-zahlensysteme');
+});
+
+function checkConversions() {
+  Worksheet.checkFields([
+    // Zahl 1: Dec 183
+    { fieldId: 'z1-hex', expected: 'b7', hint: '183 = 11×16 + 7' },
+    { fieldId: 'z1-oct', expected: '267', hint: '183 = 2×64 + 6×8 + 7' },
+    { fieldId: 'z1-bin', expected: '10110111', hint: '183 = 128+32+16+4+2+1' },
+    // Zahl 2: Bin 10001101 = 141
+    { fieldId: 'z2-dec', expected: '141', hint: '128+8+4+1 = 141' },
+    { fieldId: 'z2-hex', expected: '8d', hint: '141 = 8×16 + 13' },
+    { fieldId: 'z2-oct', expected: '215', hint: '141 = 2×64 + 1×8 + 5' },
+    // Zahl 3: Hex 4B = 75
+    { fieldId: 'z3-dec', expected: '75', hint: '4×16 + 11 = 75' },
+    { fieldId: 'z3-oct', expected: '113', hint: '75 = 1×64 + 1×8 + 3' },
+    { fieldId: 'z3-bin', expected: '1001011', hint: '75 = 64+8+2+1' },
+    // Zahl 4: Bin 001111111110 = 1022
+    { fieldId: 'z4-dec', expected: '1022', hint: '512+256+128+64+32+16+8+4+2 = 1022' },
+    { fieldId: 'z4-hex', expected: '3fe', hint: '1022 = 3×256 + 15×16 + 14' },
+    { fieldId: 'z4-oct', expected: '1776', hint: '1022 = 1×512 + 7×64 + 7×8 + 6' },
+    // Zahl 5: Oct 4002 = 2050
+    { fieldId: 'z5-dec', expected: '2050', hint: '4×512 + 0×64 + 0×8 + 2 = 2050' },
+    { fieldId: 'z5-hex', expected: '802', hint: '2050 = 8×256 + 0×16 + 2' },
+    { fieldId: 'z5-bin', expected: '100000000010', hint: '2050 = 2048+2' },
+  ], 'fb-conversions');
+}
+</script>
+
+</body>
+</html>
