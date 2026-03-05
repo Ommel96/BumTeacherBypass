@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zusammenfassung UN/NN -- Modul 164</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../../css/global.css">
+<link rel="stylesheet" href="../../../../css/worksheet.css">
+<style>
+  .rel-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 1.1rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+  }
+  .entity-row {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .entity-box {
+    flex: 1;
+    min-width: 200px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    background: var(--surface);
+  }
+  .entity-box h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .entity-box .input-group {
+    margin-bottom: 0.5rem;
+  }
+  .entity-box label {
+    font-size: 0.85rem;
+  }
+  .entity-box input {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+  }
+  .unnn-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+  .unnn-table th,
+  .unnn-table td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .unnn-table thead th {
+    background: var(--surface);
+    font-weight: 600;
+  }
+  .unnn-table td:last-child {
+    width: 140px;
+    text-align: center;
+  }
+  .unnn-table select {
+    width: 100%;
+    padding: 0.3rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    font-family: inherit;
+    font-size: 0.85rem;
+    background: #fff;
+    cursor: pointer;
+  }
+  .junction-note {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 0.75rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .junction-note strong {
+    color: #92400e;
+  }
+</style>
+</head>
+<body>
+
+<main class="container">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../../../../index.html">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../../index.html">1. Lehrjahr</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../index.html">Semester 2</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../index.html">Modul 164</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="index.html">Assoziationen</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">Zusammenfassung UN/NN</span>
+  </nav>
+
+  <div class="header">
+    <div class="header-label">Modul 164 -- Assoziationen umsetzen</div>
+    <h1>Zusammenfassung UN/NN</h1>
+    <div class="subtitle">Interaktives Arbeitsblatt 12.1.2</div>
+  </div>
+
+  <!-- Aufgabenstellung -->
+  <div class="story">
+    <p>Für jeden Beziehungstyp:</p>
+    <ol>
+      <li>Ergänzen Sie in den Entitäten die Primär- und Fremdschlüsselattribute.</li>
+      <li>Tragen Sie in der Tabelle ein, ob die Einstellung erforderlich ist (Ja oder Nein).</li>
+      <li>Ergänzen Sie hinter den Attributen die Vermerke UN, NN.</li>
+      <li>Vergleichen Sie die Lösung mit dem Nachbarn.</li>
+    </ol>
+  </div>
+
+  <!-- ═══════════════════ 1-c ═══════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Beziehung: <span class="rel-badge">1-c</span></h2>
+    </div>
+
+    <div class="entity-row">
+      <div class="entity-box">
+        <h4>Entität A</h4>
+        <div class="input-group">
+          <label for="r1c_a_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="r1c_a_pk" placeholder="z.B. ID">
+        </div>
+        <div class="input-group">
+          <label for="r1c_a_attr">Weitere Attribute / FK + Vermerke</label>
+          <input type="text" id="r1c_a_attr" placeholder="z.B. Name, BFK (NN, UN)">
+        </div>
+      </div>
+      <div class="entity-box">
+        <h4>Entität B</h4>
+        <div class="input-group">
+          <label for="r1c_b_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="r1c_b_pk" placeholder="z.B. ID">
+        </div>
+        <div class="input-group">
+          <label for="r1c_b_attr">Weitere Attribute / FK + Vermerke</label>
+          <input type="text" id="r1c_b_attr" placeholder="z.B. AID_FK (UN)">
+        </div>
+      </div>
+    </div>
+
+    <p class="task-description">Was gilt für die Einstellungen des Fremdschlüssels?</p>
+    <table class="unnn-table">
+      <thead>
+        <tr>
+          <th scope="col">Symbol</th>
+          <th scope="col">Ausformuliert</th>
+          <th scope="col">Bedeutung</th>
+          <th scope="col">Erforderlich?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>NN</td><td>Null erlaubt</td><td>Eingabe nicht erforderlich</td><td><select id="r1c_nn1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>NN</td><td>Null nicht erlaubt</td><td>Eingabe erforderlich</td><td><select id="r1c_nn2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Unique</td><td>Indiziert ohne Duplikate</td><td><select id="r1c_un1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Nicht Unique</td><td>Indiziert Duplikate erlaubt</td><td><select id="r1c_un2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+      </tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-r1c">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-r1c">Zurücksetzen</button>
+    </div>
+    <div id="fb-r1c" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- ═══════════════════ c-c ═══════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Beziehung: <span class="rel-badge">c-c</span></h2>
+    </div>
+
+    <div class="entity-row">
+      <div class="entity-box">
+        <h4>Entität A</h4>
+        <div class="input-group">
+          <label for="rcc_a_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="rcc_a_pk" placeholder="z.B. ID">
+        </div>
+        <div class="input-group">
+          <label for="rcc_a_attr">Weitere Attribute / FK + Vermerke</label>
+          <input type="text" id="rcc_a_attr" placeholder="z.B. BID_FK (UN)">
+        </div>
+      </div>
+      <div class="entity-box">
+        <h4>Entität B</h4>
+        <div class="input-group">
+          <label for="rcc_b_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="rcc_b_pk" placeholder="z.B. ID">
+        </div>
+        <div class="input-group">
+          <label for="rcc_b_attr">Weitere Attribute / FK + Vermerke</label>
+          <input type="text" id="rcc_b_attr" placeholder="z.B. Name">
+        </div>
+      </div>
+    </div>
+
+    <p class="task-description">Was gilt für die Einstellungen des Fremdschlüssels?</p>
+    <table class="unnn-table">
+      <thead>
+        <tr>
+          <th scope="col">Symbol</th>
+          <th scope="col">Ausformuliert</th>
+          <th scope="col">Bedeutung</th>
+          <th scope="col">Erforderlich?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>NN</td><td>Null erlaubt</td><td>Eingabe nicht erforderlich</td><td><select id="rcc_nn1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>NN</td><td>Null nicht erlaubt</td><td>Eingabe erforderlich</td><td><select id="rcc_nn2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Unique</td><td>Indiziert ohne Duplikate</td><td><select id="rcc_un1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Nicht Unique</td><td>Indiziert Duplikate erlaubt</td><td><select id="rcc_un2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+      </tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-rcc">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-rcc">Zurücksetzen</button>
+    </div>
+    <div id="fb-rcc" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- ═══════════════════ 1-mc ═══════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Beziehung: <span class="rel-badge">1-mc</span></h2>
+    </div>
+
+    <div class="entity-row">
+      <div class="entity-box">
+        <h4>Entität A</h4>
+        <div class="input-group">
+          <label for="r1mc_a_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="r1mc_a_pk" placeholder="z.B. ID">
+        </div>
+        <div class="input-group">
+          <label for="r1mc_a_attr">Weitere Attribute / FK + Vermerke</label>
+          <input type="text" id="r1mc_a_attr" placeholder="...">
+        </div>
+      </div>
+      <div class="entity-box">
+        <h4>Entität B</h4>
+        <div class="input-group">
+          <label for="r1mc_b_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="r1mc_b_pk" placeholder="z.B. ID">
+        </div>
+        <div class="input-group">
+          <label for="r1mc_b_attr">Weitere Attribute / FK + Vermerke</label>
+          <input type="text" id="r1mc_b_attr" placeholder="z.B. AID_FK (NN)">
+        </div>
+      </div>
+    </div>
+
+    <p class="task-description">Was gilt für die Einstellungen des Fremdschlüssels?</p>
+    <table class="unnn-table">
+      <thead>
+        <tr>
+          <th scope="col">Symbol</th>
+          <th scope="col">Ausformuliert</th>
+          <th scope="col">Bedeutung</th>
+          <th scope="col">Erforderlich?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>NN</td><td>Null erlaubt</td><td>Eingabe nicht erforderlich</td><td><select id="r1mc_nn1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>NN</td><td>Null nicht erlaubt</td><td>Eingabe erforderlich</td><td><select id="r1mc_nn2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Unique</td><td>Indiziert ohne Duplikate</td><td><select id="r1mc_un1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Nicht Unique</td><td>Indiziert Duplikate erlaubt</td><td><select id="r1mc_un2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+      </tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-r1mc">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-r1mc">Zurücksetzen</button>
+    </div>
+    <div id="fb-r1mc" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- ═══════════════════ c-mc ═══════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Beziehung: <span class="rel-badge">c-mc</span></h2>
+    </div>
+
+    <div class="entity-row">
+      <div class="entity-box">
+        <h4>Entität A</h4>
+        <div class="input-group">
+          <label for="rcmc_a_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="rcmc_a_pk" placeholder="z.B. ID">
+        </div>
+        <div class="input-group">
+          <label for="rcmc_a_attr">Weitere Attribute / FK + Vermerke</label>
+          <input type="text" id="rcmc_a_attr" placeholder="...">
+        </div>
+      </div>
+      <div class="entity-box">
+        <h4>Entität B</h4>
+        <div class="input-group">
+          <label for="rcmc_b_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="rcmc_b_pk" placeholder="z.B. ID">
+        </div>
+        <div class="input-group">
+          <label for="rcmc_b_attr">Weitere Attribute / FK + Vermerke</label>
+          <input type="text" id="rcmc_b_attr" placeholder="z.B. AID_FK">
+        </div>
+      </div>
+    </div>
+
+    <p class="task-description">Was gilt für die Einstellungen des Fremdschlüssels?</p>
+    <table class="unnn-table">
+      <thead>
+        <tr>
+          <th scope="col">Symbol</th>
+          <th scope="col">Ausformuliert</th>
+          <th scope="col">Bedeutung</th>
+          <th scope="col">Erforderlich?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>NN</td><td>Null erlaubt</td><td>Eingabe nicht erforderlich</td><td><select id="rcmc_nn1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>NN</td><td>Null nicht erlaubt</td><td>Eingabe erforderlich</td><td><select id="rcmc_nn2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Unique</td><td>Indiziert ohne Duplikate</td><td><select id="rcmc_un1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Nicht Unique</td><td>Indiziert Duplikate erlaubt</td><td><select id="rcmc_un2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+      </tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-rcmc">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-rcmc">Zurücksetzen</button>
+    </div>
+    <div id="fb-rcmc" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- ═══════════════════ mc-mc ═══════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2>Beziehung: <span class="rel-badge">mc-mc</span></h2>
+    </div>
+
+    <div class="junction-note">
+      <strong>Hinweis:</strong> Um die mc-mc Beziehung zu realisieren, müssen wir eine <strong>Zwischentabelle</strong> einführen.
+    </div>
+
+    <div class="entity-row">
+      <div class="entity-box">
+        <h4>Entität A (z.B. Auto)</h4>
+        <div class="input-group">
+          <label for="rmcmc_a_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="rmcmc_a_pk" placeholder="z.B. AutoID">
+        </div>
+        <div class="input-group">
+          <label for="rmcmc_a_attr">Weitere Attribute</label>
+          <input type="text" id="rmcmc_a_attr" placeholder="z.B. Marke, Modell">
+        </div>
+      </div>
+      <div class="entity-box">
+        <h4>Zwischentabelle (z.B. AutoFahrer)</h4>
+        <div class="input-group">
+          <label for="rmcmc_jt_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="rmcmc_jt_pk" placeholder="z.B. AutoIDFS + FahrerIDFS">
+        </div>
+        <div class="input-group">
+          <label for="rmcmc_jt_attr">Fremdschlüssel + Vermerke</label>
+          <input type="text" id="rmcmc_jt_attr" placeholder="z.B. AutoIDFS (NN), FahrerIDFS (NN)">
+        </div>
+      </div>
+      <div class="entity-box">
+        <h4>Entität B (z.B. Fahrer)</h4>
+        <div class="input-group">
+          <label for="rmcmc_b_pk">Primärschlüssel (PK)</label>
+          <input type="text" id="rmcmc_b_pk" placeholder="z.B. FahrerID">
+        </div>
+        <div class="input-group">
+          <label for="rmcmc_b_attr">Weitere Attribute</label>
+          <input type="text" id="rmcmc_b_attr" placeholder="z.B. Name, Vorname">
+        </div>
+      </div>
+    </div>
+
+    <h3>AutoIDFS (Fremdschlüssel 1)</h3>
+    <table class="unnn-table">
+      <thead>
+        <tr>
+          <th scope="col">Symbol</th>
+          <th scope="col">Ausformuliert</th>
+          <th scope="col">Bedeutung</th>
+          <th scope="col">Erforderlich?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>NN</td><td>Null erlaubt</td><td>Eingabe nicht erforderlich</td><td><select id="rmcmc_a_nn1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>NN</td><td>Null nicht erlaubt</td><td>Eingabe erforderlich</td><td><select id="rmcmc_a_nn2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Unique</td><td>Indiziert ohne Duplikate</td><td><select id="rmcmc_a_un1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Nicht Unique</td><td>Indiziert Duplikate erlaubt</td><td><select id="rmcmc_a_un2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+      </tbody>
+    </table>
+
+    <h3>FahrerIDFS (Fremdschlüssel 2)</h3>
+    <table class="unnn-table">
+      <thead>
+        <tr>
+          <th scope="col">Symbol</th>
+          <th scope="col">Ausformuliert</th>
+          <th scope="col">Bedeutung</th>
+          <th scope="col">Erforderlich?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>NN</td><td>Null erlaubt</td><td>Eingabe nicht erforderlich</td><td><select id="rmcmc_b_nn1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>NN</td><td>Null nicht erlaubt</td><td>Eingabe erforderlich</td><td><select id="rmcmc_b_nn2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Unique</td><td>Indiziert ohne Duplikate</td><td><select id="rmcmc_b_un1"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+        <tr><td>UN</td><td>Nicht Unique</td><td>Indiziert Duplikate erlaubt</td><td><select id="rmcmc_b_un2"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option></select></td></tr>
+      </tbody>
+    </table>
+
+    <div class="junction-note">
+      <strong>Wichtig:</strong> AutoIDFS zusammen mit FahrerIDFS als Paar sind der Primary-Key der Tabelle AutoFahrer. Beide zusammen markieren und als Primary-Key definieren.
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-rmcmc">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-rmcmc">Zurücksetzen</button>
+    </div>
+    <div id="fb-rmcmc" class="feedback" role="alert" aria-live="assertive"></div>
+  </div>
+
+</main>
+
+<script src="../../../../js/worksheet.js"></script>
+<script>
+  Worksheet.init('164-assoziationen-zusammenfassung-unnn');
+
+  // Check buttons (only select fields -- entity text inputs are open-ended)
+  // 1-c: mandatory (NN=Not Null) + max 1 (UN=Unique)
+  document.getElementById('btn-check-r1c').addEventListener('click', function () {
+    Worksheet.checkFields([
+      { fieldId: 'r1c_nn1', expected: 'nein', hint: 'Bei 1-c ist die Beziehung auf der 1-Seite zwingend (Not Null).' },
+      { fieldId: 'r1c_nn2', expected: 'ja' },
+      { fieldId: 'r1c_un1', expected: 'ja', hint: 'Bei 1-c kann jeder Wert nur einmal vorkommen (Unique).' },
+      { fieldId: 'r1c_un2', expected: 'nein' }
+    ], 'fb-r1c');
+  });
+
+  // c-c: conditional (NN=Null erlaubt) + max 1 (UN=Unique)
+  document.getElementById('btn-check-rcc').addEventListener('click', function () {
+    Worksheet.checkFields([
+      { fieldId: 'rcc_nn1', expected: 'ja', hint: 'Bei c-c ist die Beziehung optional (Null erlaubt).' },
+      { fieldId: 'rcc_nn2', expected: 'nein' },
+      { fieldId: 'rcc_un1', expected: 'ja', hint: 'Bei c-c kann jeder Wert nur einmal vorkommen (Unique).' },
+      { fieldId: 'rcc_un2', expected: 'nein' }
+    ], 'fb-rcc');
+  });
+
+  // 1-mc: mandatory (NN=Not Null) + many (UN=Nicht Unique)
+  document.getElementById('btn-check-r1mc').addEventListener('click', function () {
+    Worksheet.checkFields([
+      { fieldId: 'r1mc_nn1', expected: 'nein', hint: 'Bei 1-mc ist die Beziehung zwingend (Not Null).' },
+      { fieldId: 'r1mc_nn2', expected: 'ja' },
+      { fieldId: 'r1mc_un1', expected: 'nein', hint: 'Bei 1-mc sind Duplikate erlaubt (Nicht Unique).' },
+      { fieldId: 'r1mc_un2', expected: 'ja' }
+    ], 'fb-r1mc');
+  });
+
+  // c-mc: conditional (Null erlaubt) + many (Nicht Unique)
+  document.getElementById('btn-check-rcmc').addEventListener('click', function () {
+    Worksheet.checkFields([
+      { fieldId: 'rcmc_nn1', expected: 'ja', hint: 'Bei c-mc ist die Beziehung optional (Null erlaubt).' },
+      { fieldId: 'rcmc_nn2', expected: 'nein' },
+      { fieldId: 'rcmc_un1', expected: 'nein', hint: 'Bei c-mc sind Duplikate erlaubt (Nicht Unique).' },
+      { fieldId: 'rcmc_un2', expected: 'ja' }
+    ], 'fb-rcmc');
+  });
+
+  // mc-mc: both FKs mandatory (Not Null) + both not unique (Nicht Unique)
+  document.getElementById('btn-check-rmcmc').addEventListener('click', function () {
+    Worksheet.checkFields([
+      { fieldId: 'rmcmc_a_nn1', expected: 'nein', hint: 'AutoIDFS muss zwingend gesetzt sein (Not Null).' },
+      { fieldId: 'rmcmc_a_nn2', expected: 'ja' },
+      { fieldId: 'rmcmc_a_un1', expected: 'nein', hint: 'AutoIDFS darf mehrfach vorkommen (Nicht Unique).' },
+      { fieldId: 'rmcmc_a_un2', expected: 'ja' },
+      { fieldId: 'rmcmc_b_nn1', expected: 'nein', hint: 'FahrerIDFS muss zwingend gesetzt sein (Not Null).' },
+      { fieldId: 'rmcmc_b_nn2', expected: 'ja' },
+      { fieldId: 'rmcmc_b_un1', expected: 'nein', hint: 'FahrerIDFS darf mehrfach vorkommen (Nicht Unique).' },
+      { fieldId: 'rmcmc_b_un2', expected: 'ja' }
+    ], 'fb-rmcmc');
+  });
+
+  // Reset buttons
+  document.getElementById('btn-reset-r1c').addEventListener('click', function () {
+    Worksheet.resetFields([
+      'r1c_a_pk', 'r1c_a_attr', 'r1c_b_pk', 'r1c_b_attr',
+      'r1c_nn1', 'r1c_nn2', 'r1c_un1', 'r1c_un2'
+    ]);
+  });
+  document.getElementById('btn-reset-rcc').addEventListener('click', function () {
+    Worksheet.resetFields([
+      'rcc_a_pk', 'rcc_a_attr', 'rcc_b_pk', 'rcc_b_attr',
+      'rcc_nn1', 'rcc_nn2', 'rcc_un1', 'rcc_un2'
+    ]);
+  });
+  document.getElementById('btn-reset-r1mc').addEventListener('click', function () {
+    Worksheet.resetFields([
+      'r1mc_a_pk', 'r1mc_a_attr', 'r1mc_b_pk', 'r1mc_b_attr',
+      'r1mc_nn1', 'r1mc_nn2', 'r1mc_un1', 'r1mc_un2'
+    ]);
+  });
+  document.getElementById('btn-reset-rcmc').addEventListener('click', function () {
+    Worksheet.resetFields([
+      'rcmc_a_pk', 'rcmc_a_attr', 'rcmc_b_pk', 'rcmc_b_attr',
+      'rcmc_nn1', 'rcmc_nn2', 'rcmc_un1', 'rcmc_un2'
+    ]);
+  });
+  document.getElementById('btn-reset-rmcmc').addEventListener('click', function () {
+    Worksheet.resetFields([
+      'rmcmc_a_pk', 'rmcmc_a_attr', 'rmcmc_jt_pk', 'rmcmc_jt_attr',
+      'rmcmc_b_pk', 'rmcmc_b_attr',
+      'rmcmc_a_nn1', 'rmcmc_a_nn2', 'rmcmc_a_un1', 'rmcmc_a_un2',
+      'rmcmc_b_nn1', 'rmcmc_b_nn2', 'rmcmc_b_un1', 'rmcmc_b_un2'
+    ]);
+  });
+</script>
+
+</body>
+</html>

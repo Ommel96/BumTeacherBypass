@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vertiefungsfragen: Assoziationen umsetzen -- Modul 164</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../../css/global.css">
+<link rel="stylesheet" href="../../../../css/worksheet.css">
+</head>
+<body>
+
+<main class="container">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../../../../index.html">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../../index.html">1. Lehrjahr</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../index.html">Semester 2</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../index.html">Modul 164</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="index.html">Assoziationen</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">Vertiefungsfragen</span>
+  </nav>
+
+  <div class="header">
+    <div class="header-label">Modul 164 -- Assoziationen umsetzen</div>
+    <h1>Vertiefungsfragen</h1>
+    <div class="subtitle">Interaktives Arbeitsblatt 12.1.1</div>
+  </div>
+
+  <!-- Intro -->
+  <div class="story">
+    <p>Wenn wir in einer relationalen Datenbank definieren, aus welchen Assoziationen eine Beziehung besteht, so benützen wir dazu die Möglichkeit, die Eigenschaften des Fremdschlüssels zu beeinflussen.</p>
+  </div>
+
+  <!-- Frage 1 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Eigenschaften des Fremdschlüssels</h2>
+    </div>
+
+    <p class="task-description">Notieren Sie die zwei Eigenschaften des Fremdschlüssels.</p>
+
+    <div class="input-group">
+      <label for="f1_eigenschaft1">Eigenschaft 1</label>
+      <input type="text" id="f1_eigenschaft1" placeholder="Erste Eigenschaft...">
+    </div>
+
+    <div class="input-group">
+      <label for="f1_eigenschaft2">Eigenschaft 2</label>
+      <input type="text" id="f1_eigenschaft2" placeholder="Zweite Eigenschaft...">
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-reset" id="btn-reset-f1">Zurücksetzen</button>
+    </div>
+
+    <button class="hint-toggle" id="btn-hint1">Tipp anzeigen</button>
+    <div id="hint1" class="hint-content">
+      Die zwei Eigenschaften des Fremdschlüssels sind: <strong>Not Null (NN)</strong> -- ob ein Wert zwingend eingegeben werden muss -- und <strong>Unique (UN)</strong> -- ob der Wert eindeutig sein muss (keine Duplikate erlaubt).
+    </div>
+  </div>
+
+  <!-- Frage 2 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Primärschlüssel vs. Fremdschlüssel</h2>
+    </div>
+
+    <p class="task-description">Erklären Sie, wieso die gleichen Eigenschaften beim Primärschlüssel für die Definition der Assoziationen keine Rolle spielen.</p>
+
+    <div class="input-group">
+      <label for="f2_erklaerung">Ihre Erklärung</label>
+      <textarea id="f2_erklaerung" rows="5" placeholder="Erklären Sie den Unterschied..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-reset" id="btn-reset-f2">Zurücksetzen</button>
+    </div>
+
+    <button class="hint-toggle" id="btn-hint2">Tipp anzeigen</button>
+    <div id="hint2" class="hint-content">
+      Ein Primärschlüssel ist per Definition immer <strong>Not Null</strong> und <strong>Unique</strong>. Diese Eigenschaften sind bei ihm fix und können nicht verändert werden. Beim Fremdschlüssel hingegen können NN und UN frei konfiguriert werden, um die Art der Beziehung (1:1, 1:n, n:m etc.) zu bestimmen.
+    </div>
+  </div>
+
+  <!-- Frage 3 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Not Null &amp; Unique erklärt</h2>
+    </div>
+
+    <p class="task-description">Erklären Sie, welche Eigenschaften hinter &laquo;Not Null&raquo; (NN) und &laquo;is Unique&raquo; (UN) stehen.</p>
+
+    <div class="input-group">
+      <label for="f3_nn">Not Null (NN)</label>
+      <textarea id="f3_nn" rows="3" placeholder="Was bedeutet Not Null?"></textarea>
+    </div>
+
+    <div class="input-group">
+      <label for="f3_un">Unique (UN)</label>
+      <textarea id="f3_un" rows="3" placeholder="Was bedeutet Unique?"></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-reset" id="btn-reset-f3">Zurücksetzen</button>
+    </div>
+
+    <button class="hint-toggle" id="btn-hint3">Tipp anzeigen</button>
+    <div id="hint3" class="hint-content">
+      <strong>Not Null (NN):</strong> Wenn aktiviert, muss das Feld zwingend einen Wert enthalten -- es darf nicht leer (NULL) sein. Der Fremdschlüssel muss also immer auf einen existierenden Datensatz verweisen.<br><br>
+      <strong>Unique (UN):</strong> Wenn aktiviert, darf der Wert in der Spalte nur einmal vorkommen -- keine Duplikate erlaubt. Jeder referenzierte Datensatz kann also höchstens einmal zugeordnet werden.
+    </div>
+  </div>
+
+  <!-- Frage 4 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Konfiguration in der Datenbank</h2>
+    </div>
+
+    <p class="task-description">Notieren Sie, wie die beiden Eigenschaften bei einem Attribut in der Datenbank konfiguriert werden können.</p>
+
+    <div class="input-group">
+      <label for="f4_config">Konfiguration</label>
+      <textarea id="f4_config" rows="5" placeholder="Beschreiben Sie die Konfigurationsmöglichkeiten..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-reset" id="btn-reset-f4">Zurücksetzen</button>
+    </div>
+
+    <button class="hint-toggle" id="btn-hint4">Tipp anzeigen</button>
+    <div id="hint4" class="hint-content">
+      In einem Datenbank-Tool (z.B. MySQL Workbench) können die Eigenschaften beim Erstellen oder Bearbeiten einer Tabelle konfiguriert werden. Für jedes Attribut gibt es Checkboxen:<br><br>
+      <strong>NN (Not Null):</strong> Checkbox &laquo;NN&raquo; bzw. &laquo;Not Null&raquo; aktivieren.<br>
+      <strong>UN (Unique):</strong> Checkbox &laquo;UQ&raquo; bzw. &laquo;Unique&raquo; aktivieren, oder einen Unique-Index auf die Spalte setzen.<br><br>
+      Alternativ in SQL: <code>ALTER TABLE tabelle MODIFY spalte INT NOT NULL UNIQUE;</code>
+    </div>
+  </div>
+
+</main>
+
+<script src="../../../../js/worksheet.js"></script>
+<script>
+  Worksheet.init('164-assoziationen-vertiefungsfragen');
+
+  document.getElementById('btn-reset-f1').addEventListener('click', function () {
+    Worksheet.resetFields(['f1_eigenschaft1', 'f1_eigenschaft2']);
+  });
+  document.getElementById('btn-reset-f2').addEventListener('click', function () {
+    Worksheet.resetFields(['f2_erklaerung']);
+  });
+  document.getElementById('btn-reset-f3').addEventListener('click', function () {
+    Worksheet.resetFields(['f3_nn', 'f3_un']);
+  });
+  document.getElementById('btn-reset-f4').addEventListener('click', function () {
+    Worksheet.resetFields(['f4_config']);
+  });
+
+  document.getElementById('btn-hint1').addEventListener('click', function () {
+    Worksheet.toggleHint('hint1');
+  });
+  document.getElementById('btn-hint2').addEventListener('click', function () {
+    Worksheet.toggleHint('hint2');
+  });
+  document.getElementById('btn-hint3').addEventListener('click', function () {
+    Worksheet.toggleHint('hint3');
+  });
+  document.getElementById('btn-hint4').addEventListener('click', function () {
+    Worksheet.toggleHint('hint4');
+  });
+</script>
+
+</body>
+</html>
