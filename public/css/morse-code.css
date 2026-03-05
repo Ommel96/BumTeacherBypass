@@ -1,0 +1,152 @@
+/* Morse Code worksheet-specific styles */
+
+.morse-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+
+.morse-table th {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  font-weight: 600;
+  padding: 0.5rem 0.6rem;
+  text-align: center;
+  border-bottom: 2px solid var(--accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.morse-table td {
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.morse-table td:first-child {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.morse-table td:last-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--accent-dark);
+  letter-spacing: 0.1em;
+}
+
+.morse-table-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 1.5rem;
+}
+
+.morse-encoded {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  background: var(--accent-light);
+  padding: 1rem 1.2rem;
+  border-radius: 8px;
+  line-height: 2;
+  margin: 1rem 0;
+  word-break: break-all;
+}
+
+.chuck-box {
+  background: #f9f6f0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.chuck-box .chuck-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.chuck-box p {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--text);
+  font-style: italic;
+}
+
+.huffman-img {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin: 1rem 0;
+}
+
+.encoding-workspace {
+  background: #fefdfb;
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  min-height: 60px;
+}
+
+.encoding-workspace .given {
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+
+.letter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.letter-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.letter-cell span {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent-dark);
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+.letter-cell input {
+  flex: 1;
+  border: 1.5px dashed var(--border);
+  background: transparent;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+  outline: none;
+  min-width: 0;
+}
+
+.letter-cell input:focus {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--input-bg);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.huffman-help {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}

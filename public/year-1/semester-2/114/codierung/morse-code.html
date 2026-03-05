@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morse Code -- Modul 114</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../../css/global.css">
+<link rel="stylesheet" href="../../../../css/worksheet.css">
+<link rel="stylesheet" href="../../../../css/morse-code.css">
+</head>
+<body>
+
+<main class="container">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../../../../index.html">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../../index.html">1. Lehrjahr</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../index.html">Semester 2</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../index.html">Modul 114</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="index.html">Codierung</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">Morse Code</span>
+  </nav>
+
+  <div class="header">
+    <div class="header-label">Modul 114 -- Codieren</div>
+    <h1>Morse Code</h1>
+    <div class="subtitle">Interaktives Arbeitsblatt &middot; Quelle: bbw, P. Rutschmann</div>
+  </div>
+
+  <!-- TEIL 1: MORSE CODE -->
+
+  <!-- Intro -->
+  <div class="story">
+    <p>Die Morsezeichen, manchmal auch Morsealphabet oder Morsecode genannt, sind ein Zeichensatz zur Übermittlung von Buchstaben, Ziffern und übrigen Zeichen. Dabei wird ein direktes Signal ein- und ausgeschaltet. Es besteht aus drei Symbolen: <strong>kurzes Signal</strong>, <strong>langes Signal</strong> und <strong>Pause</strong>.</p>
+  </div>
+
+  <!-- Morse code reference table -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">i</div>
+      <h2>Internationales Morsealphabet</h2>
+    </div>
+
+    <div class="morse-table-grid">
+      <table class="morse-table">
+        <caption class="sr-only">Morse-Codes A bis I</caption>
+        <thead><tr><th scope="col">Zeichen</th><th scope="col">Morse</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>&middot; &minus;</td></tr>
+          <tr><td>B</td><td>&minus; &middot; &middot; &middot;</td></tr>
+          <tr><td>C</td><td>&minus; &middot; &minus; &middot;</td></tr>
+          <tr><td>D</td><td>&minus; &middot; &middot;</td></tr>
+          <tr><td>E</td><td>&middot;</td></tr>
+          <tr><td>F</td><td>&middot; &middot; &minus; &middot;</td></tr>
+          <tr><td>G</td><td>&minus; &minus; &middot;</td></tr>
+          <tr><td>H</td><td>&middot; &middot; &middot; &middot;</td></tr>
+          <tr><td>I</td><td>&middot; &middot;</td></tr>
+        </tbody>
+      </table>
+      <table class="morse-table">
+        <caption class="sr-only">Morse-Codes J bis R</caption>
+        <thead><tr><th scope="col">Zeichen</th><th scope="col">Morse</th></tr></thead>
+        <tbody>
+          <tr><td>J</td><td>&middot; &minus; &minus; &minus;</td></tr>
+          <tr><td>K</td><td>&minus; &middot; &minus;</td></tr>
+          <tr><td>L</td><td>&middot; &minus; &middot; &middot;</td></tr>
+          <tr><td>M</td><td>&minus; &minus;</td></tr>
+          <tr><td>N</td><td>&minus; &middot;</td></tr>
+          <tr><td>O</td><td>&minus; &minus; &minus;</td></tr>
+          <tr><td>P</td><td>&middot; &minus; &minus; &middot;</td></tr>
+          <tr><td>Q</td><td>&minus; &minus; &middot; &minus;</td></tr>
+          <tr><td>R</td><td>&middot; &minus; &middot;</td></tr>
+        </tbody>
+      </table>
+      <table class="morse-table">
+        <caption class="sr-only">Morse-Codes S bis Z</caption>
+        <thead><tr><th scope="col">Zeichen</th><th scope="col">Morse</th></tr></thead>
+        <tbody>
+          <tr><td>S</td><td>&middot; &middot; &middot;</td></tr>
+          <tr><td>T</td><td>&minus;</td></tr>
+          <tr><td>U</td><td>&middot; &middot; &minus;</td></tr>
+          <tr><td>V</td><td>&middot; &middot; &middot; &minus;</td></tr>
+          <tr><td>W</td><td>&middot; &minus; &minus;</td></tr>
+          <tr><td>X</td><td>&minus; &middot; &middot; &minus;</td></tr>
+          <tr><td>Y</td><td>&minus; &middot; &minus; &minus;</td></tr>
+          <tr><td>Z</td><td>&minus; &minus; &middot; &middot;</td></tr>
+          <tr><td>/</td><td>Worttrenner</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Chuck Norris text + encoded message -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Dekodiere die Nachricht</h2>
+    </div>
+
+    <div class="chuck-box">
+      <div class="chuck-icon" aria-hidden="true">CN</div>
+      <p>Chuck Norris (* 10. März 1940 in Ryan, Oklahoma; Geburtsname: Carlos Ray Norris Jr.) ist ein zur Legende gewordener Schauspieler und Kampfsportler. Aufgrund seiner stereotypen Rollen als unbesiegbarer, gesetzestreuer Actionheld erfreuen sich die <strong>Chuck Norris Facts</strong> (Chuck-Norris-Tatsachen) grosser Beliebtheit; Kurzwitze, die seine Überlegenheit parodieren.</p>
+    </div>
+
+    <p class="task-description">Dekodieren Sie die folgende Morse-Nachricht. Zwischen den Buchstaben steht ein Leerzeichen, zwischen den Wörtern ein <strong>/</strong>.</p>
+
+    <div class="morse-encoded">
+      -.-. .... ..- -.-. -.- / -. --- .-. .-. .. ... / -.- .- -. -. /<br>
+      . .. -. / ..-. . ..- . .-. / . -. - ..-. .- -.-. .... . -. --..-- /<br>
+      .. -. -.. . -- / . .-. / --.. .-- . .. / . .. ... .-- ..- . .-. ..-.<br>
+      . .-.. / .- -. . .. -. .- -. -.. . .-. / .-. . .. -... - .-.-.-
+    </div>
+
+    <div class="input-group">
+      <label for="m1_decoded">Entschlüsselte Nachricht</label>
+      <textarea id="m1_decoded" rows="3" placeholder="Schreiben Sie hier die dekodierte Nachricht..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-check" id="btn-check-morse">Prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-morse">Zurücksetzen</button>
+    </div>
+    <div id="fb1" class="feedback" role="alert" aria-live="assertive"></div>
+
+    <button class="hint-toggle" id="btn-hint1">Tipp anzeigen</button>
+    <div id="hint1" class="hint-content">
+      Beginnen Sie mit dem ersten Wort: <strong>-.-.</strong> = C, <strong>....</strong> = H, <strong>..-</strong> = U, <strong>-.-.</strong> = C, <strong>-.-</strong> = K &rarr; CHUCK. Dann mit <strong>/</strong> kommt das nächste Wort.
+    </div>
+  </div>
+
+  <!-- Problem with Morse -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Das Problem des Morse Codes</h2>
+    </div>
+
+    <p class="task-description">Erklären Sie, welches Problem der Morse Code hat. Denken Sie dabei an den faulen König.</p>
+
+    <div class="input-group">
+      <label for="m2_problem">Erklärung</label>
+      <textarea id="m2_problem" rows="5" placeholder="Beschreiben Sie das Problem der Morse-Codierung..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-reset" id="btn-reset-problem">Zurücksetzen</button>
+    </div>
+
+    <button class="hint-toggle" id="btn-hint2">Tipp anzeigen</button>
+    <div id="hint2" class="hint-content">
+      Beim faulen König war das Problem, dass Codes unterschiedlich lang waren und ein Code der Anfang eines anderen sein konnte. Morsecode hat das gleiche Problem: Die Codes sind unterschiedlich lang (z.B. E = &middot; vs. T = &minus;). Ohne Pausen zwischen den Buchstaben ist die Decodierung nicht eindeutig. Zum Beispiel: <strong>&middot; &middot;</strong> könnte II oder ein anderer Buchstabe sein. Der Morsecode benötigt deshalb Pausen als Trennzeichen.
+    </div>
+  </div>
+
+  <!-- TEIL 2: HUFFMAN CODIERUNG -->
+
+  <div class="header" style="margin-top: 2rem;">
+    <div class="header-label">Modul 114 -- Codieren</div>
+    <h1>Huffmann Codierung</h1>
+  </div>
+
+  <div class="story">
+    <p>Spannt man einen Baum nach dem Prinzip der Huffmann Codierung auf, so erhält man einen anderen Code für das Alphabet.</p>
+  </div>
+
+  <!-- Huffman tree image -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">i</div>
+      <h2>Huffmann-Baum</h2>
+    </div>
+
+    <div class="info-note">
+      <strong>Hinweis:</strong> a = 0000. Lesen Sie die Codes der anderen Buchstaben aus dem Baum ab.
+    </div>
+
+    <img src="assets/huffman-tree.png" alt="Huffmann-Baum für das Alphabet" class="huffman-img">
+  </div>
+
+  <!-- Aufgabe: Encode chuck norris -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Codieren Sie &laquo;chuck norris&raquo;</h2>
+    </div>
+
+    <p class="task-description">Codieren Sie den Namen <strong>chuck norris</strong> mit Hilfe der obigen Tabelle (Huffmann-Baum). Schreiben Sie zuerst den Code für jeden Buchstaben auf, dann die gesamte Codierung.</p>
+
+    <h3>Codes pro Buchstabe</h3>
+    <div class="letter-grid">
+      <div class="letter-cell"><span>c:</span><input type="text" id="h3_c" placeholder="00101"></div>
+      <div class="letter-cell"><span>h:</span><input type="text" id="h3_h" placeholder="..."></div>
+      <div class="letter-cell"><span>u:</span><input type="text" id="h3_u" placeholder="..."></div>
+      <div class="letter-cell"><span>k:</span><input type="text" id="h3_k" placeholder="..."></div>
+      <div class="letter-cell"><span>n:</span><input type="text" id="h3_n" placeholder="..."></div>
+      <div class="letter-cell"><span>o:</span><input type="text" id="h3_o" placeholder="..."></div>
+      <div class="letter-cell"><span>r:</span><input type="text" id="h3_r" placeholder="..."></div>
+      <div class="letter-cell"><span>i:</span><input type="text" id="h3_i" placeholder="..."></div>
+      <div class="letter-cell"><span>s:</span><input type="text" id="h3_s" placeholder="..."></div>
+    </div>
+
+    <h3>Vollständige Codierung</h3>
+    <div class="info-note">
+      <strong>Hilfe:</strong> c &rarr; 00101, also beginnt &laquo;chuck&raquo; mit: <span class="huffman-help">00101 ...</span>
+    </div>
+    <div class="input-group">
+      <label for="h3_full">&laquo;chuck norris&raquo; als Huffmann-Code</label>
+      <textarea id="h3_full" rows="3" placeholder="00101 ..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-reset" id="btn-reset-huffman">Zurücksetzen</button>
+    </div>
+  </div>
+
+  <!-- Aufgabe: Analyse -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Analyse: Huffmann vs. Morse</h2>
+    </div>
+
+    <p class="task-description">Analysieren Sie, ob die Huffmann Codierung das gleiche Problem wie der Morse-Code hat.</p>
+
+    <div class="input-group">
+      <label for="h4_analysis">Ihre Analyse</label>
+      <textarea id="h4_analysis" rows="5" placeholder="Hat die Huffmann-Codierung das gleiche Problem wie Morse? Begründen Sie..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-reset" id="btn-reset-analysis">Zurücksetzen</button>
+    </div>
+
+    <button class="hint-toggle" id="btn-hint4">Tipp anzeigen</button>
+    <div id="hint4" class="hint-content">
+      Die Huffmann-Codierung erzeugt einen <strong>präfixfreien Code</strong>: Kein Code ist Anfang eines anderen Codes. Dadurch ist die Decodierung immer eindeutig -- auch ohne Trennzeichen zwischen den Buchstaben. Das ist der entscheidende Unterschied zum Morsecode, der Pausen als Trenner benötigt.
+    </div>
+  </div>
+
+</main>
+
+<script src="../../../../js/worksheet.js"></script>
+<script>
+  Worksheet.init('114-codierung-morse-code');
+
+  // Morse decode check
+  document.getElementById('btn-check-morse').addEventListener('click', function () {
+    Worksheet.checkField(
+      'm1_decoded',
+      'chuck norris kann ein feuer entfachen, indem er zwei eiswuerfel aneinander reibt.',
+      'fb1',
+      'Tipp: Dekodiere Buchstabe für Buchstabe. Beginne mit -.-. = C, .... = H, ..- = U, usw. Vergiss die Satzzeichen nicht (--..-- = Komma, .-.-.- = Punkt).'
+    );
+  });
+
+  // Reset buttons
+  document.getElementById('btn-reset-morse').addEventListener('click', function () {
+    Worksheet.resetFields(['m1_decoded']);
+  });
+  document.getElementById('btn-reset-problem').addEventListener('click', function () {
+    Worksheet.resetFields(['m2_problem']);
+  });
+  document.getElementById('btn-reset-huffman').addEventListener('click', function () {
+    Worksheet.resetFields(['h3_c','h3_h','h3_u','h3_k','h3_n','h3_o','h3_r','h3_i','h3_s','h3_full']);
+  });
+  document.getElementById('btn-reset-analysis').addEventListener('click', function () {
+    Worksheet.resetFields(['h4_analysis']);
+  });
+
+  // Hint toggles
+  document.getElementById('btn-hint1').addEventListener('click', function () {
+    Worksheet.toggleHint('hint1');
+  });
+  document.getElementById('btn-hint2').addEventListener('click', function () {
+    Worksheet.toggleHint('hint2');
+  });
+  document.getElementById('btn-hint4').addEventListener('click', function () {
+    Worksheet.toggleHint('hint4');
+  });
+</script>
+
+</body>
+</html>
