@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zweierkomplement -- Modul 114</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../../css/global.css">
+<link rel="stylesheet" href="../../../../css/worksheet.css">
+<style>
+  .calc-box {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.4rem;
+    margin: 1rem 0;
+    line-height: 1.9;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .calc-highlight {
+    color: var(--accent-dark);
+    font-weight: 600;
+  }
+  .calc-comment {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .example-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .example-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    background: var(--card);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.8;
+  }
+  .example-card .label {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+    color: var(--accent-dark);
+  }
+  .step-list {
+    counter-reset: step;
+    list-style: none;
+    padding-left: 0;
+    margin: 1rem 0;
+  }
+  .step-list li {
+    counter-increment: step;
+    padding: 0.6rem 0 0.6rem 2.5rem;
+    position: relative;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .step-list li::before {
+    content: counter(step) ".";
+    position: absolute;
+    left: 0;
+    font-weight: 700;
+    color: var(--accent-dark);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .merke-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.4rem;
+    margin: 1.2rem 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .merke-box strong {
+    color: var(--accent-dark);
+  }
+  .practice-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    background: var(--input-bg);
+    width: 100%;
+  }
+  .practice-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .practice-grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr;
+    gap: 0.6rem 1rem;
+    align-items: center;
+    margin: 1rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+  }
+  @media (max-width: 600px) {
+    .practice-grid {
+      grid-template-columns: auto 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<main class="container">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../../../../index.html">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../../index.html">1. Lehrjahr</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../index.html">Semester 2</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../index.html">Modul 114</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="index.html">Binäre Interpretationen</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">Zweierkomplement</span>
+  </nav>
+
+  <div class="header">
+    <div class="header-label">Modul 114 -- Codieren</div>
+    <h1>Zweierkomplement</h1>
+    <div class="subtitle">Referenzdokument 10.4.3 &middot; Quelle: bbw, P. Rutschmann</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 1: Vorgehen                         -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Vorgehen: Zweierkomplement berechnen</h2>
+    </div>
+
+    <p>Um das Zweierkomplement einer positiven Zahl zu berechnen (also die negative Darstellung), gehen Sie in zwei Schritten vor:</p>
+
+    <ol class="step-list">
+      <li>Alle Bits invertieren (drehen): aus 0 wird 1, aus 1 wird 0</li>
+      <li>1 dazu addieren</li>
+    </ol>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: Zweierkomplement von 1</span>
+ 1 = <span class="calc-highlight">00000001</span>
+
+<span class="calc-comment">Schritt 1: Bits invertieren</span>
+     00000001  &rarr;  11111110
+
+<span class="calc-comment">Schritt 2: 1 addieren</span>
+     11111110
+   + 00000001
+   = <span class="calc-highlight">11111111</span>
+
+<span class="calc-comment">Ergebnis:</span> -1 = <span class="calc-highlight">11111111</span></div>
+
+    <div class="merke-box">
+      <strong>Merke:</strong> Negative Zahlen erkennt man daran, dass das höchstwertige Bit (Bit 7) den Wert 1 hat. Das Verfahren funktioniert auch umgekehrt: Zweierkomplement einer negativen Zahl ergibt die positive Zahl.
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 2: Beispiele                        -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Beispiele</h2>
+    </div>
+
+    <div class="example-grid">
+      <div class="example-card">
+        <div class="label">1 &rarr; -1</div>
+         1 = 00000001
+        11111110 + 00000001
+        <span class="calc-highlight">-1 = 11111111</span>
+      </div>
+      <div class="example-card">
+        <div class="label">7 &rarr; -7</div>
+         7 = 00000111
+        11111000 + 00000001
+        <span class="calc-highlight">-7 = 11111001</span>
+      </div>
+      <div class="example-card">
+        <div class="label">6 &rarr; -6</div>
+         6 = 00000110
+        11111001 + 00000001
+        <span class="calc-highlight">-6 = 11111010</span>
+      </div>
+      <div class="example-card">
+        <div class="label">15 &rarr; -15</div>
+        15 = 00001111
+        11110000 + 00000001
+        <span class="calc-highlight">-15 = 11110001</span>
+      </div>
+      <div class="example-card">
+        <div class="label">16 &rarr; -16</div>
+        16 = 00010000
+        11101111 + 00000001
+        <span class="calc-highlight">-16 = 11110000</span>
+      </div>
+      <div class="example-card">
+        <div class="label">57 &rarr; -57</div>
+        57 = 00111001
+        11000110 + 00000001
+        <span class="calc-highlight">-57 = 11000111</span>
+      </div>
+      <div class="example-card">
+        <div class="label">126 &rarr; -126</div>
+        126 = 01111110
+        10000001 + 00000001
+        <span class="calc-highlight">-126 = 10000010</span>
+      </div>
+      <div class="example-card">
+        <div class="label">127 &rarr; -127</div>
+        127 = 01111111
+        10000000 + 00000001
+        <span class="calc-highlight">-127 = 10000001</span>
+      </div>
+    </div>
+
+    <h3>Umgekehrt: Negativ &rarr; Positiv</h3>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: Zweierkomplement von -43</span>
+-43 = <span class="calc-highlight">11010101</span>
+
+<span class="calc-comment">Bits invertieren:</span>  00101010
+<span class="calc-comment">1 addieren:</span>       + 00000001
+                     = <span class="calc-highlight">00101011</span> = 43</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 3: Addition                         -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Binäre Addition</h2>
+    </div>
+
+    <p>Bits werden Spalte für Spalte zusammengezählt. Überträge (Carry) werden berücksichtigt:</p>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 1 + 3 = 4</span>
+  00000001   (1)
++ 00000011   (3)
+----------
+  <span class="calc-highlight">00000100</span>   (4)
+
+<span class="calc-comment">Bit 0: 1+1 = 10 &rarr; 0 notieren, 1 Übertrag</span>
+<span class="calc-comment">Bit 1: 0+1+1(Übertrag) = 10 &rarr; 0 notieren, 1 Übertrag</span>
+<span class="calc-comment">Bit 2: 0+0+1(Übertrag) = 1 &rarr; 1 notieren</span></div>
+
+    <h3>Addition mit mehreren Zahlen</h3>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 3+3+3+3+3+3 = 18</span>
+  00000011
+  00000011
+  00000011
+  00000011
+  00000011
++ 00000011
+----------
+  <span class="calc-highlight">00010010</span>   (18)
+
+<span class="calc-comment">Bit 0: 6&times;1 = 6 = 110  &rarr; 0 notieren, 11 Übertrag</span>
+<span class="calc-comment">Bit 1: 6&times;1 + 11 = 111 &rarr; 1 notieren, 11 Übertrag</span>
+<span class="calc-comment">Bit 2: 6&times;0 + 11 = 10  &rarr; 0 notieren, 1 Übertrag</span>
+<span class="calc-comment">Bit 3: 6&times;0 + 1  = 1   &rarr; 1 notieren</span>
+<span class="calc-comment">Immer das letzte Bit des Resultats notieren!</span></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 4: Subtraktion                      -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Binäre Subtraktion</h2>
+    </div>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 6 - 1 = 5</span>
+  00000110   (6)
+- 00000001   (1)
+----------
+  <span class="calc-highlight">00000101</span>   (5)
+
+<span class="calc-comment">Bit 0: 0-1 &rarr; Übertrag nötig, ergibt 1</span></div>
+
+    <h3>Negatives Resultat</h3>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 3 - 5 = -2</span>
+  00000011   (3)
+- 00000101   (5)
+----------
+  <span class="calc-highlight">11111110</span>   (-2)
+
+<span class="calc-comment">Die Überträge pflanzen sich durch alle höheren Bits fort.</span>
+<span class="calc-comment">Das Ergebnis ist automatisch im Zweierkomplement!</span></div>
+
+    <h3>Subtraktion als Addition des Zweierkomplements</h3>
+
+    <p>Statt zu subtrahieren kann man das Zweierkomplement addieren:</p>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 3 - 1 = 3 + (-1)</span>
+     3 = 00000011
++  (-1) = 11111111
+-----------
+   <span class="calc-highlight">100000010</span>
+         ^^^^^^^^
+<span class="calc-comment">Das 9. Bit (Überlauf) wird ignoriert:</span>
+   = <span class="calc-highlight">00000010</span>  (2)</div>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 3 - (-1) = 3 + 1 = 4</span>
+<span class="calc-comment">Zweierkomplement von -1 (= 11111111) ist 1 (= 00000001)</span>
+
+  00000011   (3)
++ 00000001   (1)
+----------
+  <span class="calc-highlight">00000100</span>   (4)</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 5: Multiplikation                   -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2>Binäre Multiplikation</h2>
+    </div>
+
+    <div class="merke-box">
+      <strong>Prinzip:</strong> Multiplikation mit einer Zweierpotenz entspricht dem Verschieben (Shift) aller Bits nach links.
+      <br>&bull; Multiplikation mit 2 = 1&times; links schieben
+      <br>&bull; Multiplikation mit 4 = 2&times; links schieben
+      <br>&bull; Multiplikation mit 8 = 3&times; links schieben
+    </div>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 9 &times; 2 und 9 &times; 4</span>
+9     = 00001001
+9&times;2   = <span class="calc-highlight">00010010</span>  (18)  &larr; 1&times; links geschoben
+9&times;4   = <span class="calc-highlight">00100100</span>  (36)  &larr; 2&times; links geschoben</div>
+
+    <h3>Komplexere Multiplikation</h3>
+
+    <p>Den zweiten Faktor in Zweierpotenzen zerlegen, dann die Teilresultate addieren:</p>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 9 &times; 13 = 117</span>
+<span class="calc-comment">13 = 8 + 4 + 1 = 2<sup>3</sup> + 2<sup>2</sup> + 2<sup>0</sup></span>
+<span class="calc-comment">Also: 9&times;13 = 9&times;8 + 9&times;4 + 9&times;1</span>
+
+  9&times;8 = 00001001 &laquo; 3 = 01001000   (72)
+  9&times;4 = 00001001 &laquo; 2 = 00100100   (36)
+  9&times;1 = 00001001 &laquo; 0 = 00001001    (9)
+                              ----------
+                              <span class="calc-highlight">01110101</span>  (117)</div>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 7 &times; 11 = 77</span>
+<span class="calc-comment">11 = 8 + 2 + 1 = 2<sup>3</sup> + 2<sup>1</sup> + 2<sup>0</sup></span>
+
+  7&times;8 = 00000111 &laquo; 3 = 00111000   (56)
+  7&times;2 = 00000111 &laquo; 1 = 00001110   (14)
+  7&times;1 = 00000111 &laquo; 0 = 00000111    (7)
+                              ----------
+                              <span class="calc-highlight">01001101</span>   (77)</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 6: Division                         -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <h2>Binäre Division</h2>
+    </div>
+
+    <div class="merke-box">
+      <strong>Prinzip:</strong> Division durch eine Zweierpotenz entspricht dem Verschieben (Shift) aller Bits nach rechts.
+      <br>&bull; Division durch 2 = 1&times; rechts schieben
+      <br>&bull; Division durch 4 = 2&times; rechts schieben
+    </div>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 16 / 4 = 4</span>
+<span class="calc-comment">4 = 2<sup>2</sup> &rarr; 2&times; rechts schieben</span>
+
+16 = 00010000
+     00010000 &raquo; 2 = <span class="calc-highlight">00000100</span>  (4)</div>
+
+    <h3>Schriftliche Division</h3>
+
+    <p>Für beliebige Divisoren wird schriftlich dividiert, genau wie im Dezimalsystem:</p>
+
+    <div class="calc-box"><span class="calc-comment">Beispiel: 107 / 7 = 15 Rest 2</span>
+<span class="calc-comment">Dezimal:</span>
+107 / 7 = 15 Rest 2
+  -0
+  10
+  - 7
+   37
+  -35
+    2
+
+<span class="calc-comment">Binär:</span>
+  01101011 / 00000111 = 001111 Rest 010
+
+  01101011 / 111 =
+  -000               (0, 0 passt nicht)
+   011               
+   -000              (0, 0 passt nicht)
+    0110             
+    -000             (0, 0 passt nicht)
+     01101           
+     - 111           (1, 111 passt)
+      01100          
+      - 111          (1, 111 passt)
+       01011         
+       - 111         (1, 111 passt)
+        01001        
+        - 111        (1, 111 passt)
+         <span class="calc-highlight">010</span>          (Rest)
+
+<span class="calc-comment">Ergebnis: 001111 = 15, Rest 010 = 2</span></div>
+
+    <h3>Division mit negativen Zahlen</h3>
+
+    <div class="merke-box">
+      <strong>Vorgehen:</strong>
+      <br>1. Vorzeichen des Resultats voraus bestimmen
+      <br>2. Rechnung mit positiven Zahlen durchführen
+      <br>3. Vorzeichen des Resultats und Rests korrigieren
+      <br><br>
+      Beispiel: -107 / -7 &rarr; beide negativ &rarr; Resultat positiv, Rest negativ
+      <br>Rechne: 107 / 7 = 15 Rest 2 &rarr; Ergebnis: 15 Rest -2
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 7: Übungen                          -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">7</div>
+      <h2>Übungen</h2>
+    </div>
+
+    <p>Berechnen Sie das Zweierkomplement der folgenden Zahlen (8-Bit-Darstellung):</p>
+
+    <table class="edit-table">
+      <thead>
+        <tr>
+          <th>Dezimal</th>
+          <th>Binär</th>
+          <th>Zweierkomplement (negativ)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono-cell">5</td>
+          <td class="mono-cell">00000101</td>
+          <td><input type="text" id="zk-1" class="practice-input" placeholder="8 Bit"></td>
+        </tr>
+        <tr>
+          <td class="mono-cell">12</td>
+          <td class="mono-cell">00001100</td>
+          <td><input type="text" id="zk-2" class="practice-input" placeholder="8 Bit"></td>
+        </tr>
+        <tr>
+          <td class="mono-cell">50</td>
+          <td class="mono-cell">00110010</td>
+          <td><input type="text" id="zk-3" class="practice-input" placeholder="8 Bit"></td>
+        </tr>
+        <tr>
+          <td class="mono-cell">100</td>
+          <td class="mono-cell">01100100</td>
+          <td><input type="text" id="zk-4" class="practice-input" placeholder="8 Bit"></td>
+        </tr>
+        <tr>
+          <td class="mono-cell">64</td>
+          <td class="mono-cell">01000000</td>
+          <td><input type="text" id="zk-5" class="practice-input" placeholder="8 Bit"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top: 1.5rem;">Berechnen Sie die folgenden Additionen / Subtraktionen binär:</p>
+
+    <table class="edit-table">
+      <thead>
+        <tr>
+          <th>Rechnung</th>
+          <th>Ergebnis (8 Bit)</th>
+          <th>Dezimal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono-cell">00000101 + 00000011</td>
+          <td><input type="text" id="add-1" class="practice-input" placeholder="8 Bit"></td>
+          <td><input type="text" id="add-1-dec" class="practice-input" placeholder="Dezimal" style="width: 80px;"></td>
+        </tr>
+        <tr>
+          <td class="mono-cell">00010100 + 00001010</td>
+          <td><input type="text" id="add-2" class="practice-input" placeholder="8 Bit"></td>
+          <td><input type="text" id="add-2-dec" class="practice-input" placeholder="Dezimal" style="width: 80px;"></td>
+        </tr>
+        <tr>
+          <td class="mono-cell">00001010 - 00000011</td>
+          <td><input type="text" id="sub-1" class="practice-input" placeholder="8 Bit"></td>
+          <td><input type="text" id="sub-1-dec" class="practice-input" placeholder="Dezimal" style="width: 80px;"></td>
+        </tr>
+        <tr>
+          <td class="mono-cell">00000011 - 00000101</td>
+          <td><input type="text" id="sub-2" class="practice-input" placeholder="8 Bit"></td>
+          <td><input type="text" id="sub-2-dec" class="practice-input" placeholder="Dezimal" style="width: 80px;"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="export-bar">
+      <button class="btn btn-check" id="btn-check-zk">Antworten prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-zk">Zurücksetzen</button>
+      <div class="feedback" id="fb-zk"></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="save-indicator" id="save-indicator" aria-live="polite"></div>
+
+<script src="../../../../js/worksheet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  Worksheet.init('114-zweierkomplement');
+
+  document.getElementById('btn-check-zk').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'zk-1', expected: '11111011' },
+      { fieldId: 'zk-2', expected: '11110100' },
+      { fieldId: 'zk-3', expected: '11001110' },
+      { fieldId: 'zk-4', expected: '10011100' },
+      { fieldId: 'zk-5', expected: '11000000' },
+      { fieldId: 'add-1', expected: '00001000' },
+      { fieldId: 'add-1-dec', expected: '8' },
+      { fieldId: 'add-2', expected: '00011110' },
+      { fieldId: 'add-2-dec', expected: '30' },
+      { fieldId: 'sub-1', expected: '00000111' },
+      { fieldId: 'sub-1-dec', expected: '7' },
+      { fieldId: 'sub-2', expected: '11111110' },
+      { fieldId: 'sub-2-dec', expected: '-2' }
+    ], 'fb-zk');
+  });
+
+  document.getElementById('btn-reset-zk').addEventListener('click', () => {
+    Worksheet.resetFields([
+      'zk-1', 'zk-2', 'zk-3', 'zk-4', 'zk-5',
+      'add-1', 'add-1-dec', 'add-2', 'add-2-dec',
+      'sub-1', 'sub-1-dec', 'sub-2', 'sub-2-dec'
+    ]);
+  });
+});
+</script>
+
+</body>
+</html>

@@ -46,9 +46,14 @@ public/                            Static frontend (served by Express)
     │   │   ├── zahlensysteme.html 10.2.1 Number systems theory + exercises
     │   │   ├── uebung-zahlensysteme.html  10.2.6 Conversion exercise
     │   │   └── assets/            Extracted images
-    │   └── bitoperatoren/
-    │       ├── index.html         Worksheet listing
-    │       └── uebungen-bitoperatoren.html  10.3.1 Bit operations
+    │   ├── bitoperatoren/
+    │   │   ├── index.html         Worksheet listing
+    │   │   └── uebungen-bitoperatoren.html  10.3.1 Bit operations
+    │   └── binaere-interpretationen/
+    │       ├── index.html         Worksheet listing (2 worksheets)
+    │       ├── binaere-interpretationen.html  10.4.1 LSB/MSB, Endianness, Bitmap, ASCII
+    │       ├── zweierkomplement.html  10.4.3 Zweierkomplement reference + exercises
+    │       └── assets/            Exercise images (bitmap grid, hex dumps)
     └── 164/                       Module 164: Datenbanken erstellen und Daten einfügen
         ├── index.html             Module topics
         └── assoziationen/
@@ -230,6 +235,13 @@ Keep this updated when adding worksheets with solution checking.
 ### Module 114 — Bitoperatoren (10.3.1)
 - All arithmetic, logic, shift, and LED answers verified — see check functions in uebungen-bitoperatoren.html
 - LED einschalten uses OR, LED ausschalten uses AND
+
+### Module 114 — Binäre Interpretationen (10.4.1, 10.4.3)
+- LSB exercise: bits [1,0,1,0,1,1,0,0] → LSB=53, MSB=172
+- Endianness exercise: A9/B3 → Big-Endian=0xA9B3(43443), Little-Endian=0xB3A9(45993)
+- Zweierkomplement exercises: 5→11111011, 12→11110100, 50→11001110, 100→10011100, 64→11000000
+- Addition/subtraction: 5+3=00001000(8), 20+10=00011110(30), 10-3=00000111(7), 3-5=11111110(-2)
+- Bitmap, ASCII, Memory-Dump sections are open-ended (image-based exercises)
 
 ### Module 164 — UN/NN (12.1.2)
 | Relationship | FK NN | FK UN |

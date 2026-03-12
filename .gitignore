@@ -13,3 +13,4 @@ data/
 *.pem
 npm-debug.log*
 .systemprompt
+pitch.md

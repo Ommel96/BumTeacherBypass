@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binäre Interpretationen -- Modul 114</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../../css/global.css">
+<link rel="stylesheet" href="../../../../css/worksheet.css">
+<style>
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .mono-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .merke-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.4rem;
+    margin: 1.2rem 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .merke-box strong {
+    color: var(--accent-dark);
+  }
+  .bit-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+  }
+  .bit-table th, .bit-table td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.7rem;
+    text-align: center;
+  }
+  .bit-table th {
+    background: var(--surface);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .bit-table td {
+    background: var(--card);
+  }
+  .bit-table .highlight {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+  .calc-box {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.4rem;
+    margin: 1rem 0;
+    line-height: 1.9;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .calc-comment {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .practice-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    background: var(--input-bg);
+    width: 100%;
+  }
+  .practice-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .exercise-img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 1rem 0;
+    display: block;
+  }
+  .task-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 1rem 0;
+  }
+  .task-list li {
+    position: relative;
+    padding: 0.4rem 0 0.4rem 1.6rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .task-list li::before {
+    content: "\25B6";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 0.7rem;
+    top: 0.6rem;
+  }
+  .inline-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    background: var(--input-bg);
+    width: 120px;
+    text-align: center;
+  }
+  .inline-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+</style>
+</head>
+<body>
+
+<main class="container">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../../../../index.html">Home</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../../index.html">1. Lehrjahr</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../../index.html">Semester 2</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="../index.html">Modul 114</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <a href="index.html">Binäre Interpretationen</a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span aria-current="page">Binäre Interpretationen</span>
+  </nav>
+
+  <div class="header">
+    <div class="header-label">Modul 114 -- Codieren</div>
+    <h1>Binäre Interpretationen</h1>
+    <div class="subtitle">Interaktives Arbeitsblatt 10.4.1 &middot; Quelle: bbw, P. Rutschmann</div>
+  </div>
+
+  <p>Binäre Daten können auf verschiedenste Arten interpretiert werden. Einige dieser Interpretationen müssen Sie kennen.</p>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 1: Zweierkomplement                 -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Zweierkomplement</h2>
+    </div>
+
+    <p>Bei der Codierung in der Zweierkomplementdarstellung sind negative Zahlen daran zu erkennen, dass das höchstwertige Bit den Wert 1 hat. Bei 0 liegt eine positive Zahl oder der Wert 0 vor.</p>
+
+    <p>Der Vorteil dieses Zahlenformates besteht darin, dass für die Verarbeitung in digitalen Schaltungen keine zusätzlichen Steuerlogiken notwendig sind.</p>
+
+    <div class="merke-box">
+      <strong>Aufgabe:</strong> Lesen Sie das <a href="zweierkomplement.html">Dokument Zweierkomplement</a> aufmerksam durch. Rechnen Sie mindestens drei verschiedene Zweierkomplemente, zwei Additionen/Subtraktionen und eine Multiplikation/Division selbst aus.
+    </div>
+
+    <p>Notieren Sie Ihre Rechnungen hier:</p>
+    <textarea id="zk-notizen" rows="8" placeholder="Tragen Sie Ihre Rechnungen und Ergebnisse hier ein..."></textarea>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 2: LSB vs MSB                       -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>LSB versus MSB</h2>
+    </div>
+
+    <p>Ausgangslage sei die Zahl 83 = <span class="mono">0101'0011<sub>bin</sub></span></p>
+
+    <table class="bit-table">
+      <thead>
+        <tr>
+          <th>Bit Nr</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>2er Potenz</strong></td>
+          <td>2<sup>7</sup></td><td>2<sup>6</sup></td><td>2<sup>5</sup></td><td>2<sup>4</sup></td>
+          <td>2<sup>3</sup></td><td>2<sup>2</sup></td><td>2<sup>1</sup></td><td>2<sup>0</sup></td>
+        </tr>
+        <tr>
+          <td><strong>83</strong></td>
+          <td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Nicht jedes System ordnet die Bits gleich an! Bei serieller Datenübertragung ist es wichtig zu wissen, welches Bit mit welcher 2er Potenz zuerst übermittelt wird.</p>
+
+    <h3>LSB Bitnummerierung (Least Significant Bit)</h3>
+    <p>Bit 0 hat den <strong>niedrigsten</strong> Stellenwert, also 2<sup>0</sup></p>
+
+    <table class="bit-table">
+      <thead>
+        <tr>
+          <th>Bit Nr</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>2er Potenz</strong></td>
+          <td>2<sup>7</sup></td><td>2<sup>6</sup></td><td>2<sup>5</sup></td><td>2<sup>4</sup></td>
+          <td>2<sup>3</sup></td><td>2<sup>2</sup></td><td>2<sup>1</sup></td><td>2<sup>0</sup></td>
+        </tr>
+        <tr>
+          <td><strong>83</strong></td>
+          <td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>MSB Bitnummerierung (Most Significant Bit)</h3>
+    <p>Bit 0 hat den <strong>höchsten</strong> Stellenwert, also 2<sup>n-1</sup></p>
+
+    <table class="bit-table">
+      <thead>
+        <tr>
+          <th>Bit Nr</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>2er Potenz</strong></td>
+          <td>2<sup>0</sup></td><td>2<sup>1</sup></td><td>2<sup>2</sup></td><td>2<sup>3</sup></td>
+          <td>2<sup>4</sup></td><td>2<sup>5</sup></td><td>2<sup>6</sup></td><td>2<sup>7</sup></td>
+        </tr>
+        <tr>
+          <td><strong>202</strong></td>
+          <td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="merke-box">
+      <strong>Merke:</strong> In der Codierung einer Datenübertragung zwischen zwei Systemen muss man abmachen, ob man LSB oder MSB anwendet.
+    </div>
+
+    <h3>Aufgabe</h3>
+    <p>Sie haben diese Bitfolge über eine serielle Übertragung erhalten:</p>
+
+    <table class="bit-table">
+      <thead>
+        <tr>
+          <th>Bit Nr</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Bit Wert</strong></td>
+          <td class="highlight">1</td><td class="highlight">0</td><td class="highlight">1</td><td class="highlight">0</td>
+          <td class="highlight">1</td><td class="highlight">1</td><td class="highlight">0</td><td class="highlight">0</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>a) Berechnen Sie die dezimale Zahl einmal mit LSB und einmal mit MSB (ohne Zweierkomplement):</p>
+
+    <table class="edit-table">
+      <thead>
+        <tr>
+          <th>Interpretation</th>
+          <th>Dezimalwert</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>LSB</td>
+          <td><input type="text" id="lsb-result" class="practice-input" placeholder="Dezimalzahl"></td>
+        </tr>
+        <tr>
+          <td>MSB</td>
+          <td><input type="text" id="msb-result" class="practice-input" placeholder="Dezimalzahl"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>b) Eigene Bitfolge mit dem Banknachbarn austauschen:</p>
+    <textarea id="lsb-msb-eigene" rows="4" placeholder="Notieren Sie Ihre eigene Bitfolge und die berechneten LSB/MSB-Werte..."></textarea>
+
+    <div class="export-bar">
+      <button class="btn btn-check" id="btn-check-lsb">Antworten prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-lsb">Zurücksetzen</button>
+      <div class="feedback" id="fb-lsb"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 3: Endianness                       -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Big-Endian und Little-Endian</h2>
+    </div>
+
+    <p>Ausgangslage sei die Zahl 27888 = <span class="mono">6CF0<sub>Hex</sub></span></p>
+    <p>Die Zahl besteht aus zwei Bytes: <span class="mono">6CF0<sub>Hex</sub> = 6C<sub>Hex</sub> &times; 2<sup>8</sup> + F0<sub>Hex</sub></span></p>
+    <p>Das höherwertige Byte <span class="mono">6C<sub>Hex</sub></span> steht links, das niederwertige Byte <span class="mono">F0<sub>Hex</sub></span> rechts.</p>
+
+    <p>Wenn zwei Geräte Daten Byte um Byte übertragen, ist es nicht selbstverständlich, welches Byte zuerst übertragen wird:</p>
+    <ul>
+      <li><strong>Variante A:</strong> <span class="mono">6C<sub>Hex</sub></span> und dann <span class="mono">F0<sub>Hex</sub></span></li>
+      <li><strong>Variante B:</strong> <span class="mono">F0<sub>Hex</sub></span> und dann <span class="mono">6C<sub>Hex</sub></span></li>
+    </ul>
+    <p>Die Reihenfolge muss definiert werden. Dies nennt man <strong>Endianness</strong>.</p>
+
+    <table class="edit-table" style="margin: 1rem 0;">
+      <thead>
+        <tr><th>Bezeichnung</th><th>Beschreibung</th><th>Beispiel</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Big-Endian</strong></td>
+          <td>Höchstwertiges Byte zuerst</td>
+          <td class="mono-cell">6C F0</td>
+        </tr>
+        <tr>
+          <td><strong>Little-Endian</strong></td>
+          <td>Kleinstwertiges Byte zuerst</td>
+          <td class="mono-cell">F0 6C</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>In der Computerwelt sprach man lange von den zwei Welten <strong>Motorola</strong> (Big-Endian) versus <strong>Intel</strong> (Little-Endian).</p>
+
+    <div class="merke-box">
+      <strong>Merke:</strong> Beim hardwarenahen Übertragen bzw. Speichern von Daten muss man wissen, ob Big-Endian oder Little-Endian verwendet wird.
+    </div>
+
+    <h3>Aufgabe 1</h3>
+    <p>In einem Speicher stehen diese Bytes hintereinander:</p>
+
+    <table class="bit-table" style="max-width: 300px;">
+      <thead>
+        <tr><th>Speicher</th><th>Wert</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0000</td><td class="highlight">A9<sub>Hex</sub></td></tr>
+        <tr><td>0001</td><td class="highlight">B3<sub>Hex</sub></td></tr>
+      </tbody>
+    </table>
+
+    <p>Berechnen Sie die dezimale Zahl einmal mit Big-Endian und einmal mit Little-Endian:</p>
+
+    <table class="edit-table">
+      <thead>
+        <tr>
+          <th>Interpretation</th>
+          <th>Hex-Wert</th>
+          <th>Dezimalwert</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Big-Endian</td>
+          <td><input type="text" id="be-hex-1" class="practice-input" placeholder="Hex" style="width: 80px;"></td>
+          <td><input type="text" id="be-dec-1" class="practice-input" placeholder="Dezimal"></td>
+        </tr>
+        <tr>
+          <td>Little-Endian</td>
+          <td><input type="text" id="le-hex-1" class="practice-input" placeholder="Hex" style="width: 80px;"></td>
+          <td><input type="text" id="le-dec-1" class="practice-input" placeholder="Dezimal"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="export-bar">
+      <button class="btn btn-check" id="btn-check-endian1">Antworten prüfen</button>
+      <button class="btn btn-reset" id="btn-reset-endian1">Zurücksetzen</button>
+      <div class="feedback" id="fb-endian1"></div>
+    </div>
+
+    <h3>Aufgabe 2: Memory-Dump</h3>
+    <p>In einem Memory-Dump stehen viele Bytes hintereinander. Jeweils vier aufeinanderfolgende Bytes ergeben eine Zahl vom Typ Integer (32 Bit).</p>
+    <p>Berechnen Sie das Ergebnis mit Big-Endian und Little-Endian:</p>
+
+    <img src="assets/hex-dump.png" alt="Memory-Dump mit Hex-Werten" class="exercise-img">
+
+    <table class="edit-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Big-Endian</th>
+          <th>Little-Endian</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Erste 4 Bytes</strong></td>
+          <td><textarea id="memdump-be-1" rows="2" placeholder="Hex-Wert und Dezimalwert"></textarea></td>
+          <td><textarea id="memdump-le-1" rows="2" placeholder="Hex-Wert und Dezimalwert"></textarea></td>
+        </tr>
+        <tr>
+          <td><strong>Nächste 4 Bytes</strong></td>
+          <td><textarea id="memdump-be-2" rows="2" placeholder="Hex-Wert und Dezimalwert"></textarea></td>
+          <td><textarea id="memdump-le-2" rows="2" placeholder="Hex-Wert und Dezimalwert"></textarea></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 4: IEEE 754                         -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>IEEE 754</h2>
+    </div>
+
+    <p>Der Standard <strong>IEEE 754</strong> definiert, wie Gleitkommazahlen (Kommazahlen) binär dargestellt werden. Lesen Sie das Dokument <em>40_IEEE 754.pdf</em> und halten Sie fest, wie eine Zahl definiert wird:</p>
+
+    <textarea id="ieee754-notizen" rows="6" placeholder="Wie wird eine Gleitkommazahl nach IEEE 754 definiert? (Vorzeichen, Exponent, Mantisse...)"></textarea>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 5: Bilder                           -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2>Bilder</h2>
+    </div>
+
+    <p>Bei Schwarz-Weiss-Zeichnungen ist jeder Bildpunkt entweder schwarz oder weiss und kann unmittelbar durch die Symbole 0 oder 1 codiert werden.</p>
+
+    <p>Der folgende Hexdump stammt von einer Schwarz/Weiss-Bitmap mit einer Auflösung von <strong>32 &times; 40 Pixel</strong>. Wandeln Sie die Hex-Zahlen in Binär um und malen Sie die Kästchen aus, wenn die Bits gesetzt sind:</p>
+
+    <img src="assets/bitmap-hexdata.png" alt="Hexdump der Bitmap" class="exercise-img">
+    <img src="assets/bitmap-grid.png" alt="Raster zum Ausmalen (32x40 Pixel)" class="exercise-img">
+
+    <p>Was zeigt das Bild?</p>
+    <textarea id="bitmap-result" rows="3" placeholder="Beschreiben Sie, was das Bild darstellt..."></textarea>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 6: ASCII                            -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <h2>ASCII</h2>
+    </div>
+
+    <p>Folgend sehen Sie einen &laquo;Hex-Dump&raquo; einer Textdatei. Übersetzen Sie mit Hilfe der ASCII-Tabelle die Hexadezimalzahlen in lesbaren ASCII-Text:</p>
+
+    <img src="assets/hex-dump.png" alt="Hex-Dump einer Textdatei" class="exercise-img">
+
+    <textarea id="ascii-result" rows="6" placeholder="Übersetzen Sie den Hex-Dump in lesbaren Text..."></textarea>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 7: Unicode UTF-8                    -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">7</div>
+      <h2>Unicode UTF-8</h2>
+    </div>
+
+    <p>Lesen Sie das Dokument <em>30_Unicode.pdf</em> und halten Sie fest, worin sich ASCII von Unicode UTF-8 unterscheidet:</p>
+
+    <textarea id="unicode-notizen" rows="6" placeholder="Unterschiede zwischen ASCII und Unicode UTF-8..."></textarea>
+  </div>
+
+</main>
+
+<div class="save-indicator" id="save-indicator" aria-live="polite"></div>
+
+<script src="../../../../js/worksheet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  Worksheet.init('114-binaere-interpretationen');
+
+  document.getElementById('btn-check-lsb').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'lsb-result', expected: '53' },
+      { fieldId: 'msb-result', expected: '172' }
+    ], 'fb-lsb');
+  });
+
+  document.getElementById('btn-reset-lsb').addEventListener('click', () => {
+    Worksheet.resetFields(['lsb-result', 'msb-result']);
+  });
+
+  document.getElementById('btn-check-endian1').addEventListener('click', () => {
+    Worksheet.checkFields([
+      { fieldId: 'be-hex-1', expected: 'A9B3' },
+      { fieldId: 'be-dec-1', expected: '43443' },
+      { fieldId: 'le-hex-1', expected: 'B3A9' },
+      { fieldId: 'le-dec-1', expected: '45993' }
+    ], 'fb-endian1');
+  });
+
+  document.getElementById('btn-reset-endian1').addEventListener('click', () => {
+    Worksheet.resetFields(['be-hex-1', 'be-dec-1', 'le-hex-1', 'le-dec-1']);
+  });
+});
+</script>
+
+</body>
+</html>
