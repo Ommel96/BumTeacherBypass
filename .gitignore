@@ -1,12 +1,17 @@
 # dependencies
 node_modules/
 
-# database
+# next.js
+.next/
+out/
+
+# database & uploads
 data/
 
 # env
 .env
 .env.local
+.env*.local
 
 # misc
 .DS_Store

@@ -1,8 +1,6 @@
-node_modules
-data
-.git
-.gitignore
-.dockerignore
+node_modules/
+.next/
+out/
+data/
 .env
 .env.local
-*.md
