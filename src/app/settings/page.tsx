@@ -400,28 +400,26 @@ export default function SettingsPage() {
         <div className="p-6 space-y-4">
           <RoleSelect
             label="Arbeitsblattverarbeitung"
-            description="Standardanbieter für die Verarbeitung von Dokumenten"
+            description="Anbieter und Modell für die Verarbeitung von Dokumenten"
             value={settings.defaultProviderId}
             providers={providers}
             onChange={(v) => handleRoleChange('defaultProviderId', v)}
           />
           <RoleSelect
             label="Automatische Kategorisierung"
-            description="Anbieter für die automatische Erkennung von Modul und Thema"
+            description="Anbieter und Modell für die automatische Erkennung von Modul und Thema"
             value={settings.lightweightProviderId}
             providers={providers}
             onChange={(v) => handleRoleChange('lightweightProviderId', v)}
             allowSameAsDefault
-            defaultProviderId={settings.defaultProviderId}
           />
           <RoleSelect
             label="Kompendium"
-            description="Anbieter für die Generierung von Kompendiumseinträgen"
+            description="Anbieter und Modell für die Generierung von Kompendiumseinträgen"
             value={settings.compendiumProviderId}
             providers={providers}
             onChange={(v) => handleRoleChange('compendiumProviderId', v)}
             allowSameAsDefault
-            defaultProviderId={settings.defaultProviderId}
           />
         </div>
       </div>
@@ -452,14 +450,23 @@ export default function SettingsPage() {
   );
 }
 
-function RoleSelect({ label, description, value, providers, onChange, allowSameAsDefault, defaultProviderId }: {
+function getAvailableModels(provider: ProviderRow): string[] {
+  const defaults = PROVIDER_DEFAULTS[provider.type]?.models || [];
+  const custom = provider.custom_models ? provider.custom_models.split(',').map(m => m.trim()).filter(m => m && !defaults.includes(m)) : [];
+  return [...defaults, ...custom];
+}
+
+function providerModelValue(providerId: string, model: string): string {
+  return `${providerId}:${model}`;
+}
+
+function RoleSelect({ label, description, value, providers, onChange, allowSameAsDefault }: {
   label: string;
   description: string;
   value: string;
   providers: ProviderRow[];
   onChange: (v: string) => void;
   allowSameAsDefault?: boolean;
-  defaultProviderId?: string;
 }) {
   return (
     <div>
@@ -473,9 +480,19 @@ function RoleSelect({ label, description, value, providers, onChange, allowSameA
         {allowSameAsDefault && (
           <option value="">Gleicher Anbieter wie Standard</option>
         )}
-        {providers.map(p => (
-          <option key={p.id} value={p.id}>{p.name} ({PROVIDER_LABELS[p.type]?.label || p.type} — {p.model || 'kein Modell'})</option>
-        ))}
+        {providers.map(p => {
+          const models = getAvailableModels(p);
+          const groupLabel = `${p.name} (${PROVIDER_LABELS[p.type]?.label || p.type})`;
+          return (
+            <optgroup key={p.id} label={groupLabel}>
+              {models.length > 0 ? models.map(m => (
+                <option key={providerModelValue(p.id, m)} value={providerModelValue(p.id, m)}>{m}</option>
+              )) : (
+                <option key={providerModelValue(p.id, p.model || '')} value={providerModelValue(p.id, p.model || '')}>{p.model || 'Kein Modell'}</option>
+              )}
+            </optgroup>
+          );
+        })}
       </select>
     </div>
   );

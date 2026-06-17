@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const semester = (formData.get('semester') as string) || '';
     const moduleNumber = (formData.get('module_number') as string) || '';
     const topic = (formData.get('topic') as string) || '';
-    const providerIdOverride = formData.get('providerId') as string | null;
+    const providerModelParam = (formData.get('providerModel') as string) || '';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -35,9 +35,14 @@ export async function POST(request: NextRequest) {
     }
 
     const settings = getSettings();
-    const providerConfig = providerIdOverride
-      ? getProviderConfig(providerIdOverride)
-      : getProviderConfigForRole('default');
+    let providerConfig: import('@/lib/ai-provider').ProviderConfig;
+    if (providerModelParam) {
+      const [pid, modelOverride] = providerModelParam.includes(':') ? providerModelParam.split(':') : [providerModelParam, undefined];
+      providerConfig = getProviderConfig(pid);
+      if (modelOverride) providerConfig.model = modelOverride;
+    } else {
+      providerConfig = getProviderConfigForRole('default');
+    }
 
     if (!providerConfig.apiKey && providerConfig.provider !== 'ollama' && providerConfig.provider !== 'openai-compatible') {
       return NextResponse.json(

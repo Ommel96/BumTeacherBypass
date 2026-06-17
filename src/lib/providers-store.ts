@@ -113,8 +113,8 @@ export function getProviderConfigForRole(role: ProviderRole): ProviderConfig {
     return getProviderConfigForRole('default');
   }
 
-  const providerId = row?.value;
-  if (!providerId) {
+  const rawValue = row?.value;
+  if (!rawValue) {
     const providers = listProviders();
     if (providers.length === 0) {
       throw new Error('No providers configured. Add a provider in Settings.');
@@ -122,7 +122,12 @@ export function getProviderConfigForRole(role: ProviderRole): ProviderConfig {
     return getProviderConfig(providers[0].id);
   }
 
-  return getProviderConfig(providerId);
+  const [providerId, modelOverride] = rawValue.includes(':') ? rawValue.split(':') : [rawValue, undefined];
+  const config = getProviderConfig(providerId);
+  if (modelOverride) {
+    config.model = modelOverride;
+  }
+  return config;
 }
 
 export function getDefaultProviderId(): string | null {

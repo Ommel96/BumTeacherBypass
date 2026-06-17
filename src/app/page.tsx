@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import CategorySelector from '@/components/CategorySelector';
+import { PROVIDER_DEFAULTS } from '@/lib/ai-provider-constants';
 
 type ProviderType = 'openai' | 'anthropic' | 'ollama' | 'ollama-cloud' | 'openai-compatible';
 
@@ -11,6 +12,13 @@ interface ProviderOption {
   name: string;
   type: ProviderType;
   model: string;
+  custom_models: string;
+}
+
+function getProviderModels(provider: ProviderOption): string[] {
+  const defaults = PROVIDER_DEFAULTS[provider.type]?.models || [];
+  const custom = provider.custom_models ? provider.custom_models.split(',').map(m => m.trim()).filter(m => m && !defaults.includes(m)) : [];
+  return [...defaults, ...custom];
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -41,7 +49,7 @@ export default function HomePage() {
   const [uploadResult, setUploadResult] = useState<{ id: string; filename: string } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [providers, setProviders] = useState<ProviderOption[]>([]);
-  const [selectedProviderId, setSelectedProviderId] = useState('');
+  const [selectedUploadModel, setSelectedUploadModel] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -59,9 +67,15 @@ export default function HomePage() {
         name: p.name,
         type: p.type,
         model: p.model,
+        custom_models: p.custom_models || '',
       }));
       setProviders(opts);
-      setSelectedProviderId(settingsData.defaultProviderId || (opts.length > 0 ? opts[0].id : ''));
+      const defaultId = settingsData.defaultProviderId || (opts.length > 0 ? opts[0].id : '');
+      const defaultProvider = opts.find(p => p.id === defaultId);
+      if (defaultProvider) {
+        const models = getProviderModels(defaultProvider);
+        setSelectedUploadModel(`${defaultId}:${defaultProvider.model || models[0] || ''}`);
+      }
     }).catch(() => {});
   }, []);
 
@@ -95,7 +109,7 @@ export default function HomePage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      if (selectedProviderId) formData.append('providerId', selectedProviderId);
+      if (selectedUploadModel) formData.append('providerModel', selectedUploadModel);
       if (year) formData.append('year', year);
       if (semester) formData.append('semester', semester);
       if (moduleNumber) formData.append('module_number', moduleNumber);
@@ -207,21 +221,31 @@ export default function HomePage() {
                 )}
               </div>
 
-              {providers.length > 1 && (
+              {providers.length > 0 && (
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-[var(--text)] mb-1.5">
-                    Anbieter für diesen Upload
+                    Modell für diesen Upload
                   </label>
                   <select
-                    value={selectedProviderId}
-                    onChange={(e) => setSelectedProviderId(e.target.value)}
+                    value={selectedUploadModel}
+                    onChange={(e) => setSelectedUploadModel(e.target.value)}
                     className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-light)] transition-all"
                   >
-                    {providers.map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({PROVIDER_LABELS[p.type] || p.type} — {p.model || 'kein Modell'})</option>
-                    ))}
+                    {providers.map(p => {
+                      const models = getProviderModels(p);
+                      const groupLabel = `${p.name} (${PROVIDER_LABELS[p.type] || p.type})`;
+                      return (
+                        <optgroup key={p.id} label={groupLabel}>
+                          {models.length > 0 ? models.map(m => (
+                            <option key={`${p.id}:${m}`} value={`${p.id}:${m}`}>{m}</option>
+                          )) : (
+                            <option key={`${p.id}:${p.model || ''}`} value={`${p.id}:${p.model || ''}`}>{p.model || 'Kein Modell'}</option>
+                          )}
+                        </optgroup>
+                      );
+                    })}
                   </select>
-                  <p className="text-xs text-[var(--text-muted)] mt-1">Überschreibt den Standardanbieter für diesen Upload.</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">Einmalige Überschreibung. Nach dem Upload wird das Standardmodell wieder verwendet.</p>
                 </div>
               )}
 
