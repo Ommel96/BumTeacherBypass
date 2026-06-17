@@ -1,34 +1,47 @@
-# ── Stage 1: Build (native deps for better-sqlite3) ──
-FROM node:20-alpine AS builder
+# ── Stage 1: Dependencies ──
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 RUN apk add --no-cache python3 make g++
 
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev || npm install --omit=dev
+RUN npm ci
 
-# ── Stage 2: Runtime ──
-FROM node:20-alpine
+# ── Stage 2: Build ──
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Non-root user
-RUN addgroup -S btb && adduser -S btb -G btb
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 
-# Copy runtime files
-COPY --from=builder /app/node_modules ./node_modules
-COPY package.json server.js ./
-COPY public ./public
+RUN npm run build
 
-# Data directory (mount as volume for persistence)
-RUN mkdir -p /app/data && chown -R btb:btb /app/data
+# ── Stage 3: Runtime ──
+FROM node:20-alpine AS runner
+WORKDIR /app
 
-# Entrypoint ensures volume permissions are correct
-COPY --chown=btb:btb docker-entrypoint.sh /app/docker-entrypoint.sh
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# Data directory for SQLite and uploads
+RUN mkdir -p /app/data/uploads && chown -R nextjs:nodejs /app/data
+
+COPY --chown=nextjs:nodejs docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
-USER btb
+USER nextjs
 
 EXPOSE 3847
+
+ENV PORT=3847
+ENV HOSTNAME="0.0.0.0"
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3847/ || exit 1
