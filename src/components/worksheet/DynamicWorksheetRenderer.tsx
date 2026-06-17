@@ -4,7 +4,8 @@ import Link from 'next/link';
 import React from 'react';
 import { WorksheetProvider, useWorksheet } from './WorksheetProvider';
 import { Breadcrumb, Section, Story, InputField, TableInput, GivenCell, LabelCell, CheckButton, ResetButton, ButtonGroup, Feedback, HintToggle, HintContent, InfoNote, ExampleCalc, PageHeader } from './WorksheetComponents';
-import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, WorksheetCheckGroup, WorksheetHint, CompendiumRef } from '@/lib/worksheet-schema';
+import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, WorksheetCheckGroup, WorksheetHint, CompendiumRef, InteractiveComponent } from '@/lib/worksheet-schema';
+import { PixelGrid, BitVisualizer, TruthTableBuilder, EncodingExercise } from './InteractiveComponents';
 
 interface MatchResult {
   type: 'bold' | 'code' | 'linebreak';
@@ -166,6 +167,21 @@ function renderHints(hints: WorksheetHint[]) {
   ));
 }
 
+function renderInteractiveComponent(interactive: InteractiveComponent) {
+  switch (interactive.type) {
+    case 'pixelGrid':
+      return <PixelGrid key={interactive.props.fieldId} props={interactive.props} />;
+    case 'bitVisualizer':
+      return <BitVisualizer key={interactive.props.fieldId} props={interactive.props} />;
+    case 'truthTable':
+      return <TruthTableBuilder key={interactive.props.fieldId} props={interactive.props} />;
+    case 'encodingExercise':
+      return <EncodingExercise key={interactive.props.fieldId} props={interactive.props} />;
+    default:
+      return null;
+  }
+}
+
 function renderSection(section: WorksheetSection, idx: number) {
   switch (section.type) {
     case 'story':
@@ -187,6 +203,18 @@ function renderSection(section: WorksheetSection, idx: number) {
         <ExampleCalc key={`example-${idx}`}>
           {renderContent(section.content)}
         </ExampleCalc>
+      );
+
+    case 'interactive':
+      return (
+        <Section key={`interactive-${idx}`} number={section.number} title={section.title ? renderMarkdown(section.title) as React.ReactNode : undefined}>
+          {section.content && renderContent(section.content)}
+          {section.interactive && renderInteractiveComponent(section.interactive)}
+          {section.checkGroups?.map(cg => (
+            <CheckGroupButtons key={cg.id} checkGroup={cg} />
+          ))}
+          {section.hints && section.hints.length > 0 && renderHints(section.hints)}
+        </Section>
       );
 
     case 'section':

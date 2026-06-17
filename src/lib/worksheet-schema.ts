@@ -44,8 +44,48 @@ export interface WorksheetHint {
   content: string;
 }
 
+export interface PixelGridProps {
+  width: number;
+  height: number;
+  solution?: number[];
+  labels?: { rows?: string[]; cols?: string[] };
+  encodingType?: 'rle' | 'binary' | 'none';
+  encodingDirection?: 'row' | 'col';
+  fieldId: string;
+}
+
+export interface BitVisualizerProps {
+  bits: number;
+  labels?: string[];
+  fieldId: string;
+  showDecimal?: boolean;
+  showHex?: boolean;
+}
+
+export interface TruthTableProps {
+  inputs: string[];
+  outputLabel: string;
+  rows?: Array<Record<string, string>>;
+  fieldId: string;
+}
+
+export interface EncodingExerciseProps {
+  encodingType: 'binary' | 'hex' | 'ascii' | 'rle' | 'morse';
+  fromFormat: string;
+  toFormat: string;
+  examples?: Array<{ input: string; output: string }>;
+  exercises?: Array<{ input: string; expected?: string; fieldId: string }>;
+  fieldId: string;
+}
+
+export type InteractiveComponent = 
+  | { type: 'pixelGrid'; props: PixelGridProps }
+  | { type: 'bitVisualizer'; props: BitVisualizerProps }
+  | { type: 'truthTable'; props: TruthTableProps }
+  | { type: 'encodingExercise'; props: EncodingExerciseProps };
+
 export interface WorksheetSection {
-  type: 'section' | 'story' | 'info' | 'example';
+  type: 'section' | 'story' | 'info' | 'example' | 'interactive';
   number?: string | number;
   title?: string;
   content: string;
@@ -55,6 +95,7 @@ export interface WorksheetSection {
   resets?: string[];
   hints?: WorksheetHint[];
   compendiumRefs?: CompendiumRef[];
+  interactive?: InteractiveComponent;
 }
 
 export interface WorksheetData {
@@ -84,7 +125,7 @@ export function validateWorksheetData(data: unknown): { valid: boolean; errors: 
 
   for (let i = 0; i < d.sections.length; i++) {
     const s = d.sections[i] as Record<string, unknown>;
-    if (!['section', 'story', 'info', 'example'].includes(s.type as string)) {
+    if (!['section', 'story', 'info', 'example', 'interactive'].includes(s.type as string)) {
       errors.push(`Section ${i}: invalid type "${s.type}"`);
     }
     if (typeof s.content !== 'string') {
@@ -92,6 +133,12 @@ export function validateWorksheetData(data: unknown): { valid: boolean; errors: 
     }
     if (s.type === 'section' && !s.title) {
       errors.push(`Section ${i}: section type requires title`);
+    }
+    if (s.type === 'interactive' && !s.interactive) {
+      errors.push(`Section ${i}: interactive type requires interactive property`);
+    }
+    if (s.interactive && typeof s.interactive === 'object' && !['pixelGrid', 'bitVisualizer', 'truthTable', 'encodingExercise'].includes((s.interactive as Record<string, unknown>).type as string)) {
+      errors.push(`Section ${i}: invalid interactive type "${(s.interactive as Record<string, unknown>).type}"`);
     }
     if (s.fields && !Array.isArray(s.fields)) {
       errors.push(`Section ${i}: fields must be an array`);
