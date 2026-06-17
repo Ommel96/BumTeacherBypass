@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPage, updatePageContent, updatePageTitle, updatePageWorksheetData, getPagesByDocument } from '@/lib/document-store';
 import { regeneratePage } from '@/lib/openai-processor';
-import { getResolvedProviderConfig } from '@/lib/settings-store';
+import { getProviderConfigForRole, getProviderConfig } from '@/lib/providers-store';
 
 export async function GET(
   request: NextRequest,
@@ -57,7 +57,7 @@ export async function POST(
       return NextResponse.json({ error: 'Page not found' }, { status: 404 });
     }
 
-    const providerConfig = getResolvedProviderConfig();
+    const providerConfig = getProviderConfigForRole('default');
     const allPages = getPagesByDocument(page.document_id);
     const result = await regeneratePage(page.raw_text, page.page_number, allPages.length, providerConfig);
 

@@ -90,34 +90,34 @@ export function LabelCell({ children }: { children: React.ReactNode }) {
 }
 
 export function CheckButton({ onClick, children = 'Prüfen' }: { onClick: () => void; children?: React.ReactNode }) {
-  return <button onClick={onClick} className="inline-flex items-center gap-1.5 px-4 py-2 border-none rounded-lg font-sans text-sm font-semibold cursor-pointer bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] transition-colors">{children}</button>;
+  return <button onClick={onClick} className="btn-check inline-flex items-center gap-1.5 px-4 py-2 border-none rounded-lg font-sans text-sm font-semibold cursor-pointer bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] transition-colors">{children}</button>;
 }
 
 export function ResetButton({ ids, children = 'Zurücksetzen' }: { ids: string[]; children?: React.ReactNode }) {
   const { resetFields } = useWorksheet();
-  return <button onClick={() => resetFields(ids)} className="inline-flex items-center gap-1.5 px-4 py-2 border border-[var(--border)] rounded-lg font-sans text-sm font-semibold cursor-pointer bg-transparent text-[var(--text-muted)] hover:border-[var(--text-muted)] hover:text-[var(--text)] transition-colors">{children}</button>;
+  return <button onClick={() => resetFields(ids)} className="btn-reset inline-flex items-center gap-1.5 px-4 py-2 border border-[var(--border)] rounded-lg font-sans text-sm font-semibold cursor-pointer bg-transparent text-[var(--text-muted)] hover:border-[var(--text-muted)] hover:text-[var(--text)] transition-colors">{children}</button>;
 }
 
 export function ButtonGroup({ children }: { children: React.ReactNode }) {
-  return <div className="flex gap-2 mt-5 flex-wrap">{children}</div>;
+  return <div className="btn-group flex gap-2 mt-5 flex-wrap">{children}</div>;
 }
 
 export function Feedback({ id }: { id: string }) {
   const { feedbacks } = useWorksheet();
   const fb = feedbacks[id];
   if (!fb) return null;
-  return <div className={`mt-4 p-3 rounded-lg text-sm font-medium animate-[fadeIn_0.3s_ease] ${fb.type === 'success' ? 'bg-[var(--success-bg)] text-[var(--success)]' : 'bg-[var(--error-bg)] text-[var(--error)]'}`} role="alert">{fb.msg}</div>;
+  return <div className={`feedback mt-4 p-3 rounded-lg text-sm font-medium animate-[fadeIn_0.3s_ease] ${fb.type === 'success' ? 'bg-[var(--success-bg)] text-[var(--success)]' : 'bg-[var(--error-bg)] text-[var(--error)]'}`} role="alert">{fb.msg}</div>;
 }
 
 export function HintToggle({ hintId, children = 'Tipp anzeigen' }: { hintId: string; children?: React.ReactNode }) {
   const { toggleHint } = useWorksheet();
-  return <button onClick={() => toggleHint(hintId)} className="text-sm text-[var(--accent)] cursor-pointer border-none bg-transparent font-sans font-semibold mt-3 hover:text-[var(--accent-dark)]">{children}</button>;
+  return <button onClick={() => toggleHint(hintId)} className="hint-toggle text-sm text-[var(--accent)] cursor-pointer border-none bg-transparent font-sans font-semibold mt-3 hover:text-[var(--accent-dark)]">{children}</button>;
 }
 
 export function HintContent({ id, children }: { id: string; children: React.ReactNode }) {
   const { hints } = useWorksheet();
   if (!hints[id]) return null;
-  return <div className="mt-2 p-3 bg-[var(--accent-light)] rounded-lg text-sm text-[var(--accent-dark)] leading-relaxed animate-[fadeIn_0.3s_ease]">{children}</div>;
+  return <div className="hint-content mt-2 p-3 bg-[var(--accent-light)] rounded-lg text-sm text-[var(--accent-dark)] leading-relaxed animate-[fadeIn_0.3s_ease]">{children}</div>;
 }
 
 export function InfoNote({ children }: { children: React.ReactNode }) {

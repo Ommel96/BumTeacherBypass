@@ -822,7 +822,8 @@ body {
 /* ── Print styles ── */
 @media print {
   .save-status, .export-bar, .btn-group, .btn-reset, .btn-export, .btn-check,
-  .hint-toggle, .hint-content, .breadcrumb, .feedback, .no-print { display: none !important; }
+  .hint-toggle, .hint-content, .breadcrumb, .feedback, .no-print,
+  button.btn-check, button.btn-reset, .compendium-ref-link { display: none !important; }
 
   body {
     background: white;
@@ -838,8 +839,6 @@ body {
 
   a[href] { text-decoration: none !important; color: inherit !important; }
   a[href]::after { content: none !important; }
-
-  button { display: none !important; }
 
   @page {
     margin: 1.5cm;

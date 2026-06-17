@@ -36,9 +36,9 @@ export default function CategorySelector({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Year</label>
+        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Lehrjahr</label>
         <select value={year} onChange={e => onYearChange(e.target.value)} className="w-full p-2.5 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-sm">
-          <option value="">-- Year --</option>
+          <option value="">-- Lehrjahr --</option>
           {YEAR_OPTIONS.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
@@ -54,22 +54,22 @@ export default function CategorySelector({
         </select>
       </div>
       <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Module</label>
+        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Modul</label>
         <input
           type="text"
           value={moduleNumber}
           onChange={e => onModuleNumberChange(e.target.value)}
-          placeholder="e.g. 114"
+          placeholder="z.B. 114"
           className="w-full p-2.5 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-sm"
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Topic</label>
+        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Thema</label>
         <input
           type="text"
           value={topic}
           onChange={e => onTopicChange(e.target.value)}
-          placeholder="e.g. codierung"
+          placeholder="z.B. codierung"
           className="w-full p-2.5 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-sm"
         />
       </div>

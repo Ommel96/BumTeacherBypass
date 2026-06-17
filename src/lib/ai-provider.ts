@@ -157,9 +157,10 @@ KEY RULES:
 4. Tables should have editable cells for student answers and pre-filled "given" values
 5. Hints should guide students without giving away the answer directly
 6. Preserve all educational content — questions, scenarios, tables, formulas
-7. Field IDs must be unique across the entire worksheet
-8. For free-text reflection questions, include a field but NO checkGroup (no right/wrong answer)
-9. Number sections sequentially: "1", "2", "3" for exercises, "i", "ii" for info sections
+ 7. Field IDs must be unique across the entire worksheet
+ 8. For free-text reflection questions (open-ended opinions, explanations), include a field with type "textarea" but NO checkGroup
+ 9. Number sections sequentially: "1", "2", "3" for exercises, "i", "ii" for info sections
+ 10. CRITICAL: Every "text" type field (not textarea) MUST have a matching check in a checkGroup. A field with type "text" is a fill-in-the-blank with a correct answer — it MUST have an expected value. If you create a "text" field, you MUST also create a checkGroup containing a check for that fieldId.
 
 Example of a good section:
 {
@@ -462,6 +463,7 @@ ${rawText.substring(0, 1500)}`;
             body: JSON.stringify({ model: this.config.model, max_tokens: 256, system: prompt, messages: [{ role: 'user', content: 'Classify this document.' }] }),
             signal: AbortSignal.timeout(60000),
           });
+          if (!res.ok) throw new Error(`Anthropic classify error: ${res.status}`);
           const data = await res.json();
           responseText = data.content?.[0]?.text || '{}';
           break;
@@ -476,6 +478,7 @@ ${rawText.substring(0, 1500)}`;
             body: JSON.stringify({ model: this.config.model, messages, stream: false, format: 'json' }),
             signal: AbortSignal.timeout(60000),
           });
+          if (!res.ok) throw new Error(`Ollama classify error: ${res.status}`);
           const data = await res.json();
           responseText = data.message?.content || '{}';
           break;
@@ -533,14 +536,16 @@ For each major concept or topic area, create a compendium entry with:
 Module: ${moduleNumber}, Topic: ${topic}
 ${existingSection}${webSection}
 
-Respond with ONLY a JSON array:
-[
-  {
-    "title": "LZ77 Kompression",
-    "content": "### Sliding-Window-Verfahren\\nExplanation...\\n\\n### Kodierungsverfahren\\nExplanation...",
-    "keywords": ["lz77", "sliding-window", "kompression", "dekodierung"]
-  }
-]
+Respond with ONLY a JSON object:
+{
+  "entries": [
+    {
+      "title": "LZ77 Kompression",
+      "content": "### Sliding-Window-Verfahren\\nExplanation...\\n\\n### Kodierungsverfahren\\nExplanation...",
+      "keywords": ["lz77", "sliding-window", "kompression", "dekodierung"]
+    }
+  ]
+}
 
 Document text:
 ${rawText.substring(0, 4000)}`;
@@ -568,8 +573,9 @@ ${rawText.substring(0, 4000)}`;
             body: JSON.stringify({ model: this.config.model, max_tokens: 4096, system: prompt, messages: [{ role: 'user', content: 'Extract knowledge topics from this document and create compendium entries.' }] }),
             signal: AbortSignal.timeout(120000),
           });
+          if (!res.ok) throw new Error(`Anthropic compendium error: ${res.status}`);
           const data = await res.json();
-          responseText = data.content?.[0]?.text || '[]';
+          responseText = data.content?.[0]?.text || '{}';
           break;
         }
         case 'ollama':
@@ -582,8 +588,9 @@ ${rawText.substring(0, 4000)}`;
             body: JSON.stringify({ model: this.config.model, messages, stream: false, format: 'json' }),
             signal: AbortSignal.timeout(120000),
           });
+          if (!res.ok) throw new Error(`Ollama compendium error: ${res.status}`);
           const data = await res.json();
-          responseText = data.message?.content || '[]';
+          responseText = data.message?.content || '{}';
           break;
         }
         case 'openai-compatible': {
@@ -601,14 +608,12 @@ ${rawText.substring(0, 4000)}`;
       }
 
       const parsed = extractJSON(responseText);
-      if (Array.isArray(parsed)) {
-        return parsed.map((entry: Record<string, unknown>) => ({
-          title: String(entry.title || ''),
-          content: String(entry.content || ''),
-          keywords: Array.isArray(entry.keywords) ? entry.keywords.map(String) : [],
-        })).filter(e => e.title && e.content);
-      }
-      return [];
+      const entries = Array.isArray(parsed) ? parsed : (parsed && Array.isArray((parsed as Record<string, unknown>).entries) ? (parsed as Record<string, unknown>).entries as Record<string, unknown>[] : []);
+      return entries.map((entry: Record<string, unknown>) => ({
+        title: String(entry.title || ''),
+        content: String(entry.content || ''),
+        keywords: Array.isArray(entry.keywords) ? entry.keywords.map(String) : [],
+      })).filter(e => e.title && e.content);
     } catch (error) {
       console.error('generateCompendiumEntries error:', error);
       return [];

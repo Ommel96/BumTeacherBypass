@@ -339,7 +339,7 @@ export default function PrintableWorksheetRenderer({
 
       {!ready && (
         <div style={{ textAlign: 'center', padding: '2rem', color: '#7a6f63' }}>
-          Loading answers...
+          Antworten werden geladen...
         </div>
       )}
     </div>

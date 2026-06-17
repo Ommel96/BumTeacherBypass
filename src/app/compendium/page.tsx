@@ -64,13 +64,13 @@ export default function CompendiumPage() {
       <div className="mb-8">
         <div className="font-mono text-xs tracking-widest uppercase text-[var(--accent)] mb-2">BumTeacherBypass</div>
         <h1 className="font-serif text-3xl font-bold text-[var(--text)] mb-2">Kompendium</h1>
-        <p className="text-[var(--text-muted)]">Reference knowledge base — explanations, formulas, and examples for all topics.</p>
+        <p className="text-[var(--text-muted)]">Nachschlagewerk — Erklärungen, Formeln und Beispiele zu allen Themen.</p>
       </div>
 
       <div className="mb-6">
         <input
           type="search"
-          placeholder="Search compendium..."
+          placeholder="Kompendium durchsuchen..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           className="w-full px-4 py-3 border border-[var(--border)] rounded-xl bg-white text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-light)] transition-all"
@@ -85,8 +85,8 @@ export default function CompendiumPage() {
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
           </svg>
-          <p className="font-semibold mb-1">No compendium entries yet</p>
-          <p className="text-sm">Upload documents to generate reference entries automatically.</p>
+          <p className="font-semibold mb-1">Noch keine Kompendium-Einträge</p>
+          <p className="text-sm">Lade Dokumente hoch, um automatisch Nachschlagewerk-Einträge zu erstellen.</p>
         </div>
       )}
 
@@ -98,7 +98,7 @@ export default function CompendiumPage() {
             </div>
             <h2 className="font-serif text-xl font-bold">Modul {modNum}</h2>
             <span className="text-sm text-[var(--text-muted)]">
-              {Object.values(topics).flat().length} entries
+              {Object.values(topics).flat().length} Einträge
             </span>
           </div>
 

@@ -58,6 +58,7 @@ export default function DocumentDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState(false);
+  const [regeneratingPage, setRegeneratingPage] = useState<string | null>(null);
   const [year, setYear] = useState('');
   const [semester, setSemester] = useState('');
   const [moduleNumber, setModuleNumber] = useState('');
@@ -66,7 +67,7 @@ export default function DocumentDetailPage() {
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch(`/api/documents/${id}`);
-      if (!res.ok) throw new Error('Document not found');
+      if (!res.ok) throw new Error('Dokument nicht gefunden');
       const json = await res.json();
       setData(json);
       if (json.pages?.length > 0 && !activePage) {
@@ -79,7 +80,7 @@ export default function DocumentDetailPage() {
         setTopic(json.document.topic || '');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load document');
+      setError(err instanceof Error ? err.message : 'Dokument konnte nicht geladen werden');
     } finally {
       setLoading(false);
     }
@@ -110,11 +111,33 @@ export default function DocumentDetailPage() {
     }
   };
 
+  const regeneratePage = async (pageId: string) => {
+    setRegeneratingPage(pageId);
+    try {
+      const res = await fetch(`/api/pages/${pageId}`, { method: 'POST' });
+      const pageData = await res.json();
+      if (pageData.page) {
+        setData(prev => prev ? {
+          ...prev,
+          pages: prev.pages.map(p =>
+            p.id === pageId ? { ...p, content: pageData.page.content, title: pageData.page.title, worksheet_data: pageData.page.worksheet_data } : p
+          ),
+        } : null);
+      }
+    } catch (err) {
+      console.error('Regenerate failed:', err);
+    } finally {
+      setRegeneratingPage(null);
+    }
+  };
+
+  const isRegenerating = regeneratingPage !== null;
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent)] mx-auto mb-4"/>
-        <p className="text-[var(--text-muted)]">Loading document...</p>
+        <p className="text-[var(--text-muted)]">Dokument wird geladen...</p>
       </div>
     );
   }
@@ -123,9 +146,9 @@ export default function DocumentDetailPage() {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 text-center">
         <div className="bg-red-50 text-red-800 rounded-xl p-8">
-          <p className="text-lg font-semibold mb-2">Error</p>
-          <p>{error || 'Document not found'}</p>
-          <a href="/" className="inline-block mt-4 text-[var(--accent)] underline">Back to Home</a>
+          <p className="text-lg font-semibold mb-2">Fehler</p>
+          <p>{error || 'Dokument nicht gefunden'}</p>
+          <a href="/" className="inline-block mt-4 text-[var(--accent)] underline">Zur Startseite</a>
         </div>
       </div>
     );
@@ -137,9 +160,9 @@ export default function DocumentDetailPage() {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent)] mx-auto mb-4"/>
-        <h2 className="font-serif text-2xl font-bold mb-2">Processing Document</h2>
-        <p className="text-[var(--text-muted)]">AI is converting your document into interactive worksheets...</p>
-        <p className="text-sm text-[var(--text-muted)] mt-2">This may take a minute depending on the number of pages.</p>
+        <h2 className="font-serif text-2xl font-bold mb-2">Dokument wird verarbeitet</h2>
+        <p className="text-[var(--text-muted)]">KI wandelt dein Dokument in interaktive Arbeitsblätter um...</p>
+        <p className="text-sm text-[var(--text-muted)] mt-2">Dies kann je nach Seitenzahl einen Moment dauern.</p>
       </div>
     );
   }
@@ -148,11 +171,11 @@ export default function DocumentDetailPage() {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 text-center">
         <div className="bg-red-50 text-red-800 rounded-xl p-8">
-          <p className="text-lg font-semibold mb-2">Processing Failed</p>
-          <p className="text-red-700">There was an error processing your document. Please check your AI provider settings and try again.</p>
+          <p className="text-lg font-semibold mb-2">Verarbeitung fehlgeschlagen</p>
+          <p className="text-red-700">Beim Verarbeiten des Dokuments ist ein Fehler aufgetreten. Bitte überprüfe deine KI-Anbieter-Einstellungen und versuche es erneut.</p>
           <div className="flex gap-3 justify-center mt-4">
-            <a href="/settings" className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg no-underline hover:bg-[var(--accent-dark)]">Settings</a>
-            <a href="/" className="px-4 py-2 border border-[var(--border)] rounded-lg no-underline text-[var(--text-muted)] hover:text-[var(--text)]">Home</a>
+            <a href="/settings" className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg no-underline hover:bg-[var(--accent-dark)]">Einstellungen</a>
+            <a href="/" className="px-4 py-2 border border-[var(--border)] rounded-lg no-underline text-[var(--text-muted)] hover:text-[var(--text)]">Startseite</a>
           </div>
         </div>
       </div>
@@ -163,8 +186,8 @@ export default function DocumentDetailPage() {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 text-center">
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-8">
-          <p className="text-lg font-semibold text-amber-800 mb-2">No pages extracted</p>
-          <p className="text-amber-700">The document might be empty or the content could not be parsed.</p>
+          <p className="text-lg font-semibold text-amber-800 mb-2">Keine Seiten extrahiert</p>
+          <p className="text-amber-700">Das Dokument könnte leer sein oder der Inhalt konnte nicht gelesen werden.</p>
         </div>
       </div>
     );
@@ -174,17 +197,28 @@ export default function DocumentDetailPage() {
   const worksheetData = parseWorksheetData(currentPage.worksheet_data);
 
   const breadcrumbItems = [
-    { label: 'Home', href: '/' },
+    { label: 'Startseite', href: '/' },
     ...(doc.year ? [
       { label: `${doc.year}. Lehrjahr`, href: `/worksheets/year-${doc.year}` },
       ...(doc.module_number ? [
-        { label: `Modul ${doc.module_number}`, href: `/worksheets/year-${doc.year}/semester-2/${doc.module_number}` },
+        { label: `Modul ${doc.module_number}`, href: `/worksheets/year-${doc.year}/semester-${doc.semester || '2'}/${doc.module_number}` },
       ] : []),
     ] : []),
     { label: doc.filename.replace(/\.[^.]+$/, '') },
   ];
 
   return (
+    <>
+      {isRegenerating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)] mx-auto mb-4"/>
+            <h2 className="font-serif text-2xl font-bold mb-2">Arbeitsblatt wird neu erstellt</h2>
+            <p className="text-[var(--text-muted)]">KI verarbeitet diese Seite erneut...</p>
+            <p className="text-sm text-[var(--text-muted)] mt-2">Das kann einen Moment dauern. Bitte warten.</p>
+          </div>
+        </div>
+      )}
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       {/* Page selector for multi-page documents */}
       {pages.length > 1 && (
@@ -201,8 +235,8 @@ export default function DocumentDetailPage() {
                     : 'bg-white border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]'
                 }`}
               >
-                <div className="font-mono text-xs opacity-60">Page {page.page_number}</div>
-                <div className="truncate max-w-[160px]">{pwd?.title || page.title || `Page ${page.page_number}`}</div>
+                <div className="font-mono text-xs opacity-60">Seite {page.page_number}</div>
+                <div className="truncate max-w-[160px]">{pwd?.title || page.title || `Seite ${page.page_number}`}</div>
               </button>
             );
           })}
@@ -219,37 +253,20 @@ export default function DocumentDetailPage() {
               ? `${doc.year}. Lehrjahr · Semester ${doc.semester} · Modul ${doc.module_number} · ${doc.topic}`
               : doc.year && doc.semester
                 ? `${doc.year}. Lehrjahr · Semester ${doc.semester}`
-                : 'No category assigned'}
+                : 'Keine Kategorie zugewiesen'}
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <a
-              href={`/documents/${id}/export`}
-              target="_blank"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent)] text-white rounded-lg no-underline text-sm font-medium hover:bg-[var(--accent-dark)] transition-colors"
-              title="Export worksheet with your answers as printable PDF"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Export
-            </a>
-            <a
-              href={`/api/documents/${id}/original`}
-              target="_blank"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent-light)] text-[var(--accent-dark)] rounded-lg no-underline text-sm font-medium hover:bg-[var(--accent)] hover:text-white transition-colors"
-              title="View original document"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-              </svg>
-              View Original
-            </a>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <button
-              onClick={() => setEditingCategory(!editingCategory)}
-              className="text-sm text-[var(--accent)] hover:text-[var(--accent-dark)] border-none bg-transparent cursor-pointer font-semibold"
+              onClick={() => regeneratePage(currentPage.id)}
+              disabled={regeneratingPage === currentPage.id}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] text-[var(--text-muted)] rounded-lg text-sm font-medium hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors bg-transparent cursor-pointer disabled:opacity-50"
+              title="Diese Seite mit KI neu erstellen"
             >
-              {editingCategory ? 'Close' : 'Edit Category'}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              {regeneratingPage === currentPage.id ? 'Wird neu erstellt...' : 'Neu erstellen'}
             </button>
           </div>
         </div>
@@ -258,7 +275,7 @@ export default function DocumentDetailPage() {
             <CategorySelector year={year} semester={semester} moduleNumber={moduleNumber} topic={topic} onYearChange={setYear} onSemesterChange={setSemester} onModuleNumberChange={setModuleNumber} onTopicChange={setTopic} />
             <div className="flex justify-end mt-3">
               <button onClick={saveCategory} className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--accent-dark)] transition-colors">
-                Save Category
+                Kategorie speichern
               </button>
             </div>
           </div>
@@ -277,43 +294,30 @@ export default function DocumentDetailPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="font-mono text-xs tracking-wider uppercase text-[var(--accent)] mb-1">
-                Page {currentPage.page_number} of {pages.length}
+                Seite {currentPage.page_number} von {pages.length}
               </div>
               <h2 className="font-serif text-2xl font-bold">{currentPage.title}</h2>
             </div>
             <button
-              onClick={async () => {
-                try {
-                  const res = await fetch(`/api/pages/${currentPage.id}`, { method: 'POST' });
-                  const data = await res.json();
-                  if (data.page) {
-                    setData(prev => prev ? {
-                      ...prev,
-                      pages: prev.pages.map(p =>
-                        p.id === currentPage.id ? { ...p, content: data.page.content, title: data.page.title, worksheet_data: data.page.worksheet_data } : p
-                      ),
-                    } : null);
-                  }
-                } catch (err) {
-                  console.error('Regenerate failed:', err);
-                }
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-              title="Regenerate this page with AI"
+              onClick={() => regeneratePage(currentPage.id)}
+              disabled={regeneratingPage === currentPage.id}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-50"
+              title="Diese Seite mit KI neu erstellen"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="23 4 23 10 17 10"/>
                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
               </svg>
-              Regenerate
+              {regeneratingPage === currentPage.id ? 'Wird neu erstellt...' : 'Neu erstellen'}
             </button>
           </div>
           <div className="prose max-w-none text-[var(--text)]" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentPage.content) }} />
           <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-            This page could not be converted to an interactive worksheet. Click <strong>Regenerate</strong> to try again with AI.
+            Diese Seite konnte nicht in ein interaktives Arbeitsblatt umgewandelt werden. Klicke auf Neu erstellen, um es erneut mit KI zu versuchen.
           </div>
         </div>
-      )}
+       )}
     </div>
+    </>
   );
 }

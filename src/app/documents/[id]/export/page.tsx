@@ -65,7 +65,7 @@ export default function ExportPage() {
   if (loading) {
     return (
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#7a6f63' }}>
-        Loading...
+        Laden...
       </div>
     );
   }
@@ -73,7 +73,7 @@ export default function ExportPage() {
   if (!data || !data.pages || data.pages.length === 0) {
     return (
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#7a6f63' }}>
-        No worksheet data available for export.
+        Keine Arbeitsblattdaten für den Export verfügbar.
       </div>
     );
   }
@@ -84,7 +84,7 @@ export default function ExportPage() {
   if (!worksheetData) {
     return (
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#7a6f63' }}>
-        This page has not been converted to an interactive worksheet yet.
+        Diese Seite wurde noch nicht in ein interaktives Arbeitsblatt umgewandelt.
       </div>
     );
   }
@@ -123,7 +123,7 @@ export default function ExportPage() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                Page {page.page_number}: {pwd?.title || page.title || `Page ${page.page_number}`}
+                Seite {page.page_number}: {pwd?.title || page.title || `Seite ${page.page_number}`}
               </button>
             );
           })}

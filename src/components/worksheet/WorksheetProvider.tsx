@@ -52,6 +52,8 @@ export function WorksheetProvider({ worksheetKey, children }: { worksheetKey: st
       });
   }, [worksheetKey, localKey]);
 
+  useEffect(() => () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); }, []);
+
   const persist = useCallback((updated: Record<string, string>) => {
     try { localStorage.setItem(localKey, JSON.stringify(updated)); } catch {}
     fetch(`/api/worksheet/${encodeURIComponent(worksheetKey)}`, {
@@ -74,6 +76,7 @@ export function WorksheetProvider({ worksheetKey, children }: { worksheetKey: st
   }, [persist]);
 
   const resetFields = useCallback((ids: string[]) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setFields(prev => {
       const next = { ...prev };
       for (const id of ids) delete next[id];
@@ -162,7 +165,7 @@ export function WorksheetProvider({ worksheetKey, children }: { worksheetKey: st
     <WorksheetContext.Provider value={{ worksheetKey, fields, setFieldValue, resetFields, checkField, checkFields, feedbacks, toggleHint, hints }}>
       {children}
       {saveStatus !== 'idle' && (
-        <div className={`fixed bottom-4 right-4 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm z-50 ${
+        <div className={`save-status fixed bottom-4 right-4 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm z-50 ${
           saveStatus === 'synced' ? 'bg-[var(--success-bg)] text-[var(--success)]' : 'bg-[var(--accent-light)] text-[var(--accent-dark)]'
         }`}>
           {saveStatus === 'synced' ? 'Gespeichert' : 'Lokal gespeichert'}

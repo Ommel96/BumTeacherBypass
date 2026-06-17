@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { listCompendiumEntries, searchCompendium, upsertCompendiumEntry, getCompendiumEntry } from '@/lib/compendium-store';
 import { getDocument, getPagesByDocument } from '@/lib/document-store';
 import { AIProvider } from '@/lib/ai-provider';
-import { getResolvedProviderConfig } from '@/lib/settings-store';
+import { getProviderConfigForRole } from '@/lib/providers-store';
 import { researchTopic } from '@/lib/web-research';
 
 export async function GET(request: NextRequest) {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const config = getResolvedProviderConfig();
+    const config = getProviderConfigForRole('compendium');
     const provider = new AIProvider(config);
 
     const existingEntries = listCompendiumEntries(doc.module_number, doc.topic).map(e => ({

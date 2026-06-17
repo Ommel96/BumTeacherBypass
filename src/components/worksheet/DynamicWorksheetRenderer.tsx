@@ -121,10 +121,7 @@ function renderTable(table: WorksheetTable) {
                 if (isFirstCol) {
                   return <LabelCell key={col.key}>{renderMarkdown(val || `Zeile ${ri + 1}`)}</LabelCell>;
                 }
-                if (val) {
-                  return <GivenCell key={col.key}>{renderMarkdown(val)}</GivenCell>;
-                }
-                return <GivenCell key={col.key}>{renderMarkdown(val)}</GivenCell>;
+                return <GivenCell key={col.key}>{renderMarkdown(val || `Zeile ${ri + 1}`)}</GivenCell>;
               })}
             </tr>
           ))}
@@ -217,7 +214,7 @@ function renderSection(section: WorksheetSection, idx: number) {
                   <Link
                     key={i}
                     href={`/compendium/${ref}`}
-                    className="inline-flex items-center gap-1.5 text-xs bg-[var(--accent-light)] text-[var(--accent-dark)] px-2.5 py-1 rounded-lg no-underline hover:bg-[var(--accent)] hover:text-white transition-colors font-medium"
+                    className="compendium-ref-link inline-flex items-center gap-1.5 text-xs bg-[var(--accent-light)] text-[var(--accent-dark)] px-2.5 py-1 rounded-lg no-underline hover:bg-[var(--accent)] hover:text-white transition-colors font-medium"
                     target="_blank"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

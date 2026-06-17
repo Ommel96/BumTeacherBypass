@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { getSettings, getResolvedProviderConfig } from '@/lib/settings-store';
-import { listDocuments, updateDocumentCategory } from '@/lib/document-store';
+import { getProviderConfigForRole } from '@/lib/providers-store';
+import { listDocuments, updateDocumentCategory, slugify } from '@/lib/document-store';
 import { AIProvider } from '@/lib/ai-provider';
 
 export async function POST(request: NextRequest) {
@@ -37,11 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ module_number: '', topic: '', title: '', year: '', semester: '' });
     }
 
-    const settings = getSettings();
-    const providerConfig = getResolvedProviderConfig();
-    const classifyConfig = settings.lightweightModel
-      ? { ...providerConfig, model: settings.lightweightModel }
-      : providerConfig;
+    const classifyConfig = getProviderConfigForRole('lightweight');
 
     if (!classifyConfig.apiKey && classifyConfig.provider !== 'ollama') {
       return NextResponse.json({ error: 'No API key configured' }, { status: 400 });
@@ -53,8 +49,8 @@ export async function POST(request: NextRequest) {
     const classifier = new AIProvider(classifyConfig);
     const classification = await classifier.classifyDocument(rawText.substring(0, 1500), knownModules);
 
-    const normalizedModule = classification.module_number?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß-]/g, '') || '';
-    const normalizedTopic = classification.topic?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß-]/g, '') || '';
+    const normalizedModule = slugify(classification.module_number || '');
+    const normalizedTopic = slugify(classification.topic || '');
 
     let year = '';
     let semester = '';

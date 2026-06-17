@@ -180,7 +180,7 @@ export default function CompendiumDetailPage() {
   useEffect(() => { fetchEntry(); }, [id]);
 
   const handleDelete = async () => {
-    if (!confirm('Delete this compendium entry?')) return;
+    if (!confirm('Diesen Kompendium-Eintrag löschen?')) return;
     await fetch(`/api/compendium/${id}`, { method: 'DELETE' });
     window.location.href = '/compendium';
   };
@@ -190,21 +190,25 @@ export default function CompendiumDetailPage() {
     setRegenerating(true);
     try {
       const docId = String(entry.source_doc_ids).split(',')[0];
-      await fetch('/api/compendium', {
+      const res = await fetch('/api/compendium', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documentId: docId }),
       });
-      fetchEntry();
-    } catch {}
-    setRegenerating(false);
+      if (!res.ok) throw new Error(`Regenerate failed: ${res.status}`);
+      await fetchEntry();
+    } catch (err) {
+      console.error('Regenerate failed:', err);
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent)] mx-auto mb-4"/>
-        <p className="text-[var(--text-muted)]">Loading...</p>
+        <p className="text-[var(--text-muted)]">Laden...</p>
       </div>
     );
   }
@@ -212,16 +216,27 @@ export default function CompendiumDetailPage() {
   if (!entry) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 text-center">
-        <p className="text-[var(--text-muted)]">Entry not found.</p>
-        <Link href="/compendium" className="text-[var(--accent)] hover:underline mt-2 inline-block">Back to Compendium</Link>
+        <p className="text-[var(--text-muted)]">Eintrag nicht gefunden.</p>
+        <Link href="/compendium" className="text-[var(--accent)] hover:underline mt-2 inline-block">Zurück zum Kompendium</Link>
       </div>
     );
   }
 
   return (
+    <>
+      {regenerating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)] mx-auto mb-4"/>
+            <h2 className="font-serif text-2xl font-bold mb-2">Eintrag wird neu erstellt</h2>
+            <p className="text-[var(--text-muted)]">KI erstellt diesen Kompendium-Eintrag neu...</p>
+            <p className="text-sm text-[var(--text-muted)] mt-2">Das kann einen Moment dauern. Bitte warten.</p>
+          </div>
+        </div>
+      )}
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <nav className="text-sm text-[var(--text-muted)] mb-6 flex items-center gap-1 flex-wrap">
-        <Link href="/" className="hover:text-[var(--accent)]">Home</Link>
+        <Link href="/" className="hover:text-[var(--accent)]">Startseite</Link>
         <span className="mx-1">/</span>
         <Link href="/compendium" className="hover:text-[var(--accent)]">Kompendium</Link>
         <span className="mx-1">/</span>
@@ -258,7 +273,7 @@ export default function CompendiumDetailPage() {
               className="inline-flex items-center gap-1.5 text-xs border border-[var(--border)] text-[var(--text-muted)] px-2.5 py-1 rounded-lg hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors bg-transparent cursor-pointer"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              {regenerating ? 'Regenerating...' : 'Regenerate'}
+              {regenerating ? 'Wird neu erstellt...' : 'Neu erstellen'}
             </button>
           )}
           <button
@@ -266,7 +281,7 @@ export default function CompendiumDetailPage() {
             className="inline-flex items-center gap-1.5 text-xs border border-[var(--border)] text-[var(--text-muted)] px-2.5 py-1 rounded-lg hover:border-red-400 hover:text-red-500 transition-colors bg-transparent cursor-pointer"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            Delete
+            Löschen
           </button>
         </div>
 
@@ -287,11 +302,11 @@ export default function CompendiumDetailPage() {
 
       {entry.source_doc_ids && (
         <div className="bg-white border border-[var(--border)] rounded-xl p-4 shadow-sm mb-6">
-          <h3 className="font-mono text-xs tracking-wider uppercase text-[var(--text-muted)] mb-2">Source Documents</h3>
+          <h3 className="font-mono text-xs tracking-wider uppercase text-[var(--text-muted)] mb-2">Quelldokumente</h3>
           <div className="flex flex-wrap gap-2">
             {String(entry.source_doc_ids).split(',').filter(Boolean).map(docId => (
               <Link key={docId} href={`/documents/${docId}`} className="text-sm bg-[var(--accent-light)] text-[var(--accent-dark)] px-3 py-1 rounded-lg no-underline hover:bg-[var(--accent)] hover:text-white transition-colors">
-                View Document
+                Dokument ansehen
               </Link>
             ))}
           </div>
@@ -300,7 +315,7 @@ export default function CompendiumDetailPage() {
 
       {entry.related && entry.related.length > 0 && (
         <div className="bg-white border border-[var(--border)] rounded-xl p-4 shadow-sm">
-          <h3 className="font-mono text-xs tracking-wider uppercase text-[var(--text-muted)] mb-3">Related Entries</h3>
+          <h3 className="font-mono text-xs tracking-wider uppercase text-[var(--text-muted)] mb-3">Verwandte Einträge</h3>
           <div className="flex flex-col gap-2">
             {entry.related.map(r => (
               <Link key={r.id} href={`/compendium/${r.id}`} className="flex items-center gap-3 p-3 border border-[var(--border)] rounded-lg hover:border-[var(--accent)] transition-all no-underline text-[var(--text)]">
@@ -320,9 +335,10 @@ export default function CompendiumDetailPage() {
 
       <div className="mt-6 text-center">
         <Link href="/compendium" className="text-sm text-[var(--accent)] hover:underline no-underline">
-          &larr; Back to Kompendium
+          &larr; Zurück zum Kompendium
         </Link>
-      </div>
+       </div>
     </div>
+    </>
   );
 }

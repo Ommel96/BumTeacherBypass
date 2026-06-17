@@ -2,11 +2,54 @@ import { v4 as uuidv4 } from 'uuid';
 import { insertPage, updateDocumentStatus } from './document-store';
 import { AIProvider, type ProviderConfig } from './ai-provider';
 import { getResolvedProviderConfig } from './settings-store';
-import type { WorksheetData } from './worksheet-schema';
+import type { WorksheetData, WorksheetField, WorksheetSection, WorksheetCheckGroup } from './worksheet-schema';
 import { validateWorksheetData } from './worksheet-schema';
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\n/g, '<br>');
+}
+
+function ensureCheckGroups(data: WorksheetData): WorksheetData {
+  let cgCounter = 0;
+  let checkCounter = 0;
+  const sections = data.sections.map(section => {
+    if (section.type !== 'section' || !section.fields || section.fields.length === 0) return section;
+
+    const textFields = section.fields.filter((f: WorksheetField) => f.type !== 'textarea');
+    if (textFields.length === 0) return section;
+
+    const existingChecks = (section.checkGroups || []).flatMap((cg: WorksheetCheckGroup) => cg.checks);
+    const coveredFieldIds = new Set(existingChecks.map(c => c.fieldId));
+    const orphanedFields = textFields.filter((f: WorksheetField) => !coveredFieldIds.has(f.id));
+
+    if (orphanedFields.length === 0) return section;
+
+    const cgId = `auto-cg-${++cgCounter}`;
+    const fbId = `auto-fb-${cgCounter}`;
+    const newChecks = orphanedFields.map(f => ({
+      fieldId: f.id,
+      expected: '',
+      hint: 'Prüfe dein Ergebnis sorgfältig.',
+      opts: { normalize: true },
+    }));
+    orphanedFields.forEach(() => checkCounter++);
+
+    return {
+      ...section,
+      checkGroups: [...(section.checkGroups || []), {
+        id: cgId,
+        checks: newChecks,
+        feedbackId: fbId,
+        label: 'Prüfen',
+      }],
+    };
+  });
+
+  if (cgCounter > 0) {
+    console.log(`Auto-created ${cgCounter} checkGroups for ${checkCounter} orphaned text fields`);
+  }
+
+  return { ...data, sections: sections as WorksheetSection[] };
 }
 
 export async function processDocumentPages(
@@ -36,7 +79,7 @@ export async function processDocumentPages(
         if (raw.title && Array.isArray(raw.sections)) {
           const validation = validateWorksheetData(raw);
           if (validation.valid) {
-            worksheetData = raw as unknown as WorksheetData;
+            worksheetData = ensureCheckGroups(raw as unknown as WorksheetData);
             console.log(`Page ${i + 1}: Successfully generated worksheet with ${(raw.sections as unknown[]).length} sections`);
           } else {
             console.warn(`Page ${i + 1}: AI response had title/sections but failed validation:`, validation.errors);

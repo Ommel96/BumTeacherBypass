@@ -102,7 +102,7 @@ export default function WorksheetsSlugPage() {
     return <WorksheetListPage year={year} semester={semester} moduleNumber={moduleNumber} topic={topic} />;
   }
 
-  return <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8"><p>Not found</p></div>;
+  return <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8"><p>Nicht gefunden</p></div>;
 }
 
 function YearSelectPage() {
@@ -134,16 +134,16 @@ function YearSelectPage() {
       </div>
 
       <div className="mt-12 p-6 bg-[var(--accent-light)] rounded-xl text-center">
-        <h2 className="font-serif text-xl font-bold text-[var(--accent-dark)] mb-2">Upload Your Own Documents</h2>
-        <p className="text-[var(--accent-dark)] text-sm mb-4">Upload PDF or Word files and let AI convert them into interactive, editable pages.</p>
+        <h2 className="font-serif text-xl font-bold text-[var(--accent-dark)] mb-2">Eigene Dokumente hochladen</h2>
+        <p className="text-[var(--accent-dark)] text-sm mb-4">Lade PDF- oder Word-Dateien hoch und lass sie von der KI in interaktive, bearbeitbare Seiten umwandeln.</p>
         <Link
-          href="/upload"
+          href="/?upload=1"
           className="inline-flex items-center gap-2 bg-[var(--accent)] text-white px-5 py-2.5 rounded-lg font-medium no-underline hover:bg-[var(--accent-dark)] transition-colors"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
-          Upload Document
+          Dokument hochladen
         </Link>
       </div>
     </div>
@@ -156,7 +156,7 @@ function SemesterSelectPage({ year }: { year: string }) {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <Breadcrumb parts={[
-        { label: 'Home', href: '/' },
+        { label: 'Startseite', href: '/' },
         { label: YEAR_LABELS[year] || `Lehrjahr ${year}` },
       ]} />
 
@@ -200,7 +200,7 @@ function ModuleSelectPage({ year, semester }: { year: string; semester: string }
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <Breadcrumb parts={[
-        { label: 'Home', href: '/' },
+        { label: 'Startseite', href: '/' },
         { label: YEAR_LABELS[year] || `Lehrjahr ${year}`, href: `/worksheets/year-${year}` },
         { label: SEMESTER_LABELS[semester] || `Semester ${semester}` },
       ]} />
@@ -215,8 +215,8 @@ function ModuleSelectPage({ year, semester }: { year: string; semester: string }
 
       {!loading && moduleNumbers.length === 0 && (
         <div className="text-center py-12 text-[var(--text-muted)]">
-          <p>No modules yet. Upload a document and assign it to this semester.</p>
-          <Link href="/upload" className="text-[var(--accent)] hover:underline mt-2 inline-block">Upload Document</Link>
+          <p>Noch keine Module. Lade ein Dokument hoch und weise ihm dieses Semester zu.</p>
+          <Link href="/?upload=1" className="text-[var(--accent)] hover:underline mt-2 inline-block">Dokument hochladen</Link>
         </div>
       )}
 
@@ -265,7 +265,7 @@ function TopicSelectPage({ year, semester, moduleNumber }: { year: string; semes
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <Breadcrumb parts={[
-        { label: 'Home', href: '/' },
+        { label: 'Startseite', href: '/' },
         { label: YEAR_LABELS[year] || `Lehrjahr ${year}`, href: `/worksheets/year-${year}` },
         { label: SEMESTER_LABELS[semester] || `Semester ${semester}`, href: `/worksheets/year-${year}/semester-${semester}` },
         { label: `Modul ${moduleNumber}` },
@@ -279,8 +279,8 @@ function TopicSelectPage({ year, semester, moduleNumber }: { year: string; semes
 
       {topics.length === 0 && (
         <div className="text-center py-12 text-[var(--text-muted)]">
-          <p>No topics yet. Upload a document and assign it to this module.</p>
-          <Link href="/upload" className="text-[var(--accent)] hover:underline mt-2 inline-block">Upload Document</Link>
+          <p>Noch keine Themen. Lade ein Dokument hoch und weise ihm dieses Modul zu.</p>
+          <Link href="/?upload=1" className="text-[var(--accent)] hover:underline mt-2 inline-block">Dokument hochladen</Link>
         </div>
       )}
 
@@ -318,7 +318,7 @@ function WorksheetListPage({ year, semester, moduleNumber, topic }: { year: stri
   useEffect(() => { fetchDocs(); }, [year, semester, moduleNumber, topic]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this worksheet?')) return;
+    if (!confirm('Dieses Arbeitsblatt löschen?')) return;
     setDeleting(id);
     try { await fetch(`/api/documents/${id}`, { method: 'DELETE' }); setDocs(prev => prev.filter(d => d.id !== id)); } catch {}
     finally { setDeleting(null); }
@@ -335,7 +335,7 @@ function WorksheetListPage({ year, semester, moduleNumber, topic }: { year: stri
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <Breadcrumb parts={[
-        { label: 'Home', href: '/' },
+        { label: 'Startseite', href: '/' },
         { label: YEAR_LABELS[year] || `Lehrjahr ${year}`, href: `/worksheets/year-${year}` },
         { label: SEMESTER_LABELS[semester] || `Semester ${semester}`, href: `/worksheets/year-${year}/semester-${semester}` },
         { label: `Modul ${moduleNumber}`, href: `/worksheets/year-${year}/semester-${semester}/module-${moduleNumber}` },
@@ -350,8 +350,8 @@ function WorksheetListPage({ year, semester, moduleNumber, topic }: { year: stri
 
       {docs.length === 0 && (
         <div className="text-center py-12 text-[var(--text-muted)]">
-          <p>No worksheets in this topic yet.</p>
-          <Link href="/?upload=1" className="text-[var(--accent)] hover:underline mt-2 inline-block">Upload a Document</Link>
+          <p>Noch keine Arbeitsblätter zu diesem Thema.</p>
+          <Link href="/?upload=1" className="text-[var(--accent)] hover:underline mt-2 inline-block">Dokument hochladen</Link>
         </div>
       )}
 
@@ -371,20 +371,20 @@ function WorksheetListPage({ year, semester, moduleNumber, topic }: { year: stri
               <div className="flex-1 min-w-0">
                 <div className="font-semibold truncate">{doc.filename.replace(/\.[^.]+$/, '')}</div>
                 <div className="text-xs text-[var(--text-muted)]">
-                  {doc.status === 'processing' && 'Processing...'}
-                  {doc.status === 'processed' && 'Interactive Worksheet'}
-                  {doc.status === 'error' && 'Processing failed'}
-                  {doc.status === 'uploaded' && 'Queued'}
+                  {doc.status === 'processing' && 'Verarbeitung...'}
+                  {doc.status === 'processed' && 'Interaktives Arbeitsblatt'}
+                  {doc.status === 'error' && 'Verarbeitung fehlgeschlagen'}
+                  {doc.status === 'uploaded' && 'In Warteschlange'}
                 </div>
               </div>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
             </Link>
-            <Link href={`/documents/${doc.id}#category`} className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-100 text-[var(--text-muted)] hover:text-[var(--accent)] no-underline" title="Edit category">
+            <Link href={`/documents/${doc.id}#category`} className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-100 text-[var(--text-muted)] hover:text-[var(--accent)] no-underline" title="Kategorie bearbeiten">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </Link>
-            <button onClick={() => handleDelete(doc.id)} disabled={deleting === doc.id} className="flex-shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-[var(--text-muted)] hover:text-red-500 border-none bg-transparent cursor-pointer transition-colors" title="Delete">
+            <button onClick={() => handleDelete(doc.id)} disabled={deleting === doc.id} className="flex-shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-[var(--text-muted)] hover:text-red-500 border-none bg-transparent cursor-pointer transition-colors" title="Löschen">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
           </div>

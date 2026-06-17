@@ -5,6 +5,10 @@ import getDb from './db';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads');
 
+export function slugify(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß-]/g, '');
+}
+
 export interface DocumentRow {
   id: string;
   filename: string;
@@ -53,8 +57,8 @@ export async function saveUploadedFile(
     INSERT INTO documents (id, filename, mime_type, size, status, year, semester, module_number, topic)
     VALUES (?, ?, ?, ?, 'uploaded', ?, ?, ?, ?)
   `);
-  const normalizedModule = meta?.module_number?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß-]/g, '') || '';
-  const normalizedTopic = meta?.topic?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß-]/g, '') || '';
+  const normalizedModule = slugify(meta?.module_number || '');
+  const normalizedTopic = slugify(meta?.topic || '');
   insertStmt.run(id, file.name, file.type || 'application/octet-stream', file.size, meta?.year || '', meta?.semester || '', normalizedModule, normalizedTopic);
 
   return { id, filePath };
@@ -79,8 +83,8 @@ export function listDocumentsByCategory(year?: string, semester?: string, module
 
   if (year) { conditions.push('year = ?'); params.push(year); }
   if (semester) { conditions.push('semester = ?'); params.push(semester); }
-  if (moduleNumber) { conditions.push('LOWER(module_number) = ?'); params.push(moduleNumber.toLowerCase()); }
-  if (topic) { conditions.push('LOWER(topic) = ?'); params.push(topic.toLowerCase()); }
+  if (moduleNumber) { conditions.push('LOWER(module_number) = ?'); params.push(slugify(moduleNumber)); }
+  if (topic) { conditions.push('LOWER(topic) = ?'); params.push(slugify(topic)); }
 
   if (conditions.length === 0) {
     return listDocuments();
@@ -101,11 +105,12 @@ export function updateDocumentStatus(id: string, status: string): void {
 
 export function updateDocumentCategory(id: string, year: string, semester: string, moduleNumber: string, topic: string): void {
   const db = getDb();
-  const normalizedTopic = topic.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß-]/g, '');
+  const normalizedModule = slugify(moduleNumber);
+  const normalizedTopic = slugify(topic);
   const stmt = db.prepare(`
     UPDATE documents SET year = ?, semester = ?, module_number = ?, topic = ?, updated_at = datetime('now') WHERE id = ?
   `);
-  stmt.run(year, semester, moduleNumber, normalizedTopic, id);
+  stmt.run(year, semester, normalizedModule, normalizedTopic, id);
 }
 
 export function insertPage(page: {

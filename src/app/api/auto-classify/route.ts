@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { getSettings, getResolvedProviderConfig, saveSettings } from '@/lib/settings-store';
-import { listDocuments, updateDocumentCategory } from '@/lib/document-store';
+import { getSettings, saveSettings } from '@/lib/settings-store';
+import { getProviderConfigForRole } from '@/lib/providers-store';
+import { listDocuments, updateDocumentCategory, slugify } from '@/lib/document-store';
 import { AIProvider } from '@/lib/ai-provider';
 
 export async function POST(request: NextRequest) {
@@ -25,10 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, autoClassify: settings.autoClassify, classified: 0, message: 'No uncategorized documents.' });
     }
 
-    const providerConfig = getResolvedProviderConfig();
-    const classifyConfig = settings.lightweightModel
-      ? { ...providerConfig, model: settings.lightweightModel }
-      : providerConfig;
+    const classifyConfig = getProviderConfigForRole('lightweight');
     const classifier = new AIProvider(classifyConfig);
     const knownModules = Array.from(new Set(allDocs.map(d => d.module_number).filter(Boolean)));
 
@@ -44,8 +42,8 @@ export async function POST(request: NextRequest) {
         const classification = await classifier.classifyDocument(rawText, knownModules);
         let autoYear = doc.year;
         let autoSemester = doc.semester;
-        let autoModule = classification.module_number;
-        let autoTopic = classification.topic;
+        let autoModule = slugify(classification.module_number || '');
+        let autoTopic = slugify(classification.topic || '');
 
         if (autoModule) {
           const matchingDocs = allDocs.filter(d => d.module_number === autoModule);

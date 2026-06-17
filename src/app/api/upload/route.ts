@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { saveUploadedFile, updateDocumentStatus, updateDocumentCategory, listDocuments, getDocument, getPagesByDocument } from '@/lib/document-store';
+import { saveUploadedFile, updateDocumentStatus, updateDocumentCategory, listDocuments, getDocument, getPagesByDocument, slugify } from '@/lib/document-store';
 import { extractTextFromPdf, extractTextFromDocx, isSupportedExtension, isSupportedMimeType } from '@/lib/parser';
 import { processDocumentPages } from '@/lib/openai-processor';
-import { getResolvedProviderConfig, getSettings } from '@/lib/settings-store';
+import { getSettings } from '@/lib/settings-store';
+import { getProviderConfigForRole, getProviderConfig } from '@/lib/providers-store';
 import { AIProvider } from '@/lib/ai-provider';
 import { upsertCompendiumEntry, listCompendiumEntries } from '@/lib/compendium-store';
 import { researchTopic } from '@/lib/web-research';
@@ -17,8 +18,9 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File | null;
     const year = (formData.get('year') as string) || '';
     const semester = (formData.get('semester') as string) || '';
-    const moduleNumber = (formData.get('module_number') as string || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß-]/g, '');
-    const topic = (formData.get('topic') as string || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß-]/g, '');
+    const moduleNumber = (formData.get('module_number') as string) || '';
+    const topic = (formData.get('topic') as string) || '';
+    const providerIdOverride = formData.get('providerId') as string | null;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -33,7 +35,9 @@ export async function POST(request: NextRequest) {
     }
 
     const settings = getSettings();
-    const providerConfig = getResolvedProviderConfig();
+    const providerConfig = providerIdOverride
+      ? getProviderConfig(providerIdOverride)
+      : getProviderConfigForRole('default');
 
     if (!providerConfig.apiKey && providerConfig.provider !== 'ollama' && providerConfig.provider !== 'openai-compatible') {
       return NextResponse.json(
@@ -59,16 +63,14 @@ export async function POST(request: NextRequest) {
           try {
             const allDocs = listDocuments();
             const knownModules = Array.from(new Set(allDocs.map(d => d.module_number).filter(Boolean)));
-            const classifyConfig = settings.lightweightModel
-              ? { ...providerConfig, model: settings.lightweightModel }
-              : providerConfig;
+            const classifyConfig = getProviderConfigForRole('lightweight');
             const classifier = new AIProvider(classifyConfig);
             const classification = await classifier.classifyDocument(rawText, knownModules);
 
             let autoYear = year;
             let autoSemester = semester;
-            let autoModule = moduleNumber || classification.module_number;
-            let autoTopic = topic || classification.topic;
+            let autoModule = slugify(moduleNumber || classification.module_number || '');
+            let autoTopic = slugify(topic || classification.topic || '');
 
             if (autoModule) {
               const matchingDocs = allDocs.filter(d => d.module_number === autoModule);
@@ -83,7 +85,6 @@ export async function POST(request: NextRequest) {
             console.error('Auto-categorization error:', e);
           }
         } else if (year || moduleNumber || topic) {
-          // User manually specified some fields, save them
           updateDocumentCategory(id, year, semester, moduleNumber, topic);
         }
 
@@ -110,7 +111,8 @@ export async function POST(request: NextRequest) {
                   console.error('Web research error:', e);
                 }
 
-                const compendiumProvider = new AIProvider(providerConfig);
+                const compendiumConfig = getProviderConfigForRole('compendium');
+                const compendiumProvider = new AIProvider(compendiumConfig);
                 const generated = await compendiumProvider.generateCompendiumEntries(rawText, doc.module_number, doc.topic, existingEntries, webResearch);
                 for (const entry of generated) {
                   upsertCompendiumEntry({
@@ -145,8 +147,8 @@ export async function POST(request: NextRequest) {
       id,
       filename: file.name,
       status: 'processing',
-      provider: settings.provider,
-      model: settings.model,
+      provider: providerConfig.provider,
+      model: providerConfig.model,
       message: 'Document uploaded and processing started.',
     }, { status: 202 });
 
