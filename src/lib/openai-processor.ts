@@ -13,7 +13,7 @@ function ensureCheckGroups(data: WorksheetData): WorksheetData {
   let cgCounter = 0;
   let checkCounter = 0;
   const sections = data.sections.map(section => {
-    if (section.type !== 'section' || !section.fields || section.fields.length === 0) return section;
+    if ((section.type !== 'section' && section.type !== 'interactive') || !section.fields || section.fields.length === 0) return section;
 
     const textFields = section.fields.filter((f: WorksheetField) => f.type !== 'textarea');
     if (textFields.length === 0) return section;
