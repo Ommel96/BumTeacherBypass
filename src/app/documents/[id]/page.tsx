@@ -22,6 +22,16 @@ interface PageData {
   worksheet_data: string | null;
 }
 
+interface PageVersion {
+  id: string;
+  page_id: string;
+  version: number;
+  worksheet_data: string | null;
+  content: string;
+  title: string;
+  created_at: string;
+}
+
 interface DocumentData {
   document: {
     id: string;
@@ -63,6 +73,18 @@ export default function DocumentDetailPage() {
   const [semester, setSemester] = useState('');
   const [moduleNumber, setModuleNumber] = useState('');
   const [topic, setTopic] = useState('');
+  const [versions, setVersions] = useState<PageVersion[]>([]);
+  const [showVersions, setShowVersions] = useState(false);
+
+  const loadVersions = useCallback(async (pageId: string) => {
+    try {
+      const res = await fetch(`/api/pages/${pageId}/versions`);
+      if (res.ok) {
+        const data = await res.json();
+        setVersions(data.versions || []);
+      }
+    } catch {}
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -79,12 +101,15 @@ export default function DocumentDetailPage() {
         setModuleNumber(json.document.module_number || '');
         setTopic(json.document.topic || '');
       }
+      if (json.pages?.length > 0) {
+        loadVersions(json.pages[0].id);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Dokument konnte nicht geladen werden');
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, loadVersions]);
 
   useEffect(() => {
     fetchData();
@@ -115,6 +140,7 @@ export default function DocumentDetailPage() {
     setRegeneratingPage(pageId);
     try {
       const res = await fetch(`/api/pages/${pageId}`, { method: 'POST' });
+      if (!res.ok) throw new Error('Regeneration failed');
       const pageData = await res.json();
       if (pageData.page) {
         setData(prev => prev ? {
@@ -123,11 +149,28 @@ export default function DocumentDetailPage() {
             p.id === pageId ? { ...p, content: pageData.page.content, title: pageData.page.title, worksheet_data: pageData.page.worksheet_data } : p
           ),
         } : null);
+        loadVersions(pageId);
       }
     } catch (err) {
       console.error('Regenerate failed:', err);
     } finally {
       setRegeneratingPage(null);
+    }
+  };
+
+  const restoreVersion = async (pageId: string, versionId: string) => {
+    try {
+      const res = await fetch(`/api/pages/${pageId}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ versionId }),
+      });
+      if (res.ok) {
+        await fetchData();
+        loadVersions(pageId);
+      }
+    } catch (err) {
+      console.error('Restore version failed:', err);
     }
   };
 
@@ -228,7 +271,7 @@ export default function DocumentDetailPage() {
             return (
               <button
                 key={page.id}
-                onClick={() => setActivePage(page.id)}
+                onClick={() => { setActivePage(page.id); loadVersions(page.id); }}
                 className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activePage === page.id
                     ? 'bg-[var(--accent)] text-white'
@@ -296,8 +339,41 @@ export default function DocumentDetailPage() {
             >
               {editingCategory ? 'Schließen' : 'Kategorie bearbeiten'}
             </button>
+            {versions.length > 0 && (
+              <button
+                onClick={() => setShowVersions(!showVersions)}
+                className="text-sm text-[var(--text-muted)] hover:text-[var(--accent)] border-none bg-transparent cursor-pointer font-medium"
+              >
+                Versionen ({versions.length})
+              </button>
+            )}
           </div>
         </div>
+        {showVersions && versions.length > 0 && (
+          <div className="mt-3 p-3 bg-[var(--surface)] rounded-lg border border-[var(--border)]">
+            <div className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Frühere Versionen</div>
+            <div className="space-y-1.5">
+              {versions.map(v => {
+                const pwd = parseWorksheetData(v.worksheet_data);
+                return (
+                  <div key={v.id} className="flex items-center justify-between gap-2 p-2 bg-white rounded-md border border-[var(--border)]">
+                    <div className="text-sm">
+                      <span className="font-medium">Version {v.version}</span>
+                      <span className="text-[var(--text-muted)] ml-2 text-xs">{pwd?.title || v.title}</span>
+                      <span className="text-[var(--text-muted)] ml-2 text-xs">{new Date(v.created_at).toLocaleString('de-CH')}</span>
+                    </div>
+                    <button
+                      onClick={() => restoreVersion(currentPage.id, v.id)}
+                      className="text-xs px-2 py-1 bg-[var(--accent-light)] text-[var(--accent-dark)] rounded hover:bg-[var(--accent)] hover:text-white transition-colors border-none cursor-pointer"
+                    >
+                      Wiederherstellen
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {editingCategory && (
           <div className="mt-4">
             <CategorySelector year={year} semester={semester} moduleNumber={moduleNumber} topic={topic} onYearChange={setYear} onSemesterChange={setSemester} onModuleNumberChange={setModuleNumber} onTopicChange={setTopic} />
