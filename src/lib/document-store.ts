@@ -162,10 +162,40 @@ export function updatePageTitle(id: string, title: string): void {
 
 export function updatePageWorksheetData(id: string, worksheetData: string | null): void {
   const db = getDb();
+  const existing = db.prepare('SELECT worksheet_data, content, title FROM pages WHERE id = ?').get(id) as { worksheet_data: string | null; content: string; title: string } | undefined;
+  if (existing) {
+    const versionCount = (db.prepare('SELECT COUNT(*) as cnt FROM page_versions WHERE page_id = ?').get(id) as { cnt: number }).cnt;
+    const nextVersion = versionCount + 1;
+    db.prepare('INSERT INTO page_versions (id, page_id, version, worksheet_data, content, title) VALUES (?, ?, ?, ?, ?, ?)').run(
+      `${id}_v${nextVersion}`, id, nextVersion, existing.worksheet_data, existing.content, existing.title
+    );
+  }
   const stmt = db.prepare(`
     UPDATE pages SET worksheet_data = ?, updated_at = datetime('now') WHERE id = ?
   `);
   stmt.run(worksheetData, id);
+}
+
+export function getPageVersions(pageId: string): Array<{ id: string; page_id: string; version: number; worksheet_data: string | null; content: string; title: string; created_at: string }> {
+  const db = getDb();
+  return db.prepare('SELECT * FROM page_versions WHERE page_id = ? ORDER BY version DESC').all(pageId) as Array<{ id: string; page_id: string; version: number; worksheet_data: string | null; content: string; title: string; created_at: string }>;
+}
+
+export function restorePageVersion(pageId: string, versionId: string): void {
+  const db = getDb();
+  const version = db.prepare('SELECT * FROM page_versions WHERE id = ?').get(versionId) as { worksheet_data: string | null; content: string; title: string } | undefined;
+  if (!version) throw new Error('Version not found');
+  const existing = db.prepare('SELECT worksheet_data, content, title FROM pages WHERE id = ?').get(pageId) as { worksheet_data: string | null; content: string; title: string } | undefined;
+  if (existing) {
+    const versionCount = (db.prepare('SELECT COUNT(*) as cnt FROM page_versions WHERE page_id = ?').get(pageId) as { cnt: number }).cnt;
+    const nextVersion = versionCount + 1;
+    db.prepare('INSERT INTO page_versions (id, page_id, version, worksheet_data, content, title) VALUES (?, ?, ?, ?, ?, ?)').run(
+      `${pageId}_v${nextVersion}`, pageId, nextVersion, existing.worksheet_data, existing.content, existing.title
+    );
+  }
+  db.prepare('UPDATE pages SET worksheet_data = ?, content = ?, title = ?, updated_at = datetime(\'now\') WHERE id = ?').run(
+    version.worksheet_data, version.content, version.title, pageId
+  );
 }
 
 export async function deleteDocument(id: string): Promise<void> {

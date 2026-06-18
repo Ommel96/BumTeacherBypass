@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useWorksheet } from './WorksheetProvider';
 import type { PixelGridProps, BitVisualizerProps, TruthTableProps, EncodingExerciseProps } from '@/lib/worksheet-schema';
 
@@ -10,33 +10,32 @@ export function PixelGrid({ props }: { props: PixelGridProps }) {
 
   const totalCells = width * height;
   const savedValue = fields[fieldId] || '';
-  const initialState = useMemo(() => {
+  const grid = useMemo(() => {
     if (savedValue) {
       try {
         const parsed = JSON.parse(savedValue);
-        if (Array.isArray(parsed) && parsed.length === totalCells) return parsed;
+        if (Array.isArray(parsed) && parsed.length === totalCells) return parsed.map(Number);
       } catch {}
     }
     return new Array(totalCells).fill(0);
   }, [savedValue, totalCells]);
 
-  const [grid, setGrid] = useState<number[]>(initialState);
-
   const toggleCell = useCallback((index: number) => {
-    setGrid(prev => {
-      const next = [...prev];
-      next[index] = next[index] === 1 ? 0 : 1;
-      const serialized = JSON.stringify(next);
-      setFieldValue(fieldId, serialized);
-      return next;
-    });
-  }, [fieldId, setFieldValue]);
+    const next = [...grid];
+    next[index] = next[index] === 1 ? 0 : 1;
+    setFieldValue(fieldId, JSON.stringify(next));
+  }, [grid, fieldId, setFieldValue]);
 
   const resetGrid = useCallback(() => {
     const cleared = new Array(totalCells).fill(0);
-    setGrid(cleared);
     setFieldValue(fieldId, JSON.stringify(cleared));
   }, [totalCells, fieldId, setFieldValue]);
+
+  const showSolution = useCallback(() => {
+    if (!solution) return;
+    const solutionGrid = solution.length === totalCells ? [...solution] : new Array(totalCells).fill(0);
+    setFieldValue(fieldId, JSON.stringify(solutionGrid));
+  }, [solution, totalCells, fieldId, setFieldValue]);
 
   const encodeRLE = useCallback((data: number[]): string => {
     if (data.length === 0) return '';
@@ -161,11 +160,7 @@ export function PixelGrid({ props }: { props: PixelGridProps }) {
         {solution && (
           <button
             type="button"
-            onClick={() => {
-              const solutionGrid = solution.length === totalCells ? [...solution] : new Array(totalCells).fill(0);
-              setGrid(solutionGrid);
-              setFieldValue(fieldId, JSON.stringify(solutionGrid));
-            }}
+            onClick={showSolution}
             className="pixel-solution-btn"
           >
             Lösung anzeigen
@@ -187,7 +182,7 @@ export function BitVisualizer({ props }: { props: BitVisualizerProps }) {
   const { bits, labels, fieldId, showDecimal = true, showHex = true } = props;
 
   const savedValue = fields[fieldId] || '';
-  const initialBits = useMemo(() => {
+  const bitValues = useMemo(() => {
     if (savedValue) {
       const parsed = savedValue.padStart(bits, '0').split('').map(Number);
       if (parsed.length === bits && parsed.every(b => b === 0 || b === 1)) return parsed;
@@ -195,16 +190,11 @@ export function BitVisualizer({ props }: { props: BitVisualizerProps }) {
     return new Array(bits).fill(0);
   }, [savedValue, bits]);
 
-  const [bitValues, setBitValues] = useState<number[]>(initialBits);
-
   const toggleBit = useCallback((index: number) => {
-    setBitValues(prev => {
-      const next = [...prev];
-      next[index] = next[index] === 1 ? 0 : 1;
-      setFieldValue(fieldId, next.join(''));
-      return next;
-    });
-  }, [fieldId, setFieldValue]);
+    const next = [...bitValues];
+    next[index] = next[index] === 1 ? 0 : 1;
+    setFieldValue(fieldId, next.join(''));
+  }, [bitValues, fieldId, setFieldValue]);
 
   const decimalValue = useMemo(() => {
     return bitValues.reduce((acc, bit, i) => acc + bit * Math.pow(2, bits - 1 - i), 0);
@@ -216,7 +206,6 @@ export function BitVisualizer({ props }: { props: BitVisualizerProps }) {
 
   const resetBits = useCallback(() => {
     const cleared = new Array(bits).fill(0);
-    setBitValues(cleared);
     setFieldValue(fieldId, cleared.join(''));
   }, [bits, fieldId, setFieldValue]);
 

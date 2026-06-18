@@ -91,6 +91,18 @@ function getOrCreateDb(): Database.Database {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS page_versions (
+      id TEXT PRIMARY KEY,
+      page_id TEXT NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+      version INTEGER NOT NULL DEFAULT 1,
+      worksheet_data TEXT,
+      content TEXT NOT NULL DEFAULT '',
+      title TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_page_versions_page ON page_versions(page_id, version);
   `);
 
   const docInfo = db.prepare("PRAGMA table_info(documents)").all() as Array<{ name: string }>;
