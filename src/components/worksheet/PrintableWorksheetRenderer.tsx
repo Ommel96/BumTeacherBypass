@@ -365,6 +365,54 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
         </div>
       );
     }
+    case 'huffmanTreeBuilder': {
+      const { fieldId, initialString, frequencyTable } = interactive.props;
+      const freq = frequencyTable || (() => {
+        const str = initialString || '';
+        const counts: Record<string, number> = {};
+        for (const ch of str) counts[ch] = (counts[ch] || 0) + 1;
+        return counts;
+      })();
+      const sorted = Object.entries(freq).sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]));
+      const savedValue = fields[fieldId] || '{}';
+      let assignments: Record<string, string> = {};
+      try { assignments = JSON.parse(savedValue); } catch {}
+      return (
+        <div key={fieldId} style={{ margin: '0.75rem 0' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Häufigkeitstabelle</div>
+          <table style={{ borderCollapse: 'collapse' }}>
+            <thead><tr><th style={{ padding: '0.35rem 0.6rem', borderBottom: '2px solid #b8860b', background: '#f5ecd4', color: '#8b6508' }}>Zeichen</th>{sorted.map(([ch]) => <th key={ch} style={{ padding: '0.35rem 0.6rem', borderBottom: '2px solid #b8860b', background: '#f5ecd4', color: '#8b6508' }}>{ch}</th>)}</tr></thead>
+            <tbody>
+              <tr><td style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7a6f63', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e8e2d8' }}>Häufigkeit</td>{sorted.map(([ch, count]) => <td key={ch} style={{ textAlign: 'center', fontWeight: 700, color: '#8b6508', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e8e2d8' }}>{count}</td>)}</tr>
+              <tr><td style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7a6f63', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e8e2d8' }}>Code</td>{sorted.map(([ch]) => <td key={ch} style={{ textAlign: 'center', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e8e2d8', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{assignments[ch] || ''}</td>)}</tr>
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case 'lz77Simulator': {
+      const { fieldId, inputString } = interactive.props;
+      const savedStep = parseInt(fields[fieldId] || '0', 10) || 0;
+      return (
+        <div key={fieldId} style={{ margin: '0.75rem 0' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem' }}>LZ77 Simulator — Eingabe: <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>{inputString}</code></div>
+          <div style={{ fontSize: '0.85rem', color: '#7a6f63' }}>Schritt: {savedStep}</div>
+        </div>
+      );
+    }
+    case 'lz78Simulator':
+    case 'compressionTable': {
+      const { fieldId, algorithm, direction, inputString } = interactive.props;
+      const algoLabel = algorithm === 'lz77' ? 'LZ77' : algorithm === 'lz78' ? 'LZ78' : 'LZW';
+      return (
+        <div key={fieldId} style={{ margin: '0.75rem 0' }}>
+          <div style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: '#f5ecd4', color: '#8b6508', border: '1px solid #b8860b', marginBottom: '0.5rem' }}>
+            {algoLabel} — {direction === 'encode' ? 'Kodierung' : 'Dekodierung'}
+          </div>
+          <div style={{ fontSize: '0.85rem' }}>Eingabe: <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{inputString}</code></div>
+        </div>
+      );
+    }
     default:
       return null;
   }

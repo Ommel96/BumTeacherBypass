@@ -78,11 +78,64 @@ export interface EncodingExerciseProps {
   fieldId: string;
 }
 
+export interface HuffmanTreeProps {
+  fieldId: string;
+  initialString?: string;
+  frequencyTable?: Record<string, number>;
+  solution?: HuffmanTreeNode;
+}
+
+export interface HuffmanTreeNode {
+  char?: string;
+  freq: number;
+  left?: HuffmanTreeNode;
+  right?: HuffmanTreeNode;
+  code?: string;
+}
+
+export interface LZ77SimulatorProps {
+  fieldId: string;
+  inputString: string;
+  bufferSize: number;
+  lookaheadSize: number;
+  solution?: LZ77Triple[];
+  stepByStep?: boolean;
+}
+
+export interface LZ77Triple {
+  offset: number;
+  length: number;
+  nextChar: string;
+}
+
+export interface CompressionTableProps {
+  fieldId: string;
+  algorithm: 'lz77' | 'lz78' | 'lzw';
+  direction: 'encode' | 'decode';
+  inputString: string;
+  bufferSize?: number;
+  lookaheadSize?: number;
+  solution?: CompressionTableRow[];
+}
+
+export interface CompressionTableRow {
+  step: number;
+  buffer?: string;
+  lookahead?: string;
+  output?: string;
+  dictionaryEntry?: string;
+  [key: string]: string | number | undefined;
+}
+
 export type InteractiveComponent = 
   | { type: 'pixelGrid'; props: PixelGridProps }
   | { type: 'bitVisualizer'; props: BitVisualizerProps }
   | { type: 'truthTable'; props: TruthTableProps }
-  | { type: 'encodingExercise'; props: EncodingExerciseProps };
+  | { type: 'encodingExercise'; props: EncodingExerciseProps }
+  | { type: 'huffmanTreeBuilder'; props: HuffmanTreeProps }
+  | { type: 'lz77Simulator'; props: LZ77SimulatorProps }
+  | { type: 'lz78Simulator'; props: CompressionTableProps }
+  | { type: 'compressionTable'; props: CompressionTableProps };
 
 export interface WorksheetSection {
   type: 'section' | 'story' | 'info' | 'example' | 'interactive';
@@ -103,6 +156,23 @@ export interface WorksheetData {
   label?: string;
   subtitle?: string;
   sections: WorksheetSection[];
+}
+
+export function normalizeWorksheetData(data: WorksheetData): WorksheetData {
+  const sections = data.sections.map(section => {
+    let s = { ...section };
+    if (s.type === 'interactive' && !s.interactive) {
+      s = { ...s, type: 'section' as const };
+    }
+    if (typeof s.content !== 'string') {
+      s = { ...s, content: '' };
+    }
+    if (!s.fields) {
+      s = { ...s, fields: [] };
+    }
+    return s;
+  });
+  return { ...data, sections };
 }
 
 export function validateWorksheetData(data: unknown): { valid: boolean; errors: string[] } {
@@ -129,15 +199,16 @@ export function validateWorksheetData(data: unknown): { valid: boolean; errors: 
       errors.push(`Section ${i}: invalid type "${s.type}"`);
     }
     if (typeof s.content !== 'string') {
-      errors.push(`Section ${i}: missing content`);
+      if (s.type === 'interactive') {
+        (d.sections as Record<string, unknown>[])[i] = { ...s, content: '' };
+      } else {
+        errors.push(`Section ${i}: missing content`);
+      }
     }
     if (s.type === 'section' && !s.title) {
       errors.push(`Section ${i}: section type requires title`);
     }
-    if (s.type === 'interactive' && !s.interactive) {
-      errors.push(`Section ${i}: interactive type requires interactive property`);
-    }
-    if (s.interactive && typeof s.interactive === 'object' && !['pixelGrid', 'bitVisualizer', 'truthTable', 'encodingExercise'].includes((s.interactive as Record<string, unknown>).type as string)) {
+    if (s.interactive && typeof s.interactive === 'object' && !['pixelGrid', 'bitVisualizer', 'truthTable', 'encodingExercise', 'huffmanTreeBuilder', 'lz77Simulator', 'lz78Simulator', 'compressionTable'].includes((s.interactive as Record<string, unknown>).type as string)) {
       errors.push(`Section ${i}: invalid interactive type "${(s.interactive as Record<string, unknown>).type}"`);
     }
     if (s.fields && !Array.isArray(s.fields)) {

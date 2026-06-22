@@ -1,8 +1,9 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { getPage, updatePageContent, updatePageTitle, updatePageWorksheetData, getPagesByDocument } from '@/lib/document-store';
+import { getPage, updatePageContent, updatePageTitle, updatePageWorksheetData, getPagesByDocument, getDocument } from '@/lib/document-store';
 import { regeneratePage } from '@/lib/openai-processor';
 import { getProviderConfigForRole, getProviderConfig } from '@/lib/providers-store';
+import { listCompendiumEntries } from '@/lib/compendium-store';
 
 export async function GET(
   request: NextRequest,
@@ -59,7 +60,17 @@ export async function POST(
 
     const providerConfig = getProviderConfigForRole('default');
     const allPages = getPagesByDocument(page.document_id);
-    const result = await regeneratePage(page.raw_text, page.page_number, allPages.length, providerConfig);
+
+    let compendiumEntries: Array<{ id: string; title: string; keywords: string }> = [];
+    try {
+      const doc = getDocument(page.document_id);
+      if (doc?.module_number || doc?.topic) {
+        const entries = listCompendiumEntries(doc.module_number, doc.topic);
+        compendiumEntries = entries.map(e => ({ id: e.id, title: e.title, keywords: e.keywords }));
+      }
+    } catch {}
+
+    const result = await regeneratePage(page.raw_text, page.page_number, allPages.length, providerConfig, undefined, compendiumEntries);
 
     updatePageContent(params.id, result.content);
     updatePageTitle(params.id, result.title);

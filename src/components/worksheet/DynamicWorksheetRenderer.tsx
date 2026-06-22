@@ -5,7 +5,7 @@ import React from 'react';
 import { WorksheetProvider, useWorksheet } from './WorksheetProvider';
 import { Breadcrumb, Section, Story, InputField, TableInput, GivenCell, LabelCell, CheckButton, ResetButton, ButtonGroup, Feedback, HintToggle, HintContent, InfoNote, ExampleCalc, PageHeader } from './WorksheetComponents';
 import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, WorksheetCheckGroup, WorksheetHint, CompendiumRef, InteractiveComponent } from '@/lib/worksheet-schema';
-import { PixelGrid, BitVisualizer, TruthTableBuilder, EncodingExercise } from './InteractiveComponents';
+import { PixelGrid, BitVisualizer, TruthTableBuilder, EncodingExercise, HuffmanTreeBuilder, LZ77Simulator, LZ78Simulator, CompressionTable } from './InteractiveComponents';
 
 interface MatchResult {
   type: 'bold' | 'code' | 'linebreak';
@@ -177,6 +177,14 @@ function renderInteractiveComponent(interactive: InteractiveComponent) {
       return <TruthTableBuilder key={interactive.props.fieldId} props={interactive.props} />;
     case 'encodingExercise':
       return <EncodingExercise key={interactive.props.fieldId} props={interactive.props} />;
+    case 'huffmanTreeBuilder':
+      return <HuffmanTreeBuilder key={interactive.props.fieldId} props={interactive.props} />;
+    case 'lz77Simulator':
+      return <LZ77Simulator key={interactive.props.fieldId} props={interactive.props} />;
+    case 'lz78Simulator':
+      return <LZ78Simulator key={interactive.props.fieldId} props={interactive.props} />;
+    case 'compressionTable':
+      return <CompressionTable key={interactive.props.fieldId} props={interactive.props} />;
     default:
       return null;
   }

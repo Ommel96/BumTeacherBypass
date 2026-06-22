@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { insertPage, updateDocumentStatus } from './document-store';
 import { AIProvider, type ProviderConfig } from './ai-provider';
-import { getResolvedProviderConfig } from './settings-store';
+import { getResolvedProviderConfig, getSettings } from './settings-store';
+import { getProviderConfigForRole } from './providers-store';
 import type { WorksheetData, WorksheetField, WorksheetSection, WorksheetCheckGroup } from './worksheet-schema';
-import { validateWorksheetData } from './worksheet-schema';
+import { validateWorksheetData, normalizeWorksheetData } from './worksheet-schema';
+import { listCompendiumEntries } from './compendium-store';
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\n/g, '<br>');
@@ -55,16 +57,21 @@ function ensureCheckGroups(data: WorksheetData): WorksheetData {
 export async function processDocumentPages(
   documentId: string,
   pages: string[],
-  providerConfig?: ProviderConfig
+  providerConfig?: ProviderConfig,
+  enrichmentOverride?: ProviderConfig,
+  compendiumEntries?: Array<{ id: string; title: string; keywords: string }>
 ): Promise<void> {
-  const config = providerConfig || getResolvedProviderConfig();
+  const settings = getSettings();
+  const structureConfig = providerConfig || getProviderConfigForRole('default');
+  const enrichmentConfig = enrichmentOverride
+    || (settings.enrichmentProviderId ? getProviderConfigForRole('enrichment') : undefined);
 
-  if (!config.apiKey && config.provider !== 'ollama' && config.provider !== 'openai-compatible') {
+  if (!structureConfig.apiKey && structureConfig.provider !== 'ollama' && structureConfig.provider !== 'openai-compatible') {
     await updateDocumentStatus(documentId, 'error');
     throw new Error('API key required. Configure a provider in Settings.');
   }
 
-  const provider = new AIProvider(config);
+  const provider = new AIProvider(structureConfig, enrichmentConfig);
   await updateDocumentStatus(documentId, 'processing');
 
   try {
@@ -72,17 +79,22 @@ export async function processDocumentPages(
       const rawText = pages[i];
 
       try {
-        const result = await provider.processPage(rawText, i + 1, pages.length);
+        const result = await provider.processPage(rawText, i + 1, pages.length, compendiumEntries);
 
         let worksheetData: WorksheetData | null = null;
         const raw = result as unknown as Record<string, unknown>;
         if (raw.title && Array.isArray(raw.sections)) {
-          const validation = validateWorksheetData(raw);
+          const normalized = normalizeWorksheetData(raw as unknown as WorksheetData);
+          const validation = validateWorksheetData(normalized);
+          const sectionTypes = normalized.sections.map((s: WorksheetSection) => s.type);
+          const checkGroupCounts = normalized.sections.map((s: WorksheetSection) => (s as WorksheetSection & { checkGroups?: unknown[] }).checkGroups?.length || 0);
+          const interactiveCount = normalized.sections.filter((s: WorksheetSection) => s.type === 'interactive').length;
           if (validation.valid) {
-            worksheetData = ensureCheckGroups(raw as unknown as WorksheetData);
-            console.log(`Page ${i + 1}: Successfully generated worksheet with ${(raw.sections as unknown[]).length} sections (2-pass: structure + enrichment)`);
+            worksheetData = ensureCheckGroups(normalized);
+            console.log(`Page ${i + 1}: Successfully generated worksheet with ${normalized.sections.length} sections (types: ${sectionTypes.join(', ')}, checkGroups per section: ${checkGroupCounts.join(', ')}, interactive: ${interactiveCount})`);
           } else {
             console.warn(`Page ${i + 1}: AI response had title/sections but failed validation:`, validation.errors);
+            worksheetData = ensureCheckGroups(normalized);
           }
         } else {
           console.warn(`Page ${i + 1}: AI response missing title or sections. Got keys: ${Object.keys(raw).join(', ')}`);
@@ -125,20 +137,27 @@ export async function regeneratePage(
   rawText: string,
   pageNumber: number,
   totalPages: number,
-  providerConfig?: ProviderConfig
+  providerConfig?: ProviderConfig,
+  enrichmentOverride?: ProviderConfig,
+  compendiumEntries?: Array<{ id: string; title: string; keywords: string }>
 ): Promise<{ title: string; content: string; worksheet_data: string | null }> {
-  const config = providerConfig || getResolvedProviderConfig();
-  const provider = new AIProvider(config);
-  const result = await provider.processPage(rawText, pageNumber, totalPages);
+  const settings = getSettings();
+  const structureConfig = providerConfig || getProviderConfigForRole('default');
+  const enrichmentConfig = enrichmentOverride
+    || (settings.enrichmentProviderId ? getProviderConfigForRole('enrichment') : undefined);
+  const provider = new AIProvider(structureConfig, enrichmentConfig);
+  const result = await provider.processPage(rawText, pageNumber, totalPages, compendiumEntries);
 
   let worksheetData: WorksheetData | null = null;
   const raw = result as unknown as Record<string, unknown>;
   if (raw.title && Array.isArray(raw.sections)) {
-    const validation = validateWorksheetData(raw);
+    const normalized = normalizeWorksheetData(raw as unknown as WorksheetData);
+    const validation = validateWorksheetData(normalized);
     if (validation.valid) {
-      worksheetData = raw as unknown as WorksheetData;
+      worksheetData = ensureCheckGroups(normalized);
     } else {
       console.warn('Regenerate: AI response failed validation:', validation.errors);
+      worksheetData = ensureCheckGroups(normalized);
     }
   }
 

@@ -5,6 +5,8 @@ export interface AppSettings {
   defaultProviderId: string;
   lightweightProviderId: string;
   compendiumProviderId: string;
+  structureProviderId: string;
+  enrichmentProviderId: string;
   autoClassify: boolean;
 }
 
@@ -12,6 +14,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultProviderId: '',
   lightweightProviderId: '',
   compendiumProviderId: '',
+  structureProviderId: '',
+  enrichmentProviderId: '',
   autoClassify: true,
 };
 
@@ -36,6 +40,8 @@ export function getSettings(): AppSettings {
     defaultProviderId,
     lightweightProviderId: map.lightweightProviderId || '',
     compendiumProviderId: map.compendiumProviderId || '',
+    structureProviderId: map.structureProviderId || '',
+    enrichmentProviderId: map.enrichmentProviderId || '',
     autoClassify: map.autoClassify === 'false' ? false : true,
   };
 }
@@ -57,6 +63,8 @@ export function saveSettings(settings: Partial<AppSettings>): void {
   if (settings.defaultProviderId !== undefined) entries.push(['defaultProviderId', settings.defaultProviderId]);
   if (settings.lightweightProviderId !== undefined) entries.push(['lightweightProviderId', settings.lightweightProviderId]);
   if (settings.compendiumProviderId !== undefined) entries.push(['compendiumProviderId', settings.compendiumProviderId]);
+  if (settings.structureProviderId !== undefined) entries.push(['structureProviderId', settings.structureProviderId]);
+  if (settings.enrichmentProviderId !== undefined) entries.push(['enrichmentProviderId', settings.enrichmentProviderId]);
   if (settings.autoClassify !== undefined) entries.push(['autoClassify', String(settings.autoClassify)]);
 
   if (entries.length > 0) {

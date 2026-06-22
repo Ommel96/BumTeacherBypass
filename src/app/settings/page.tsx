@@ -21,6 +21,8 @@ interface AppSettings {
   defaultProviderId: string;
   lightweightProviderId: string;
   compendiumProviderId: string;
+  structureProviderId: string;
+  enrichmentProviderId: string;
   autoClassify: boolean;
 }
 
@@ -224,7 +226,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleRoleChange = async (role: 'defaultProviderId' | 'lightweightProviderId' | 'compendiumProviderId', value: string) => {
+  const handleRoleChange = async (role: 'defaultProviderId' | 'lightweightProviderId' | 'compendiumProviderId' | 'structureProviderId' | 'enrichmentProviderId', value: string) => {
     await fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -404,6 +406,22 @@ export default function SettingsPage() {
             value={settings.defaultProviderId}
             providers={providers}
             onChange={(v) => handleRoleChange('defaultProviderId', v)}
+          />
+          <RoleSelect
+            label="Struktur-Erstellung (Pass 1)"
+            description="Anbieter und Modell für die Erstellung der Arbeitsblattstruktur (leer = Standard)"
+            value={settings.structureProviderId}
+            providers={providers}
+            onChange={(v) => handleRoleChange('structureProviderId', v)}
+            allowSameAsDefault
+          />
+          <RoleSelect
+            label="Anreicherung (Pass 2)"
+            description="Anbieter und Modell für Lösungen, interaktive Komponenten und Hinweise (leer = Standard)"
+            value={settings.enrichmentProviderId}
+            providers={providers}
+            onChange={(v) => handleRoleChange('enrichmentProviderId', v)}
+            allowSameAsDefault
           />
           <RoleSelect
             label="Automatische Kategorisierung"

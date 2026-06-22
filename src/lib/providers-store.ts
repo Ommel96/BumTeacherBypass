@@ -102,11 +102,18 @@ export function getProviderConfig(providerId: string): ProviderConfig {
   };
 }
 
-export type ProviderRole = 'default' | 'lightweight' | 'compendium';
+export type ProviderRole = 'default' | 'lightweight' | 'compendium' | 'structure' | 'enrichment';
 
 export function getProviderConfigForRole(role: ProviderRole): ProviderConfig {
   const db = getDb();
-  const settingKey = role === 'default' ? 'defaultProviderId' : role === 'lightweight' ? 'lightweightProviderId' : 'compendiumProviderId';
+  const settingKeyMap: Record<ProviderRole, string> = {
+    default: 'defaultProviderId',
+    lightweight: 'lightweightProviderId',
+    compendium: 'compendiumProviderId',
+    structure: 'structureProviderId',
+    enrichment: 'enrichmentProviderId',
+  };
+  const settingKey = settingKeyMap[role];
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(settingKey) as { value: string } | undefined;
 
   if (role !== 'default' && (!row || !row.value)) {
