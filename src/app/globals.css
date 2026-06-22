@@ -862,6 +862,8 @@ body {
   transition: all 0.15s ease;
   padding: 0;
   background: var(--card);
+  touch-action: none;
+  user-select: none;
 }
 
 .pixel-cell:hover {
@@ -876,6 +878,27 @@ body {
 
 .pixel-off {
   background: var(--card);
+}
+
+.pixel-drag-counter {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  background: var(--accent);
+  color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transform: translate(-50%, -50%);
+  transition: opacity 0.15s ease;
 }
 
 .pixel-encoding-section {
@@ -1194,6 +1217,309 @@ body {
 
 .encoding-feedback.error {
   color: var(--error);
+}
+
+/* ── Interactive: Huffman Tree Builder ── */
+.huffman-tree-container {
+  margin: 1rem 0;
+}
+
+.huffman-freq-table {
+  margin-bottom: 1rem;
+}
+
+.huffman-freq-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.huffman-freq-edit-table {
+  border-collapse: collapse;
+  width: auto;
+}
+
+.huffman-freq-edit-table th {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  text-align: center;
+  min-width: 36px;
+}
+
+.huffman-freq-edit-table td {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.huffman-freq-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface);
+  font-size: 0.75rem;
+}
+
+.huffman-freq-value {
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.huffman-code-input {
+  width: 80px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  border: 1.5px dashed var(--border);
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+  background: transparent;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.huffman-code-input:focus {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--input-bg);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.huffman-solution-section {
+  margin-top: 0.5rem;
+}
+
+/* ── Interactive: LZ77 Simulator ── */
+.lz77-simulator-container {
+  margin: 1rem 0;
+}
+
+.lz77-input-display {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.lz77-input-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lz77-input-chars {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.lz77-char {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+}
+
+.lz77-char-processed {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.lz77-char-buffer {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.lz77-char-lookahead {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+.lz77-steps-section {
+  margin-top: 0.75rem;
+}
+
+.lz77-steps-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lz77-steps-table {
+  border-collapse: collapse;
+}
+
+.lz77-steps-table th {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.lz77-steps-table td {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.lz77-step-num {
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.lz77-step-active {
+  background: var(--accent-light);
+}
+
+.lz77-step-buffer {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #1e40af;
+  background: #dbeafe;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+.lz77-step-lookahead {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+.lz77-step-output {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.lz77-step-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.lz77-step-indicator {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.lz77-result-table {
+  margin-top: 0.75rem;
+}
+
+/* ── Interactive: Compression Table (LZ78/LZW) ── */
+.compression-table-container {
+  margin: 1rem 0;
+}
+
+.compression-algorithm-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  border: 1px solid var(--accent);
+  margin-bottom: 0.75rem;
+}
+
+.compression-input-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 0.75rem;
+}
+
+.compression-input-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.compression-input-string {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  background: var(--card);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.compression-edit-table {
+  border-collapse: collapse;
+}
+
+.compression-edit-table th {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.compression-edit-table td {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.compression-step-num {
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }
 
 /* ── Print styles ── */

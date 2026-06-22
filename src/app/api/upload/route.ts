@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     const moduleNumber = (formData.get('module_number') as string) || '';
     const topic = (formData.get('topic') as string) || '';
     const providerModelParam = (formData.get('providerModel') as string) || '';
+    const enrichmentModelParam = (formData.get('enrichmentModel') as string) || '';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -42,6 +43,13 @@ export async function POST(request: NextRequest) {
       if (modelOverride) providerConfig.model = modelOverride;
     } else {
       providerConfig = getProviderConfigForRole('default');
+    }
+
+    let enrichmentConfig: import('@/lib/ai-provider').ProviderConfig | undefined;
+    if (enrichmentModelParam) {
+      const [pid, modelOverride] = enrichmentModelParam.includes(':') ? enrichmentModelParam.split(':') : [enrichmentModelParam, undefined];
+      enrichmentConfig = getProviderConfig(pid);
+      if (modelOverride) enrichmentConfig.model = modelOverride;
     }
 
     if (!providerConfig.apiKey && providerConfig.provider !== 'ollama' && providerConfig.provider !== 'openai-compatible') {
@@ -94,47 +102,51 @@ export async function POST(request: NextRequest) {
         }
 
         if (textPages.length > 0 && !(textPages.length === 1 && textPages[0].trim() === '')) {
-          await processDocumentPages(id, textPages, providerConfig);
+          const doc = getDocument(id);
+          let compendiumEntries: Array<{ id: string; title: string; keywords: string }> = [];
 
-          try {
-            const doc = getDocument(id);
-            if (doc?.module_number || doc?.topic) {
-              const pages = getPagesByDocument(id);
-              const rawText = pages.map(p => p.raw_text || p.content || '').filter(Boolean).join('\n');
-              if (rawText.trim()) {
-                const existingEntries = listCompendiumEntries(doc.module_number, doc.topic).map(e => ({
-                  title: e.title,
-                  content: e.content,
-                  keywords: e.keywords,
-                }));
+          if (doc?.module_number || doc?.topic) {
+            try {
+              const existingEntries = listCompendiumEntries(doc.module_number, doc.topic).map(e => ({
+                title: e.title,
+                content: e.content,
+                keywords: e.keywords,
+              }));
 
-                const keywords = rawText.substring(0, 500).split(/\s+/).filter(w => w.length > 4).slice(0, 5);
-                let webResearch = '';
-                try {
-                  webResearch = await researchTopic(keywords);
-                } catch (e) {
-                  console.error('Web research error:', e);
-                }
-
-                const compendiumConfig = getProviderConfigForRole('compendium');
-                const compendiumProvider = new AIProvider(compendiumConfig);
-                const generated = await compendiumProvider.generateCompendiumEntries(rawText, doc.module_number, doc.topic, existingEntries, webResearch);
-                for (const entry of generated) {
-                  upsertCompendiumEntry({
-                    id: '',
-                    module_number: doc.module_number,
-                    topic: doc.topic,
-                    title: entry.title,
-                    content: entry.content,
-                    keywords: (entry.keywords || []).join(','),
-                    source_doc_ids: id,
-                  });
-                }
+              const keywords = rawText.substring(0, 500).split(/\s+/).filter(w => w.length > 4).slice(0, 5);
+              let webResearch = '';
+              try {
+                webResearch = await researchTopic(keywords);
+              } catch (e) {
+                console.error('Web research error:', e);
               }
+
+              const compendiumConfig = getProviderConfigForRole('compendium');
+              const compendiumProvider = new AIProvider(compendiumConfig);
+              const generated = await compendiumProvider.generateCompendiumEntries(rawText, doc.module_number, doc.topic, existingEntries, webResearch);
+              for (const entry of generated) {
+                upsertCompendiumEntry({
+                  id: '',
+                  module_number: doc.module_number,
+                  topic: doc.topic,
+                  title: entry.title,
+                  content: entry.content,
+                  keywords: (entry.keywords || []).join(','),
+                  source_doc_ids: id,
+                });
+              }
+
+              const allEntries = listCompendiumEntries(doc.module_number, doc.topic);
+              compendiumEntries = allEntries.map(e => ({ id: e.id, title: e.title, keywords: e.keywords }));
+              console.log(`Compendium: generated ${generated.length} entries, ${compendiumEntries.length} total available for enrichment`);
+            } catch (e) {
+              console.error('Compendium generation error:', e);
             }
-          } catch (e) {
-            console.error('Compendium generation error:', e);
+          } else {
+            console.log(`Compendium: skipped — no module_number or topic (module=${doc?.module_number}, topic=${doc?.topic})`);
           }
+
+          await processDocumentPages(id, textPages, providerConfig, enrichmentConfig, compendiumEntries);
         } else {
           updateDocumentStatus(id, 'processed');
         }

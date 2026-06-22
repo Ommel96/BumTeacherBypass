@@ -11,6 +11,8 @@ export async function GET() {
       defaultProviderId: settings.defaultProviderId,
       lightweightProviderId: settings.lightweightProviderId,
       compendiumProviderId: settings.compendiumProviderId,
+      structureProviderId: settings.structureProviderId,
+      enrichmentProviderId: settings.enrichmentProviderId,
       autoClassify: settings.autoClassify,
     });
   } catch (error) {
@@ -23,12 +25,14 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { defaultProviderId, lightweightProviderId, compendiumProviderId, autoClassify, testProviderId } = body;
+    const { defaultProviderId, lightweightProviderId, compendiumProviderId, structureProviderId, enrichmentProviderId, autoClassify, testProviderId } = body;
 
     const updates: Record<string, string> = {};
     if (defaultProviderId !== undefined) updates.defaultProviderId = defaultProviderId;
     if (lightweightProviderId !== undefined) updates.lightweightProviderId = lightweightProviderId;
     if (compendiumProviderId !== undefined) updates.compendiumProviderId = compendiumProviderId;
+    if (structureProviderId !== undefined) updates.structureProviderId = structureProviderId;
+    if (enrichmentProviderId !== undefined) updates.enrichmentProviderId = enrichmentProviderId;
     if (autoClassify !== undefined) updates.autoClassify = String(autoClassify);
 
     if (Object.keys(updates).length > 0) {

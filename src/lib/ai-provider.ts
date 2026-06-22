@@ -1,4 +1,6 @@
 export type ProviderType = 'openai' | 'anthropic' | 'ollama' | 'ollama-cloud' | 'openai-compatible';
+import { analyzeTextForToolHints } from './tool-analysis';
+import { saveToolGaps } from './tool-gaps-store';
 
 export interface ProviderConfig {
   provider: ProviderType;
@@ -51,6 +53,13 @@ function extractJSON(text: string): unknown {
     } catch {}
   }
 
+  const greedyFenceMatch = trimmed.match(/```(?:json)?\s*\n([\s\S]*)\n\s*```/);
+  if (greedyFenceMatch && greedyFenceMatch[1] !== fenceMatch?.[1]) {
+    try {
+      return JSON.parse(greedyFenceMatch[1].trim());
+    } catch {}
+  }
+
   const firstBrace = trimmed.indexOf('{');
   const firstBracket = trimmed.indexOf('[');
   let startIdx = -1;
@@ -64,18 +73,41 @@ function extractJSON(text: string): unknown {
     startIdx = Math.min(firstBrace, firstBracket);
   }
 
-  if (trimmed[startIdx] === '{') {
-    let depth = 0;
-    for (let i = startIdx; i < trimmed.length; i++) {
-      if (trimmed[i] === '{') depth++;
-      else if (trimmed[i] === '}') depth--;
-      if (depth === 0) {
-        try {
-          return JSON.parse(trimmed.substring(startIdx, i + 1));
-        } catch (e) {
-          console.error('extractJSON: found braces but JSON.parse failed, first 500 chars:', trimmed.substring(startIdx, startIdx + 500));
-          break;
-        }
+  const openChar = trimmed[startIdx];
+  const closeChar = openChar === '{' ? '}' : ']';
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = startIdx; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+
+    if (escape) {
+      escape = false;
+      continue;
+    }
+
+    if (ch === '\\' && inString) {
+      escape = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (ch === openChar) depth++;
+    else if (ch === closeChar) depth--;
+
+    if (depth === 0) {
+      try {
+        return JSON.parse(trimmed.substring(startIdx, i + 1));
+      } catch (e) {
+        console.error('extractJSON: found brackets but JSON.parse failed, first 500 chars:', trimmed.substring(startIdx, startIdx + 500));
+        break;
       }
     }
   }
@@ -85,9 +117,11 @@ function extractJSON(text: string): unknown {
 
 export class AIProvider {
   private config: ProviderConfig;
+  private enrichmentConfig?: ProviderConfig;
 
-  constructor(config: ProviderConfig) {
+  constructor(config: ProviderConfig, enrichmentConfig?: ProviderConfig) {
     this.config = config;
+    this.enrichmentConfig = enrichmentConfig;
   }
 
   private buildStructurePrompt(): string {
@@ -129,10 +163,18 @@ RULES:
 9. Do NOT add "interactive" type sections — use "section" with text fields for now`;
   }
 
-  private buildEnrichmentPrompt(structuredWorksheet: string): string {
+  private buildEnrichmentPrompt(structuredWorksheet: string, detectedTools?: string[], compendiumEntries?: Array<{ id: string; title: string; keywords: string }>): string {
+    const toolsHint = detectedTools && detectedTools.length > 0
+      ? `\n\nDETECTED RELEVANT TOOLS (the document content matches these interactive components — use them where appropriate):\n${detectedTools.map(t => `- ${t}`).join('\n')}`
+      : '';
+
+    const compendiumHint = compendiumEntries && compendiumEntries.length > 0
+      ? `\n\nAVAILABLE COMPENDIUM ENTRIES (link to these in compendiumRefs using their id as "ref" and their title as "label"):\n${compendiumEntries.map(e => `- ref: "${e.id}", title: "${e.title}", keywords: ${e.keywords}`).join('\n')}`
+      : '';
+
     return `You are enriching an educational worksheet with solutions and interactive components. The worksheet structure has already been created in Pass 1. Your job in Pass 2 is to ADD:
 1. Expected answers via checkGroups for every "text" field
-2. Interactive components (pixelGrid, bitVisualizer, truthTable, encodingExercise) where the content calls for them
+2. Interactive components (pixelGrid, bitVisualizer, truthTable, encodingExercise, huffmanTreeBuilder, lz77Simulator, lz78Simulator, compressionTable) where the content calls for them
 3. Helpful hints
 4. Compendium reference links
 
@@ -140,6 +182,8 @@ RESPOND WITH ONLY THE COMPLETE JSON OBJECT (the full worksheet with your additio
 
 INPUT WORKSHEET (Pass 1 output):
 ${structuredWorksheet}
+${toolsHint}
+${compendiumHint}
 
 YOUR TASK — Add these to the worksheet:
 
@@ -160,40 +204,78 @@ B) INTERACTIVE COMPONENTS — When the content involves these topics, REPLACE te
   Then add checkGroups for the truth table outputs (fieldId format: "tt1_r0", "tt1_r1", etc.)
 - Format conversion (binary↔decimal↔hex, ASCII, Morse, RLE) → add "interactive" section with encodingExercise:
   {"type": "encodingExercise", "props": {"encodingType": "binary|hex|ascii|rle|morse", "fromFormat": "Dezimal", "toFormat": "Binär", "examples": [...], "exercises": [...], "fieldId": "enc1"}}
+- Huffman coding, frequency tables, binary trees → add "interactive" section with huffmanTreeBuilder:
+  {"type": "huffmanTreeBuilder", "props": {"fieldId": "ht1", "initialString": "SCHAFFHAUSEN", "frequencyTable": {"S": 2, "C": 1, ...}, "solution": {"char": undefined, "freq": 12, "left": {...}, "right": {...}, "code": ""}}}
+  If solution is omitted, students fill in codes manually. frequencyTable is auto-generated from initialString if omitted.
+- LZ77 compression, sliding window, buffer/lookahead → add "interactive" section with lz77Simulator:
+  {"type": "lz77Simulator", "props": {"fieldId": "lz1", "inputString": "MUSTERRABARBAR", "bufferSize": 6, "lookaheadSize": 4, "stepByStep": true}}
+- LZ78 compression, dictionary encoding → add "interactive" section with lz78Simulator:
+  {"type": "lz78Simulator", "props": {"fieldId": "lz2", "algorithm": "lz78", "direction": "encode", "inputString": "RADLADERMUSTER", "solution": [{"step": 1, "dictionaryEntry": "R", "output": "(0,R)"}, ...]}}
+- LZW compression, dictionary tables → add "interactive" section with compressionTable:
+  {"type": "compressionTable", "props": {"fieldId": "ct1", "algorithm": "lzw", "direction": "encode", "inputString": "ABABABA", "solution": [{"step": 1, "dictionaryEntry": "AB", "output": "65"}, ...]}}
+  compressionTable can also be used for lz77/lz78 when you want a fillable table format instead of step-by-step simulator
 
 C) HINTS — Add hints that guide without giving away the answer:
 {"id": "hint1", "label": "optional button text", "content": "hint text in German"}
 
-D) COMPENDIUM REFS — Link to reference topics:
-{"ref": "lowercase-slug", "label": "Short German label"}
+D) COMPENDIUM REFS — Link to reference topics from the compendium:
+{"ref": "compendium-entry-id", "label": "Short German label"}
+Use the EXACT "ref" id from the AVAILABLE COMPENDIUM ENTRIES list above. Place compendiumRefs in sections where the content relates to the referenced topic. Every section that discusses a topic covered by a compendium entry MUST include a compendiumRefs array.
 
 IMPORTANT:
 - Change section type from "section" to "interactive" when adding an interactive component
 - Keep ALL existing fields, content, and structure from Pass 1
 - Every "text" field MUST have a matching check in a checkGroup
 - "textarea" fields should NOT have checkGroups
-- Return the COMPLETE worksheet JSON, not just the additions`;
+- Return the COMPLETE worksheet JSON, not just the additions
+
+E) TOOL GAPS — If you encounter content that would benefit from an interactive component NOT listed above (pixelGrid, bitVisualizer, truthTable, encodingExercise), describe it. After the worksheet JSON, add a "toolGaps" array:
+"toolGaps": [
+  {
+    "name": "descriptive English name for the missing tool (e.g. 'dragAndDrop', 'numberLine', 'circuitBuilder')",
+    "reason": "Why this tool would help (in German)",
+    "contentExample": "Brief example of the content that needs it",
+    "suggestedProps": "What props/config the tool would need"
+  }
+]
+Only include toolGaps if you genuinely need a component that does not exist. Do NOT list the 4 existing tools as gaps.`;
   }
 
-  async processPage(rawText: string, pageNumber: number, totalPages: number): Promise<ProviderResponse> {
+  async processPage(rawText: string, pageNumber: number, totalPages: number, compendiumEntries?: Array<{ id: string; title: string; keywords: string }>): Promise<ProviderResponse> {
     const structureResult = await this.callProvider(this.buildStructurePrompt(), `Page ${pageNumber} of ${totalPages}:\n\n${rawText}`);
     const structured = extractJSON(structureResult) as ProviderResponse;
+    console.log(`Pass 1 (structure): ${structured?.sections?.length || 0} sections, title: "${structured?.title || 'N/A'}"`);
 
     const structuredStr = JSON.stringify(structured, null, 2);
-    const enrichmentPrompt = this.buildEnrichmentPrompt(structuredStr);
+    const detectedTools = analyzeTextForToolHints(rawText);
+    if (detectedTools.length > 0) {
+      console.log(`Detected tools for page ${pageNumber}: ${detectedTools.map(t => t.type).join(', ')}`);
+    }
+    const enrichmentPrompt = this.buildEnrichmentPrompt(structuredStr, detectedTools.map(t => t.type), compendiumEntries);
+    const enrichmentCfg = this.enrichmentConfig || this.config;
 
     let enrichedResult: string;
     try {
-      enrichedResult = await this.callProvider(enrichmentPrompt, 'Add solutions, interactive components, hints, and compendium refs to this worksheet.');
+      enrichedResult = await this.callProviderWithConfig(enrichmentCfg, enrichmentPrompt, 'Add solutions, interactive components, hints, and compendium refs to this worksheet.');
     } catch (err) {
       console.error('Pass 2 (enrichment) failed, using Pass 1 result:', err);
       return structured;
     }
 
     try {
-      const enriched = extractJSON(enrichedResult) as ProviderResponse;
+      const enriched = extractJSON(enrichedResult) as ProviderResponse & { toolGaps?: Array<{ name: string; reason: string; contentExample: string; suggestedProps: string }> };
+      const enrichedSections = enriched?.sections as Array<Record<string, unknown>> | undefined;
+      console.log(`Pass 2 (enrichment): ${enrichedSections?.length || 0} sections, types: ${(enrichedSections || []).map(s => s.type).join(', ')}, checkGroups: ${(enrichedSections || []).map(s => Array.isArray(s.checkGroups) ? (s.checkGroups as unknown[]).length : 0).join(', ')}`);
       if (enriched && enriched.title && Array.isArray(enriched.sections)) {
-        return enriched;
+        if (enriched.toolGaps && Array.isArray(enriched.toolGaps) && enriched.toolGaps.length > 0) {
+          saveToolGaps(enriched.toolGaps.map(g => ({
+            ...g,
+            detectedAt: new Date().toISOString(),
+          })));
+          console.log(`Detected ${enriched.toolGaps.length} tool gap(s): ${enriched.toolGaps.map(g => g.name).join(', ')}`);
+        }
+        const { toolGaps, ...worksheetData } = enriched;
+        return worksheetData;
       }
     } catch (err) {
       console.error('Pass 2 (enrichment) JSON parse failed, using Pass 1 result:', err);
@@ -203,27 +285,31 @@ IMPORTANT:
   }
 
   private async callProvider(systemPrompt: string, userMessage: string): Promise<string> {
-    switch (this.config.provider) {
+    return this.callProviderWithConfig(this.config, systemPrompt, userMessage);
+  }
+
+  private async callProviderWithConfig(config: ProviderConfig, systemPrompt: string, userMessage: string): Promise<string> {
+    switch (config.provider) {
       case 'openai':
-        return this.callOpenAI(systemPrompt, userMessage);
+        return this.callOpenAI(config, systemPrompt, userMessage);
       case 'anthropic':
-        return this.callAnthropic(systemPrompt, userMessage);
+        return this.callAnthropic(config, systemPrompt, userMessage);
       case 'ollama':
-        return this.callOllama(systemPrompt, userMessage);
+        return this.callOllama(config, systemPrompt, userMessage);
       case 'ollama-cloud':
-        return this.callOllamaCloud(systemPrompt, userMessage);
+        return this.callOllamaCloud(config, systemPrompt, userMessage);
       case 'openai-compatible':
-        return this.callOpenAICompatible(systemPrompt, userMessage);
+        return this.callOpenAICompatible(config, systemPrompt, userMessage);
       default:
-        throw new Error(`Unknown provider: ${this.config.provider}`);
+        throw new Error(`Unknown provider: ${config.provider}`);
     }
   }
 
-  private async callOpenAI(systemPrompt: string, userMessage: string): Promise<string> {
+  private async callOpenAI(config: ProviderConfig, systemPrompt: string, userMessage: string): Promise<string> {
     const OpenAI = await import('openai');
-    const client = new OpenAI.default({ apiKey: this.config.apiKey, baseURL: this.config.baseUrl });
+    const client = new OpenAI.default({ apiKey: config.apiKey, baseURL: config.baseUrl });
     const completion = await client.chat.completions.create({
-      model: this.config.model,
+      model: config.model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
@@ -234,17 +320,17 @@ IMPORTANT:
     return completion.choices[0]?.message?.content || '{}';
   }
 
-  private async callAnthropic(systemPrompt: string, userMessage: string): Promise<string> {
-    const response = await fetch(`${this.config.baseUrl.replace(/\/v1$/, '')}/v1/messages`, {
+  private async callAnthropic(config: ProviderConfig, systemPrompt: string, userMessage: string): Promise<string> {
+    const response = await fetch(`${config.baseUrl.replace(/\/v1$/, '')}/v1/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': this.config.apiKey,
+        'x-api-key': config.apiKey,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: this.config.model,
+        model: config.model,
         max_tokens: 8192,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
@@ -261,12 +347,12 @@ IMPORTANT:
     return data.content?.[0]?.text || '{}';
   }
 
-  private async callOllama(systemPrompt: string, userMessage: string): Promise<string> {
-    const response = await fetch(`${this.config.baseUrl}/api/chat`, {
+  private async callOllama(config: ProviderConfig, systemPrompt: string, userMessage: string): Promise<string> {
+    const response = await fetch(`${config.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: this.config.model,
+        model: config.model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
@@ -286,17 +372,17 @@ IMPORTANT:
     return data.message?.content || '{}';
   }
 
-  private async callOllamaCloud(systemPrompt: string, userMessage: string): Promise<string> {
+  private async callOllamaCloud(config: ProviderConfig, systemPrompt: string, userMessage: string): Promise<string> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (this.config.apiKey) {
-      headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+    if (config.apiKey) {
+      headers['Authorization'] = `Bearer ${config.apiKey}`;
     }
 
-    const response = await fetch(`${this.config.baseUrl}/api/chat`, {
+    const response = await fetch(`${config.baseUrl}/api/chat`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: this.config.model,
+        model: config.model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
@@ -358,11 +444,11 @@ IMPORTANT:
     return fullContent || '{}';
   }
 
-  private async callOpenAICompatible(systemPrompt: string, userMessage: string): Promise<string> {
+  private async callOpenAICompatible(config: ProviderConfig, systemPrompt: string, userMessage: string): Promise<string> {
     const OpenAI = await import('openai');
     const client = new OpenAI.default({
-      apiKey: this.config.apiKey || 'not-needed',
-      baseURL: this.config.baseUrl,
+      apiKey: config.apiKey || 'not-needed',
+      baseURL: config.baseUrl,
     });
 
     const messages = [
@@ -373,14 +459,14 @@ IMPORTANT:
     let completion;
     try {
       completion = await client.chat.completions.create({
-        model: this.config.model,
+        model: config.model,
         messages,
         response_format: { type: 'json_object' },
         temperature: 0.2,
       });
     } catch {
       completion = await client.chat.completions.create({
-        model: this.config.model,
+        model: config.model,
         messages,
         temperature: 0.2,
       });
@@ -581,7 +667,7 @@ ${rawText.substring(0, 4000)}`;
         case 'openai': {
           const OpenAI = await import('openai');
           const client = new OpenAI.default({ apiKey: this.config.apiKey, baseURL: this.config.baseUrl });
-          const completion = await client.chat.completions.create({ model: this.config.model, messages, response_format: { type: 'json_object' }, temperature: 0.2 });
+          const completion = await client.chat.completions.create({ model: this.config.model, messages, response_format: { type: 'json_object' }, temperature: 0.2, max_tokens: 8192 });
           responseText = completion.choices[0]?.message?.content || '[]';
           break;
         }
@@ -589,7 +675,7 @@ ${rawText.substring(0, 4000)}`;
           const res = await fetch(`${this.config.baseUrl.replace(/\/v1$/, '')}/v1/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': this.config.apiKey, 'anthropic-version': '2023-06-01' },
-            body: JSON.stringify({ model: this.config.model, max_tokens: 4096, system: prompt, messages: [{ role: 'user', content: 'Extract knowledge topics from this document and create compendium entries.' }] }),
+            body: JSON.stringify({ model: this.config.model, max_tokens: 8192, system: prompt, messages: [{ role: 'user', content: 'Extract knowledge topics from this document and create compendium entries.' }] }),
             signal: AbortSignal.timeout(120000),
           });
           if (!res.ok) throw new Error(`Anthropic compendium error: ${res.status}`);
@@ -617,9 +703,9 @@ ${rawText.substring(0, 4000)}`;
           const client = new OpenAI.default({ apiKey: this.config.apiKey || 'not-needed', baseURL: this.config.baseUrl });
           let completion;
           try {
-            completion = await client.chat.completions.create({ model: this.config.model, messages, response_format: { type: 'json_object' }, temperature: 0.2 });
+            completion = await client.chat.completions.create({ model: this.config.model, messages, response_format: { type: 'json_object' }, temperature: 0.2, max_tokens: 8192 });
           } catch {
-            completion = await client.chat.completions.create({ model: this.config.model, messages, temperature: 0.2 });
+            completion = await client.chat.completions.create({ model: this.config.model, messages, temperature: 0.2, max_tokens: 8192 });
           }
           responseText = completion.choices[0]?.message?.content || '[]';
           break;
@@ -627,12 +713,18 @@ ${rawText.substring(0, 4000)}`;
       }
 
       const parsed = extractJSON(responseText);
+      if (!parsed || (typeof parsed === 'object' && !Array.isArray(parsed) && !(parsed as Record<string, unknown>).entries)) {
+        console.error('Compendium: extractJSON returned unexpected structure:', typeof parsed, Array.isArray(parsed));
+        console.error('Compendium response (first 500 chars):', responseText.substring(0, 500));
+      }
       const entries = Array.isArray(parsed) ? parsed : (parsed && Array.isArray((parsed as Record<string, unknown>).entries) ? (parsed as Record<string, unknown>).entries as Record<string, unknown>[] : []);
-      return entries.map((entry: Record<string, unknown>) => ({
+      const result = entries.map((entry: Record<string, unknown>) => ({
         title: String(entry.title || ''),
         content: String(entry.content || ''),
         keywords: Array.isArray(entry.keywords) ? entry.keywords.map(String) : [],
       })).filter(e => e.title && e.content);
+      console.log(`Compendium: generated ${result.length} entries from ${entries.length} raw entries (response length: ${responseText.length})`);
+      return result;
     } catch (error) {
       console.error('generateCompendiumEntries error:', error);
       return [];
