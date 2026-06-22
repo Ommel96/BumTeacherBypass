@@ -80,7 +80,7 @@ export async function processDocumentPages(
           const validation = validateWorksheetData(raw);
           if (validation.valid) {
             worksheetData = ensureCheckGroups(raw as unknown as WorksheetData);
-            console.log(`Page ${i + 1}: Successfully generated worksheet with ${(raw.sections as unknown[]).length} sections`);
+            console.log(`Page ${i + 1}: Successfully generated worksheet with ${(raw.sections as unknown[]).length} sections (2-pass: structure + enrichment)`);
           } else {
             console.warn(`Page ${i + 1}: AI response had title/sections but failed validation:`, validation.errors);
           }

@@ -40,12 +40,10 @@ export interface ProviderResponse {
 function extractJSON(text: string): unknown {
   const trimmed = text.trim();
 
-  // Try direct parse first
   try {
     return JSON.parse(trimmed);
   } catch {}
 
-  // Strip markdown code fences: ```json ... ``` or ``` ... ```
   const fenceMatch = trimmed.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
   if (fenceMatch) {
     try {
@@ -53,7 +51,6 @@ function extractJSON(text: string): unknown {
     } catch {}
   }
 
-  // Try to find the outermost { ... } or [ ... ]
   const firstBrace = trimmed.indexOf('{');
   const firstBracket = trimmed.indexOf('[');
   let startIdx = -1;
@@ -67,7 +64,6 @@ function extractJSON(text: string): unknown {
     startIdx = Math.min(firstBrace, firstBracket);
   }
 
-  // For objects, find the matching closing brace
   if (trimmed[startIdx] === '{') {
     let depth = 0;
     for (let i = startIdx; i < trimmed.length; i++) {
@@ -94,130 +90,151 @@ export class AIProvider {
     this.config = config;
   }
 
+  private buildStructurePrompt(): string {
+    return `You are an educational worksheet structure generator for German vocational education (Lehrjahr/Modul/Arbeitsblatt).
+
+PASS 1: Convert the raw document text into a structured worksheet JSON. Focus on ACCURATE STRUCTURE and CONTENT PRESERVATION. Do NOT add expected answers, checkGroups, interactive components, or hints yet — those will be added in Pass 2.
+
+RESPOND WITH ONLY A JSON OBJECT. No markdown, no code fences.
+
+JSON structure:
+{
+  "title": "worksheet title in German",
+  "label": "optional module label, e.g. 'Modul 114 -- Codieren'",
+  "subtitle": "optional subtitle",
+  "sections": [
+    {
+      "type": "section" | "story" | "info" | "example",
+      "number": "1",
+      "title": "section title in German",
+      "content": "the educational text content using **bold**, \`code\`, and line breaks",
+      "fields": [
+        {"id": "s1_f1", "label": "German label for the question", "type": "text|textarea", "placeholder": "optional hint text"}
+      ],
+      "table": {"id": "t1", "columns": [{"key": "k", "label": "Label", "editable": true|false}], "rows": [{"k": "given value"}]},
+      "resets": ["s1_f1"]
+    }
+  ]
+}
+
+RULES:
+1. GERMAN labels: use German for all labels, titles, placeholders
+2. PRESERVE all educational content — every question, scenario, table, formula, example from the source
+3. Every fill-in-the-blank question → "text" field with a unique id
+4. Every open-ended/reflection question → "textarea" field (no expected answer needed)
+5. Tables with editable cells for student answers, given values pre-filled
+6. Number sections: "1", "2", "3" for exercises, "i", "ii" for info
+7. Field IDs must be unique across the entire worksheet
+8. Do NOT include checkGroups, expected answers, interactive components, or hints — those come in Pass 2
+9. Do NOT add "interactive" type sections — use "section" with text fields for now`;
+  }
+
+  private buildEnrichmentPrompt(structuredWorksheet: string): string {
+    return `You are enriching an educational worksheet with solutions and interactive components. The worksheet structure has already been created in Pass 1. Your job in Pass 2 is to ADD:
+1. Expected answers via checkGroups for every "text" field
+2. Interactive components (pixelGrid, bitVisualizer, truthTable, encodingExercise) where the content calls for them
+3. Helpful hints
+4. Compendium reference links
+
+RESPOND WITH ONLY THE COMPLETE JSON OBJECT (the full worksheet with your additions). No markdown, no code fences.
+
+INPUT WORKSHEET (Pass 1 output):
+${structuredWorksheet}
+
+YOUR TASK — Add these to the worksheet:
+
+A) CHECKGROUPS: For every "text" type field (NOT textarea), add a checkGroup with the expected answer:
+- "id": group id like "cg1", "cg2"
+- "checks": array of {"fieldId": "matching field id", "expected": "the correct answer", "hint": "optional German hint"}
+- "feedbackId": unique id like "fb1"
+- "label": optional, defaults to "Prüfen"
+Example: field "s1_dec42" with label "42 als Binärzahl" → checkGroup with check {"fieldId": "s1_dec42", "expected": "101010", "hint": "42 = 32+8+2"}
+
+B) INTERACTIVE COMPONENTS — When the content involves these topics, REPLACE text fields with interactive widgets:
+- Pixel images, RLE encoding, binary grids → add "interactive" section with pixelGrid:
+  {"type": "pixelGrid", "props": {"width": 8, "height": 8, "fieldId": "pg1", "encodingType": "rle|binary|none", "encodingDirection": "row|col", "solution": [0,1,...], "labels": {"rows": [...], "cols": [...]}}}
+- Bit manipulation, binary values → add "interactive" section with bitVisualizer:
+  {"type": "bitVisualizer", "props": {"bits": 8, "fieldId": "bv1", "labels": ["128","64",...], "showDecimal": true, "showHex": true}}
+- Truth tables, logic gates (AND, OR, NOT, XOR) → add "interactive" section with truthTable:
+  {"type": "truthTable", "props": {"inputs": ["A","B"], "outputLabel": "Q = A AND B", "fieldId": "tt1"}}
+  Then add checkGroups for the truth table outputs (fieldId format: "tt1_r0", "tt1_r1", etc.)
+- Format conversion (binary↔decimal↔hex, ASCII, Morse, RLE) → add "interactive" section with encodingExercise:
+  {"type": "encodingExercise", "props": {"encodingType": "binary|hex|ascii|rle|morse", "fromFormat": "Dezimal", "toFormat": "Binär", "examples": [...], "exercises": [...], "fieldId": "enc1"}}
+
+C) HINTS — Add hints that guide without giving away the answer:
+{"id": "hint1", "label": "optional button text", "content": "hint text in German"}
+
+D) COMPENDIUM REFS — Link to reference topics:
+{"ref": "lowercase-slug", "label": "Short German label"}
+
+IMPORTANT:
+- Change section type from "section" to "interactive" when adding an interactive component
+- Keep ALL existing fields, content, and structure from Pass 1
+- Every "text" field MUST have a matching check in a checkGroup
+- "textarea" fields should NOT have checkGroups
+- Return the COMPLETE worksheet JSON, not just the additions`;
+  }
+
   async processPage(rawText: string, pageNumber: number, totalPages: number): Promise<ProviderResponse> {
+    const structureResult = await this.callProvider(this.buildStructurePrompt(), `Page ${pageNumber} of ${totalPages}:\n\n${rawText}`);
+    const structured = extractJSON(structureResult) as ProviderResponse;
+
+    const structuredStr = JSON.stringify(structured, null, 2);
+    const enrichmentPrompt = this.buildEnrichmentPrompt(structuredStr);
+
+    let enrichedResult: string;
+    try {
+      enrichedResult = await this.callProvider(enrichmentPrompt, 'Add solutions, interactive components, hints, and compendium refs to this worksheet.');
+    } catch (err) {
+      console.error('Pass 2 (enrichment) failed, using Pass 1 result:', err);
+      return structured;
+    }
+
+    try {
+      const enriched = extractJSON(enrichedResult) as ProviderResponse;
+      if (enriched && enriched.title && Array.isArray(enriched.sections)) {
+        return enriched;
+      }
+    } catch (err) {
+      console.error('Pass 2 (enrichment) JSON parse failed, using Pass 1 result:', err);
+    }
+
+    return structured;
+  }
+
+  private async callProvider(systemPrompt: string, userMessage: string): Promise<string> {
     switch (this.config.provider) {
       case 'openai':
-        return this.processWithOpenAI(rawText, pageNumber, totalPages);
+        return this.callOpenAI(systemPrompt, userMessage);
       case 'anthropic':
-        return this.processWithAnthropic(rawText, pageNumber, totalPages);
+        return this.callAnthropic(systemPrompt, userMessage);
       case 'ollama':
-        return this.processWithOllama(rawText, pageNumber, totalPages);
+        return this.callOllama(systemPrompt, userMessage);
       case 'ollama-cloud':
-        return this.processWithOllamaCloud(rawText, pageNumber, totalPages);
+        return this.callOllamaCloud(systemPrompt, userMessage);
       case 'openai-compatible':
-        return this.processWithOpenAICompatible(rawText, pageNumber, totalPages);
+        return this.callOpenAICompatible(systemPrompt, userMessage);
       default:
         throw new Error(`Unknown provider: ${this.config.provider}`);
     }
   }
 
-  private buildSystemPrompt(): string {
-    return `You are an educational worksheet generator for German vocational education (Lehrjahr/Modul/Arbeitsblatt). Convert raw PDF/document text into interactive worksheet JSON.
-
-RESPOND WITH ONLY A JSON OBJECT. No markdown, no code fences, no explanation.
-
-JSON structure:
-{
-  "title": "string",
-  "label": "optional module label, e.g. 'Modul 114 -- Codieren'",
-  "subtitle": "optional string",
-  "sections": [
-    {
-      "type": "section" | "story" | "info" | "example" | "interactive",
-      "number": "1", "title": "optional section title",
-      "content": "markdown-like text with **bold**, \`code\`, line breaks",
-      "fields": [{"id":"s1_f1","label":"Label","type":"text|textarea","placeholder":"optional","compendiumRef":{"ref":"slug","label":"Label"}}],
-      "table": {"id":"t1","columns":[{"key":"k","label":"Label","editable":bool}],"rows":[{}]},
-      "checkGroups": [{"id":"cg1","checks":[{"fieldId":"s1_f1","expected":"answer","hint":"optional"}],"feedbackId":"fb1","label":"optional"}],
-      "resets": ["fieldId1"],
-      "hints": [{"id":"h1","content":"hint text"}],
-      "compendiumRefs": [{"ref":"slug","label":"Label"}],
-      "interactive": {
-        "type": "pixelGrid|bitVisualizer|truthTable|encodingExercise",
-        "props": { ... see below ... }
-      }
-    }
-  ]
-}
-
-Section types:
-- "section": main exercise with fields/tables/checkGroups
-- "story": intro text block
-- "info": info/hint box
-- "example": worked example
-- "interactive": widget section with pixelGrid, bitVisualizer, truthTable, or encodingExercise
-
-Interactive component props:
-- pixelGrid: {"width":8,"height":8,"fieldId":"pg1","encodingType":"rle|binary|none","encodingDirection":"row|col","solution":[0,1,...],"labels":{"rows":["Z0",...],"cols":["0",...]}}
-- bitVisualizer: {"bits":8,"fieldId":"bv1","labels":["128","64",...],"showDecimal":true,"showHex":true}
-- truthTable: {"inputs":["A","B"],"outputLabel":"Q = A AND B","fieldId":"tt1"} (rows auto-generated)
-- encodingExercise: {"encodingType":"binary|hex|ascii|rle|morse","fromFormat":"Dezimal","toFormat":"Binär","examples":[{"input":"5","output":"101"}],"exercises":[{"input":"7","expected":"111","fieldId":"e1"}],"fieldId":"enc1"}
-
-RULES:
-1. German UI labels: Prüfen, Zurücksetzen, Tipp anzeigen
-2. Every "text" field MUST have a matching check in a checkGroup with expected answer
-3. "textarea" fields for open-ended questions — no checkGroup needed
-4. Unique field IDs across entire worksheet
-5. Use "interactive" sections for pixel grids, RLE/binary encoding, bit manipulation, truth tables, logic gates
-6. Use pixelGrid for RLE exercises (students tick boxes to create images)
-7. Use bitVisualizer for bit position/value exercises
-8. Use truthTable for logic gate exercises (dropdowns for 0/1 output)
-9. Use encodingExercise for format conversion (binary↔decimal↔hex, ASCII, Morse)
-10. Preserve ALL educational content — questions, scenarios, tables, formulas
-
-Example section:
-{
-  "type":"section","number":"1","title":"Dezimal in Binär umrechnen",
-  "content":"Wandeln Sie die folgenden Dezimalzahlen in Binärzahlen um.",
-  "fields":[
-    {"id":"s1_d42","label":"42 als Binärzahl","type":"text","placeholder":"z.B. 101010"},
-    {"id":"s1_d255","label":"255 als Binärzahl","type":"text","placeholder":"..."}
-  ],
-  "checkGroups":[{"id":"cg1","checks":[
-    {"fieldId":"s1_d42","expected":"101010","hint":"42 = 32+8+2"},
-    {"fieldId":"s1_d255","expected":"11111111"}
-  ],"feedbackId":"fb1"}],
-  "resets":["s1_d42","s1_d255"]
-}
-
-Example interactive pixelGrid for RLE:
-{
-  "type":"interactive","number":"2","title":"RLE-Kodierung: Bild erstellen",
-  "content":"Klicken Sie auf die Zellen, um das Bild zu erstellen.",
-  "interactive":{"type":"pixelGrid","props":{"width":8,"height":8,"fieldId":"pg1","encodingType":"rle","encodingDirection":"row","solution":[0,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1]}}
-}
-
-Example interactive truthTable:
-{
-  "type":"interactive","number":"3","title":"AND-Gatter",
-  "content":"Füllen Sie die Ausgangsspalte Q aus.",
-  "interactive":{"type":"truthTable","props":{"inputs":["A","B"],"outputLabel":"Q = A AND B","fieldId":"tt1"}},
-  "checkGroups":[{"id":"cg2","checks":[
-    {"fieldId":"tt1_r0","expected":"0"},{"fieldId":"tt1_r1","expected":"0"},
-    {"fieldId":"tt1_r2","expected":"0"},{"fieldId":"tt1_r3","expected":"1"}
-  ],"feedbackId":"fb2"}]
-}`;
-  }
-
-  private async processWithOpenAI(rawText: string, pageNumber: number, totalPages: number): Promise<ProviderResponse> {
+  private async callOpenAI(systemPrompt: string, userMessage: string): Promise<string> {
     const OpenAI = await import('openai');
     const client = new OpenAI.default({ apiKey: this.config.apiKey, baseURL: this.config.baseUrl });
-
     const completion = await client.chat.completions.create({
       model: this.config.model,
       messages: [
-        { role: 'system', content: this.buildSystemPrompt() },
-        { role: 'user', content: `Page ${pageNumber} of ${totalPages}:\n\n${rawText}` },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
       ],
       response_format: { type: 'json_object' },
       temperature: 0.2,
     });
-
-    const responseText = completion.choices[0]?.message?.content || '{}';
-    return extractJSON(responseText) as ProviderResponse;
+    return completion.choices[0]?.message?.content || '{}';
   }
 
-  private async processWithAnthropic(rawText: string, pageNumber: number, totalPages: number): Promise<ProviderResponse> {
+  private async callAnthropic(systemPrompt: string, userMessage: string): Promise<string> {
     const response = await fetch(`${this.config.baseUrl.replace(/\/v1$/, '')}/v1/messages`, {
       method: 'POST',
       headers: {
@@ -229,13 +246,8 @@ Example interactive truthTable:
       body: JSON.stringify({
         model: this.config.model,
         max_tokens: 8192,
-        system: this.buildSystemPrompt(),
-        messages: [
-          {
-            role: 'user',
-            content: `Page ${pageNumber} of ${totalPages}:\n\n${rawText}`,
-          },
-        ],
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
       }),
       signal: AbortSignal.timeout(900000),
     });
@@ -246,19 +258,18 @@ Example interactive truthTable:
     }
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || '{}';
-    return extractJSON(text) as ProviderResponse;
+    return data.content?.[0]?.text || '{}';
   }
 
-  private async processWithOllama(rawText: string, pageNumber: number, totalPages: number): Promise<ProviderResponse> {
+  private async callOllama(systemPrompt: string, userMessage: string): Promise<string> {
     const response = await fetch(`${this.config.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: this.config.model,
         messages: [
-          { role: 'system', content: this.buildSystemPrompt() },
-          { role: 'user', content: `Page ${pageNumber} of ${totalPages}:\n\n${rawText}` },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
         ],
         stream: false,
         format: 'json',
@@ -272,11 +283,10 @@ Example interactive truthTable:
     }
 
     const data = await response.json();
-    const text = data.message?.content || '{}';
-    return extractJSON(text) as ProviderResponse;
+    return data.message?.content || '{}';
   }
 
-  private async processWithOllamaCloud(rawText: string, pageNumber: number, totalPages: number): Promise<ProviderResponse> {
+  private async callOllamaCloud(systemPrompt: string, userMessage: string): Promise<string> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.config.apiKey) {
       headers['Authorization'] = `Bearer ${this.config.apiKey}`;
@@ -288,8 +298,8 @@ Example interactive truthTable:
       body: JSON.stringify({
         model: this.config.model,
         messages: [
-          { role: 'system', content: this.buildSystemPrompt() },
-          { role: 'user', content: `Page ${pageNumber} of ${totalPages}:\n\n${rawText}` },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
         ],
         stream: true,
         format: 'json',
@@ -329,7 +339,7 @@ Example interactive truthTable:
           }
           if (chunk.done) {
             reader.cancel();
-            return extractJSON(fullContent) as ProviderResponse;
+            return fullContent || '{}';
           }
         } catch {}
       }
@@ -345,10 +355,10 @@ Example interactive truthTable:
       } catch {}
     }
 
-    return extractJSON(fullContent) as ProviderResponse;
+    return fullContent || '{}';
   }
 
-  private async processWithOpenAICompatible(rawText: string, pageNumber: number, totalPages: number): Promise<ProviderResponse> {
+  private async callOpenAICompatible(systemPrompt: string, userMessage: string): Promise<string> {
     const OpenAI = await import('openai');
     const client = new OpenAI.default({
       apiKey: this.config.apiKey || 'not-needed',
@@ -356,8 +366,8 @@ Example interactive truthTable:
     });
 
     const messages = [
-      { role: 'system' as const, content: this.buildSystemPrompt() },
-      { role: 'user' as const, content: `Page ${pageNumber} of ${totalPages}:\n\n${rawText}` },
+      { role: 'system' as const, content: systemPrompt },
+      { role: 'user' as const, content: userMessage },
     ];
 
     let completion;
@@ -376,8 +386,7 @@ Example interactive truthTable:
       });
     }
 
-    const responseText = completion.choices[0]?.message?.content || '{}';
-    return extractJSON(responseText) as ProviderResponse;
+    return completion.choices[0]?.message?.content || '{}';
   }
 
   async testConnection(): Promise<{ ok: boolean; error?: string }> {
