@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { saveUploadedFile, updateDocumentStatus, updateDocumentCategory, listDocuments, getDocument, getPagesByDocument, slugify } from '@/lib/document-store';
+import { saveUploadedFile, updateDocumentStatus, updateDocumentCategory, updateProcessingStep, updateProcessingTimings, listDocuments, getDocument, getPagesByDocument, slugify } from '@/lib/document-store';
 import { extractTextFromPdf, extractTextFromDocx, isSupportedExtension, isSupportedMimeType } from '@/lib/parser';
 import { processDocumentPages } from '@/lib/openai-processor';
 import { getSettings } from '@/lib/settings-store';
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
     const topic = (formData.get('topic') as string) || '';
     const providerModelParam = (formData.get('providerModel') as string) || '';
     const enrichmentModelParam = (formData.get('enrichmentModel') as string) || '';
+    const reviewerModelParam = (formData.get('reviewerModel') as string) || '';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -52,6 +53,13 @@ export async function POST(request: NextRequest) {
       if (modelOverride) enrichmentConfig.model = modelOverride;
     }
 
+    let reviewerConfig: import('@/lib/ai-provider').ProviderConfig | undefined;
+    if (reviewerModelParam) {
+      const [pid, modelOverride] = reviewerModelParam.includes(':') ? reviewerModelParam.split(':') : [reviewerModelParam, undefined];
+      reviewerConfig = getProviderConfig(pid);
+      if (modelOverride) reviewerConfig.model = modelOverride;
+    }
+
     if (!providerConfig.apiKey && providerConfig.provider !== 'ollama' && providerConfig.provider !== 'openai-compatible') {
       return NextResponse.json(
         { error: 'API key required. Configure a provider in Settings.' },
@@ -62,17 +70,25 @@ export async function POST(request: NextRequest) {
     const { id, filePath } = await saveUploadedFile(file, { year, semester, module_number: moduleNumber, topic });
 
     const processingPromise = (async () => {
+      const timings: Record<string, number> = {};
+      const startTime = Date.now();
       let textPages: string[];
       try {
+        updateProcessingStep(id, 'extracting');
+        const t0 = Date.now();
         if (ext === '.pdf' || file.type === 'application/pdf') {
           textPages = await extractTextFromPdf(filePath);
         } else {
           textPages = await extractTextFromDocx(filePath);
         }
+        timings.extracting = Date.now() - t0;
+        updateProcessingTimings(id, timings);
 
         const rawText = textPages.join('\n');
 
         if (settings.autoClassify) {
+          updateProcessingStep(id, 'classifying');
+          const t1 = Date.now();
           try {
             const allDocs = listDocuments();
             const knownModules = Array.from(new Set(allDocs.map(d => d.module_number).filter(Boolean)));
@@ -97,6 +113,8 @@ export async function POST(request: NextRequest) {
           } catch (e) {
             console.error('Auto-categorization error:', e);
           }
+          timings.classifying = Date.now() - t1;
+          updateProcessingTimings(id, timings);
         } else if (year || moduleNumber || topic) {
           updateDocumentCategory(id, year, semester, moduleNumber, topic);
         }
@@ -106,6 +124,8 @@ export async function POST(request: NextRequest) {
           let compendiumEntries: Array<{ id: string; title: string; keywords: string }> = [];
 
           if (doc?.module_number || doc?.topic) {
+            updateProcessingStep(id, 'compendium');
+            const t2 = Date.now();
             try {
               const existingEntries = listCompendiumEntries(doc.module_number, doc.topic).map(e => ({
                 title: e.title,
@@ -142,17 +162,24 @@ export async function POST(request: NextRequest) {
             } catch (e) {
               console.error('Compendium generation error:', e);
             }
+            timings.compendium = Date.now() - t2;
+            updateProcessingTimings(id, timings);
           } else {
             console.log(`Compendium: skipped — no module_number or topic (module=${doc?.module_number}, topic=${doc?.topic})`);
           }
 
-          await processDocumentPages(id, textPages, providerConfig, enrichmentConfig, compendiumEntries);
+          await processDocumentPages(id, textPages, providerConfig, enrichmentConfig, compendiumEntries, reviewerConfig, timings, (updated) => updateProcessingTimings(id, updated));
         } else {
           updateDocumentStatus(id, 'processed');
         }
+        timings.total = Date.now() - startTime;
+        updateProcessingTimings(id, timings);
       } catch (err) {
         console.error('Processing error:', err);
+        timings.total = Date.now() - startTime;
+        updateProcessingTimings(id, timings);
         updateDocumentStatus(id, 'error');
+        updateProcessingStep(id, 'error');
       }
     })();
 

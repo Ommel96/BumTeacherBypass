@@ -119,6 +119,12 @@ function getOrCreateDb(): Database.Database {
   if (!docCols.includes('topic')) {
     db.exec("ALTER TABLE documents ADD COLUMN topic TEXT NOT NULL DEFAULT ''");
   }
+  if (!docCols.includes('processing_step')) {
+    db.exec("ALTER TABLE documents ADD COLUMN processing_step TEXT NOT NULL DEFAULT ''");
+  }
+  if (!docCols.includes('processing_timings')) {
+    db.exec("ALTER TABLE documents ADD COLUMN processing_timings TEXT NOT NULL DEFAULT ''");
+  }
 
   const pageInfo = db.prepare("PRAGMA table_info(pages)").all() as Array<{ name: string }>;
   const pageCols = pageInfo.map(c => c.name);

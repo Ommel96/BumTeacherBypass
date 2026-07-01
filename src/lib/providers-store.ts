@@ -102,7 +102,7 @@ export function getProviderConfig(providerId: string): ProviderConfig {
   };
 }
 
-export type ProviderRole = 'default' | 'lightweight' | 'compendium' | 'structure' | 'enrichment';
+export type ProviderRole = 'default' | 'lightweight' | 'compendium' | 'structure' | 'enrichment' | 'reviewer';
 
 export function getProviderConfigForRole(role: ProviderRole): ProviderConfig {
   const db = getDb();
@@ -112,6 +112,7 @@ export function getProviderConfigForRole(role: ProviderRole): ProviderConfig {
     compendium: 'compendiumProviderId',
     structure: 'structureProviderId',
     enrichment: 'enrichmentProviderId',
+    reviewer: 'reviewerProviderId',
   };
   const settingKey = settingKeyMap[role];
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(settingKey) as { value: string } | undefined;

@@ -7,7 +7,9 @@ export interface AppSettings {
   compendiumProviderId: string;
   structureProviderId: string;
   enrichmentProviderId: string;
+  reviewerProviderId: string;
   autoClassify: boolean;
+  enableReview: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -16,7 +18,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   compendiumProviderId: '',
   structureProviderId: '',
   enrichmentProviderId: '',
+  reviewerProviderId: '',
   autoClassify: true,
+  enableReview: true,
 };
 
 export function getSettings(): AppSettings {
@@ -42,7 +46,9 @@ export function getSettings(): AppSettings {
     compendiumProviderId: map.compendiumProviderId || '',
     structureProviderId: map.structureProviderId || '',
     enrichmentProviderId: map.enrichmentProviderId || '',
+    reviewerProviderId: map.reviewerProviderId || '',
     autoClassify: map.autoClassify === 'false' ? false : true,
+    enableReview: map.enableReview === 'false' ? false : true,
   };
 }
 
@@ -65,7 +71,9 @@ export function saveSettings(settings: Partial<AppSettings>): void {
   if (settings.compendiumProviderId !== undefined) entries.push(['compendiumProviderId', settings.compendiumProviderId]);
   if (settings.structureProviderId !== undefined) entries.push(['structureProviderId', settings.structureProviderId]);
   if (settings.enrichmentProviderId !== undefined) entries.push(['enrichmentProviderId', settings.enrichmentProviderId]);
+  if (settings.reviewerProviderId !== undefined) entries.push(['reviewerProviderId', settings.reviewerProviderId]);
   if (settings.autoClassify !== undefined) entries.push(['autoClassify', String(settings.autoClassify)]);
+  if (settings.enableReview !== undefined) entries.push(['enableReview', String(settings.enableReview)]);
 
   if (entries.length > 0) {
     upsertMany(entries);

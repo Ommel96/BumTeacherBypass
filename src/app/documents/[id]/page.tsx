@@ -43,6 +43,8 @@ interface DocumentData {
     semester: string;
     module_number: string;
     topic: string;
+    processing_step: string;
+    processing_timings: string;
     created_at: string;
   };
   pages: PageData[];
@@ -57,6 +59,176 @@ function parseWorksheetData(raw: string | null): WorksheetData | null {
     }
   } catch {}
   return null;
+}
+
+const PROCESSING_STEPS = [
+  { key: 'extracting', label: 'Textextrakt', desc: 'Dokument wird gelesen' },
+  { key: 'classifying', label: 'Kategorisierung', desc: 'Modul und Thema werden erkannt' },
+  { key: 'compendium', label: 'Kompendium', desc: 'Referenzeinträge werden erstellt' },
+  { key: 'pass1', label: 'Pass 1: Struktur', desc: 'Arbeitsblattstruktur wird erstellt' },
+  { key: 'pass2', label: 'Pass 2: Anreicherung', desc: 'Lösungen und Komponenten werden hinzugefügt' },
+  { key: 'pass3', label: 'Pass 3: Review', desc: 'Qualitätsprüfung wird durchgeführt' },
+  { key: 'done', label: 'Fertig', desc: 'Arbeitsblatt ist bereit' },
+];
+
+const TIMING_STEP_KEYS = ['extracting', 'classifying', 'compendium', 'pass1', 'pass2', 'pass3'];
+
+function formatDuration(ms: number): string {
+  if (!ms || ms < 0) return '—';
+  if (ms < 1000) return `${ms}ms`;
+  const s = ms / 1000;
+  if (s < 60) return `${s.toFixed(1)}s`;
+  const m = Math.floor(s / 60);
+  const rest = Math.round(s % 60);
+  return `${m}m ${rest}s`;
+}
+
+function parseTimings(raw: string): Record<string, number> {
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
+function TimingBar({ label, ms, total }: { label: string; ms: number; total: number }) {
+  const pct = total > 0 ? Math.round((ms / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3 text-sm">
+      <span className="w-32 flex-shrink-0 text-[var(--text-muted)] truncate">{label}</span>
+      <div className="flex-1 h-5 bg-[var(--accent-light)] rounded-full overflow-hidden relative">
+        <div
+          className="h-full bg-[var(--accent)] rounded-full transition-all"
+          style={{ width: `${Math.max(pct, 2)}%` }}
+        />
+      </div>
+      <span className="w-16 flex-shrink-0 text-right font-mono text-xs text-[var(--text)]">{formatDuration(ms)}</span>
+      <span className="w-10 flex-shrink-0 text-right text-xs text-[var(--text-muted)]">{pct}%</span>
+    </div>
+  );
+}
+
+function ProcessingTracker({ step, filename, timings }: { step: string; filename: string; timings: Record<string, number> }) {
+  const currentIdx = step.includes('pass')
+    ? PROCESSING_STEPS.findIndex(s => step.startsWith(s.key))
+    : PROCESSING_STEPS.findIndex(s => s.key === step);
+
+  const activeStepKey = step.includes('_page')
+    ? step.split('_page')[0]
+    : step;
+
+  const totalSoFar = TIMING_STEP_KEYS.reduce((sum, k) => sum + (timings[k] || 0), 0);
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--accent-light)] mb-4">
+          <svg className="animate-spin h-8 w-8 text-[var(--accent)]" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
+            <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+        </div>
+        <h2 className="font-serif text-2xl font-bold mb-1">Dokument wird verarbeitet</h2>
+        <p className="text-sm text-[var(--text-muted)] truncate">{filename}</p>
+        {totalSoFar > 0 && (
+          <p className="text-xs text-[var(--text-muted)] mt-1">Bisher: {formatDuration(totalSoFar)}</p>
+        )}
+      </div>
+
+      <div className="space-y-1">
+        {PROCESSING_STEPS.map((s, idx) => {
+          const isDone = idx < currentIdx || step === 'done';
+          const isActive = s.key === activeStepKey && step !== 'done' && step !== 'error';
+          const isUpcoming = idx > currentIdx && step !== 'done';
+          const stepTiming = timings[s.key] || 0;
+
+          return (
+            <div
+              key={s.key}
+              className={`flex items-start gap-4 p-3 rounded-lg transition-all ${
+                isActive ? 'bg-[var(--accent-light)]' : isDone ? 'opacity-60' : 'opacity-30'
+              }`}
+            >
+              <div className="flex-shrink-0 mt-0.5">
+                {isDone ? (
+                  <div className="w-7 h-7 rounded-full bg-[var(--success-bg)] flex items-center justify-center">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                ) : isActive ? (
+                  <div className="w-7 h-7 rounded-full border-2 border-[var(--accent)] flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-full bg-[var(--accent)] animate-pulse"/>
+                  </div>
+                ) : (
+                  <div className="w-7 h-7 rounded-full border-2 border-[var(--border)] flex items-center justify-center">
+                    <span className="text-xs text-[var(--text-muted)]">{idx + 1}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`flex items-center gap-2 text-sm font-semibold ${isActive ? 'text-[var(--accent-dark)]' : isDone ? 'text-[var(--text)]' : 'text-[var(--text-muted)]'}`}>
+                  {s.label}
+                  {isActive && step.includes('_page') && (
+                    <span className="text-xs font-normal text-[var(--accent)]">Seite {step.split('_page')[1]}…</span>
+                  )}
+                  {stepTiming > 0 && (
+                    <span className="text-xs font-mono font-normal text-[var(--text-muted)]">{formatDuration(stepTiming)}</span>
+                  )}
+                </div>
+                <div className="text-xs text-[var(--text-muted)]">
+                  {isUpcoming ? s.desc : isActive ? 'Wird bearbeitet…' : isDone ? 'Abgeschlossen' : s.desc}
+                </div>
+                {isActive && (
+                  <div className="mt-2 h-1 bg-[var(--accent-light)] rounded-full overflow-hidden">
+                    <div className="h-full bg-[var(--accent)] rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]" style={{ width: '60%' }}/>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ProcessingTimingsCard({ timings }: { timings: Record<string, number> }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const total = timings.total || TIMING_STEP_KEYS.reduce((sum, k) => sum + (timings[k] || 0), 0);
+  if (total === 0) return null;
+
+  const stepLabels: Record<string, string> = {
+    extracting: 'Textextrakt',
+    classifying: 'Kategorisierung',
+    compendium: 'Kompendium',
+    pass1: 'Pass 1: Struktur',
+    pass2: 'Pass 2: Anreicherung',
+    pass3: 'Pass 3: Review',
+  };
+
+  return (
+    <div className="bg-white border border-[var(--border)] rounded-xl shadow-sm mb-6 overflow-hidden">
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="w-full flex items-center justify-between p-5 hover:bg-[var(--surface)] transition-colors border-none cursor-pointer bg-transparent"
+      >
+        <div className="flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${collapsed ? '' : 'rotate-90'}`}>
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <h3 className="font-semibold text-base">Verarbeitungszeiten</h3>
+        </div>
+        <span className="text-sm font-mono font-semibold text-[var(--accent)]">{formatDuration(total)}</span>
+      </button>
+      {!collapsed && (
+        <div className="px-5 pb-5 space-y-2">
+          {TIMING_STEP_KEYS.map(k => {
+            const ms = timings[k] || 0;
+            if (ms === 0) return null;
+            return <TimingBar key={k} label={stepLabels[k] || k} ms={ms} total={total} />;
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function DocumentDetailPage() {
@@ -115,9 +287,17 @@ export default function DocumentDetailPage() {
     fetchData();
     const interval = setInterval(() => {
       if (data?.document?.status === 'processing') fetchData();
-    }, 5000);
+    }, 2000);
     return () => clearInterval(interval);
   }, [fetchData, data?.document?.status]);
+
+  useEffect(() => {
+    if (data?.document?.status === 'processing') {
+      setRegeneratingPage('active');
+    } else if (data?.document?.status === 'processed' || data?.document?.status === 'error') {
+      setRegeneratingPage(null);
+    }
+  }, [data?.document?.status]);
 
   const saveCategory = async () => {
     try {
@@ -139,21 +319,18 @@ export default function DocumentDetailPage() {
   const regeneratePage = async (pageId: string) => {
     setRegeneratingPage(pageId);
     try {
-      const res = await fetch(`/api/pages/${pageId}`, { method: 'POST' });
+      const res = await fetch(`/api/pages/${pageId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
       if (!res.ok) throw new Error('Regeneration failed');
-      const pageData = await res.json();
-      if (pageData.page) {
-        setData(prev => prev ? {
-          ...prev,
-          pages: prev.pages.map(p =>
-            p.id === pageId ? { ...p, content: pageData.page.content, title: pageData.page.title, worksheet_data: pageData.page.worksheet_data } : p
-          ),
-        } : null);
-        loadVersions(pageId);
-      }
+      setData(prev => prev ? {
+        ...prev,
+        document: { ...prev.document, status: 'processing', processing_step: 'pass1', processing_timings: '' },
+      } : null);
     } catch (err) {
       console.error('Regenerate failed:', err);
-    } finally {
       setRegeneratingPage(null);
     }
   };
@@ -201,12 +378,7 @@ export default function DocumentDetailPage() {
 
   if (doc.status === 'processing') {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent)] mx-auto mb-4"/>
-        <h2 className="font-serif text-2xl font-bold mb-2">Dokument wird verarbeitet</h2>
-        <p className="text-[var(--text-muted)]">KI wandelt dein Dokument in interaktive Arbeitsblätter um...</p>
-        <p className="text-sm text-[var(--text-muted)] mt-2">Dies kann je nach Seitenzahl einen Moment dauern.</p>
-      </div>
+      <ProcessingTracker step={doc.processing_step} filename={doc.filename} timings={parseTimings(doc.processing_timings)} />
     );
   }
 
@@ -385,6 +557,9 @@ export default function DocumentDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Processing timings */}
+      <ProcessingTimingsCard timings={parseTimings(doc.processing_timings)} />
 
       {/* Worksheet rendering */}
       {worksheetData ? (

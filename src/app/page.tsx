@@ -51,6 +51,7 @@ export default function HomePage() {
   const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [selectedStructureModel, setSelectedStructureModel] = useState('');
   const [selectedEnrichmentModel, setSelectedEnrichmentModel] = useState('');
+  const [selectedReviewerModel, setSelectedReviewerModel] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -78,6 +79,7 @@ export default function HomePage() {
         const defaultModel = `${defaultId}:${defaultProvider.model || models[0] || ''}`;
         setSelectedStructureModel(defaultModel);
         setSelectedEnrichmentModel(defaultModel);
+        setSelectedReviewerModel(defaultModel);
       }
       if (settingsData.structureProviderId) {
         const sProv = opts.find(p => p.id === settingsData.structureProviderId.split(':')[0]);
@@ -86,6 +88,10 @@ export default function HomePage() {
       if (settingsData.enrichmentProviderId) {
         const eProv = opts.find(p => p.id === settingsData.enrichmentProviderId.split(':')[0]);
         if (eProv) setSelectedEnrichmentModel(settingsData.enrichmentProviderId);
+      }
+      if (settingsData.reviewerProviderId) {
+        const rProv = opts.find(p => p.id === settingsData.reviewerProviderId.split(':')[0]);
+        if (rProv) setSelectedReviewerModel(settingsData.reviewerProviderId);
       }
     }).catch(() => {});
   }, []);
@@ -122,6 +128,7 @@ export default function HomePage() {
       formData.append('file', file);
       if (selectedStructureModel) formData.append('providerModel', selectedStructureModel);
       if (selectedEnrichmentModel) formData.append('enrichmentModel', selectedEnrichmentModel);
+      if (selectedReviewerModel) formData.append('reviewerModel', selectedReviewerModel);
       if (year) formData.append('year', year);
       if (semester) formData.append('semester', semester);
       if (moduleNumber) formData.append('module_number', moduleNumber);
@@ -284,6 +291,31 @@ export default function HomePage() {
                       })}
                     </select>
                     <p className="text-xs text-[var(--text-muted)] mt-1">Fügt Lösungen, interaktive Komponenten und Hinweise hinzu.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text)] mb-1.5">
+                      Review-Modell (Pass 3)
+                    </label>
+                    <select
+                      value={selectedReviewerModel}
+                      onChange={(e) => setSelectedReviewerModel(e.target.value)}
+                      className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-light)] transition-all"
+                    >
+                      {providers.map(p => {
+                        const models = getProviderModels(p);
+                        const groupLabel = `${p.name} (${PROVIDER_LABELS[p.type] || p.type})`;
+                        return (
+                          <optgroup key={p.id} label={groupLabel}>
+                            {models.length > 0 ? models.map(m => (
+                              <option key={`${p.id}:${m}`} value={`${p.id}:${m}`}>{m}</option>
+                            )) : (
+                              <option key={`${p.id}:${p.model || ''}`} value={`${p.id}:${p.model || ''}`}>{p.model || 'Kein Modell'}</option>
+                            )}
+                          </optgroup>
+                        );
+                      })}
+                    </select>
+                    <p className="text-xs text-[var(--text-muted)] mt-1">Prüft und korrigiert das Arbeitsblatt auf Vollständigkeit und Fehler.</p>
                   </div>
                 </div>
               )}

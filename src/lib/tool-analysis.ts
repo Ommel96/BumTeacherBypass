@@ -2,7 +2,7 @@ import { AIProvider, type ProviderConfig } from './ai-provider';
 import { getProviderConfigForRole } from './providers-store';
 
 export interface ToolSuggestion {
-  type: 'pixelGrid' | 'bitVisualizer' | 'truthTable' | 'encodingExercise' | 'huffmanTreeBuilder' | 'lz77Simulator' | 'lz78Simulator' | 'compressionTable';
+  type: 'pixelGrid' | 'bitVisualizer' | 'truthTable' | 'encodingExercise' | 'huffmanTreeBuilder' | 'lz77Simulator' | 'lz78Simulator' | 'compressionTable' | 'xorCalculator' | 'asymmetricFlow' | 'choiceMatrix' | 'dropdownChoice';
   confidence: 'high' | 'medium' | 'low';
   reason: string;
   sectionIndex?: number;
@@ -192,6 +192,60 @@ export function analyzeTextForToolHints(text: string): ToolSuggestion[] {
       type: 'compressionTable',
       confidence: 'medium',
       reason: 'Dokument enthält Kompressions-Tabellen-Themen',
+    });
+  }
+
+  const xorPatterns = [
+    /xor|exklusiv.*oder|exklusiv.*oder.*verknüpfung/i,
+    /bit.*xor|xor.*bit|xor.*operation|xor.*rechner/i,
+    / bitwise.*xor|xor.*verknüpfung.*bit/i,
+  ];
+  if (xorPatterns.some(p => p.test(lower))) {
+    suggestions.push({
+      type: 'xorCalculator',
+      confidence: 'high',
+      reason: 'Dokument enthält XOR-Verknüpfungs-Themen',
+    });
+  }
+
+  const asymmetricPatterns = [
+    /asymmetrisch.*verschlüssel|public.*key.*private.*key/i,
+    /öffentlicher.*schlüssel|privater.*schlüssel|schlüsselpaar/i,
+    /alice.*bob|rsa.*verschlüssel|asymmetrische.*kryptograph/i,
+    /verschlüssel.*öffentlich.*entschlüssel.*privat/i,
+  ];
+  if (asymmetricPatterns.some(p => p.test(lower))) {
+    suggestions.push({
+      type: 'asymmetricFlow',
+      confidence: 'high',
+      reason: 'Dokument enthält asymmetrische Verschlüsselungs-Themen',
+    });
+  }
+
+  const choiceMatrixPatterns = [
+    /wahr.*falsch|true.*false|richtig.*falsch/i,
+    /multiple.*choice|mehrfach.*auswahl|kreuz.*tabelle|antwort.*tabelle/i,
+    /kreuzen.*zutreff|markier.*zutreff|zutreffend.*kreuz/i,
+    /ja.*nein.*tabelle|zustimm.*ablehn/i,
+  ];
+  if (choiceMatrixPatterns.some(p => p.test(lower))) {
+    suggestions.push({
+      type: 'choiceMatrix',
+      confidence: 'high',
+      reason: 'Dokument enthält Multiple-Choice/Wahr-Falsch-Aufgaben',
+    });
+  }
+
+  const dropdownPatterns = [
+    /dropdown|auswahl.*liste|wähle.*aus|welche.*der.*folgend/i,
+    /ordne.*zu|zuordnung.*auswahl|auswahl.*möglichkeit/i,
+    /kreuz.*die.*richtige.*antwort|wähle.*die.*richtige/i,
+  ];
+  if (dropdownPatterns.some(p => p.test(lower))) {
+    suggestions.push({
+      type: 'dropdownChoice',
+      confidence: 'medium',
+      reason: 'Dokument enthält Auswahl-/Zuordnungsaufgaben',
     });
   }
 

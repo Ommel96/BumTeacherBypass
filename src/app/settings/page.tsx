@@ -23,7 +23,9 @@ interface AppSettings {
   compendiumProviderId: string;
   structureProviderId: string;
   enrichmentProviderId: string;
+  reviewerProviderId: string;
   autoClassify: boolean;
+  enableReview: boolean;
 }
 
 const PROVIDER_LABELS: Record<string, { label: string; description: string; needsApiKey: boolean }> = {
@@ -37,10 +39,12 @@ const PROVIDER_LABELS: Record<string, { label: string; description: string; need
 export default function SettingsPage() {
   const [providers, setProviders] = useState<ProviderRow[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [draftSettings, setDraftSettings] = useState<AppSettings | null>(null);
   const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
   const [editingProvider, setEditingProvider] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorHint, setErrorHint] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
@@ -100,6 +104,7 @@ export default function SettingsPage() {
       const settingsData = await settingsRes.json();
       setProviders(providersData);
       setSettings(settingsData);
+      setDraftSettings(settingsData);
     } catch (err) {
       console.error('Failed to fetch data:', err);
     }
@@ -226,22 +231,55 @@ export default function SettingsPage() {
     }
   };
 
-  const handleRoleChange = async (role: 'defaultProviderId' | 'lightweightProviderId' | 'compendiumProviderId' | 'structureProviderId' | 'enrichmentProviderId', value: string) => {
-    await fetch('/api/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [role]: value }),
-    });
-    fetchData();
+  const handleRoleChange = (role: 'defaultProviderId' | 'lightweightProviderId' | 'compendiumProviderId' | 'structureProviderId' | 'enrichmentProviderId' | 'reviewerProviderId', value: string) => {
+    setDraftSettings(prev => prev ? { ...prev, [role]: value } : prev);
   };
 
-  const handleAutoClassifyChange = async (value: boolean) => {
-    await fetch('/api/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ autoClassify: value }),
-    });
-    fetchData();
+  const handleAutoClassifyChange = (value: boolean) => {
+    setDraftSettings(prev => prev ? { ...prev, autoClassify: value } : prev);
+  };
+
+  const handleEnableReviewChange = (value: boolean) => {
+    setDraftSettings(prev => prev ? { ...prev, enableReview: value } : prev);
+  };
+
+  const hasUnsavedChanges = settings && draftSettings ? JSON.stringify(settings) !== JSON.stringify(draftSettings) : false;
+
+  const handleSaveSettings = async () => {
+    if (!draftSettings) return;
+    setSettingsSaving(true);
+    try {
+      const updates: Record<string, string | boolean> = {};
+      if (settings!.defaultProviderId !== draftSettings.defaultProviderId) updates.defaultProviderId = draftSettings.defaultProviderId;
+      if (settings!.lightweightProviderId !== draftSettings.lightweightProviderId) updates.lightweightProviderId = draftSettings.lightweightProviderId;
+      if (settings!.compendiumProviderId !== draftSettings.compendiumProviderId) updates.compendiumProviderId = draftSettings.compendiumProviderId;
+      if (settings!.structureProviderId !== draftSettings.structureProviderId) updates.structureProviderId = draftSettings.structureProviderId;
+      if (settings!.enrichmentProviderId !== draftSettings.enrichmentProviderId) updates.enrichmentProviderId = draftSettings.enrichmentProviderId;
+      if (settings!.reviewerProviderId !== draftSettings.reviewerProviderId) updates.reviewerProviderId = draftSettings.reviewerProviderId;
+      if (settings!.autoClassify !== draftSettings.autoClassify) updates.autoClassify = draftSettings.autoClassify;
+      if (settings!.enableReview !== draftSettings.enableReview) updates.enableReview = draftSettings.enableReview;
+
+      if (Object.keys(updates).length > 0) {
+        await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates),
+        });
+      }
+      setSettings(draftSettings);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      setError('Fehler beim Speichern der Einstellungen');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const handleDiscardSettings = () => {
+    setDraftSettings(settings);
   };
 
   if (!settings) {
@@ -403,14 +441,14 @@ export default function SettingsPage() {
           <RoleSelect
             label="Arbeitsblattverarbeitung"
             description="Anbieter und Modell für die Verarbeitung von Dokumenten"
-            value={settings.defaultProviderId}
+            value={draftSettings!.defaultProviderId}
             providers={providers}
             onChange={(v) => handleRoleChange('defaultProviderId', v)}
           />
           <RoleSelect
             label="Struktur-Erstellung (Pass 1)"
             description="Anbieter und Modell für die Erstellung der Arbeitsblattstruktur (leer = Standard)"
-            value={settings.structureProviderId}
+            value={draftSettings!.structureProviderId}
             providers={providers}
             onChange={(v) => handleRoleChange('structureProviderId', v)}
             allowSameAsDefault
@@ -418,7 +456,7 @@ export default function SettingsPage() {
           <RoleSelect
             label="Anreicherung (Pass 2)"
             description="Anbieter und Modell für Lösungen, interaktive Komponenten und Hinweise (leer = Standard)"
-            value={settings.enrichmentProviderId}
+            value={draftSettings!.enrichmentProviderId}
             providers={providers}
             onChange={(v) => handleRoleChange('enrichmentProviderId', v)}
             allowSameAsDefault
@@ -426,7 +464,7 @@ export default function SettingsPage() {
           <RoleSelect
             label="Automatische Kategorisierung"
             description="Anbieter und Modell für die automatische Erkennung von Modul und Thema"
-            value={settings.lightweightProviderId}
+            value={draftSettings!.lightweightProviderId}
             providers={providers}
             onChange={(v) => handleRoleChange('lightweightProviderId', v)}
             allowSameAsDefault
@@ -434,9 +472,17 @@ export default function SettingsPage() {
           <RoleSelect
             label="Kompendium"
             description="Anbieter und Modell für die Generierung von Kompendiumseinträgen"
-            value={settings.compendiumProviderId}
+            value={draftSettings!.compendiumProviderId}
             providers={providers}
             onChange={(v) => handleRoleChange('compendiumProviderId', v)}
+            allowSameAsDefault
+          />
+          <RoleSelect
+            label="Review (Pass 3)"
+            description="Anbieter und Modell für die Qualitätsprüfung des Arbeitsblatts (leer = Standard)"
+            value={draftSettings!.reviewerProviderId}
+            providers={providers}
+            onChange={(v) => handleRoleChange('reviewerProviderId', v)}
             allowSameAsDefault
           />
         </div>
@@ -450,13 +496,57 @@ export default function SettingsPage() {
             <p className="text-sm text-[var(--text-muted)] mt-1">Hochgeladene Dokumente automatisch kategorisieren.</p>
           </div>
           <button
-            onClick={() => handleAutoClassifyChange(!settings.autoClassify)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors border-none cursor-pointer ${settings.autoClassify ? 'bg-[var(--accent)]' : 'bg-gray-300'}`}
+            onClick={() => handleAutoClassifyChange(!draftSettings!.autoClassify)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors border-none cursor-pointer ${draftSettings!.autoClassify ? 'bg-[var(--accent)]' : 'bg-gray-300'}`}
           >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.autoClassify ? 'translate-x-6' : 'translate-x-1'}`} />
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${draftSettings!.autoClassify ? 'translate-x-6' : 'translate-x-1'}`} />
           </button>
         </div>
       </div>
+
+      {/* Review Toggle */}
+      <div className="bg-white border border-[var(--border)] rounded-xl shadow-sm mb-6 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold text-lg">Review-Pass (Pass 3)</h2>
+            <p className="text-sm text-[var(--text-muted)] mt-1">Arbeitsblätter nach der Anreicherung automatisch auf Vollständigkeit und Fehler prüfen lassen.</p>
+          </div>
+          <button
+            onClick={() => handleEnableReviewChange(!draftSettings!.enableReview)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors border-none cursor-pointer ${draftSettings!.enableReview ? 'bg-[var(--accent)]' : 'bg-gray-300'}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${draftSettings!.enableReview ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Save Button */}
+      {hasUnsavedChanges && (
+        <div className="sticky bottom-4 z-40">
+          <div className="bg-white border border-[var(--border)] rounded-xl shadow-lg p-4 flex items-center justify-between">
+            <span className="text-sm font-medium text-[var(--text)]">Ungespeicherte Änderungen</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDiscardSettings}
+                disabled={settingsSaving}
+                className="px-4 py-2 border border-[var(--border)] rounded-lg font-sans text-sm font-semibold text-[var(--text-muted)] hover:border-[var(--text-muted)] hover:text-[var(--text)] transition-colors bg-transparent cursor-pointer"
+              >
+                Verwerfen
+              </button>
+              <button
+                onClick={handleSaveSettings}
+                disabled={settingsSaving}
+                className="inline-flex items-center gap-2 px-5 py-2 bg-[var(--accent)] text-white rounded-lg font-sans text-sm font-semibold hover:bg-[var(--accent-dark)] transition-colors border-none cursor-pointer disabled:opacity-60"
+              >
+                {settingsSaving && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                )}
+                {settingsSaving ? 'Speichern...' : 'Speichern'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Info box */}
       <div className="p-4 bg-[var(--accent-light)] rounded-xl text-sm text-[var(--accent-dark)]">

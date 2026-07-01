@@ -5,7 +5,7 @@ import React from 'react';
 import { WorksheetProvider, useWorksheet } from './WorksheetProvider';
 import { Breadcrumb, Section, Story, InputField, TableInput, GivenCell, LabelCell, CheckButton, ResetButton, ButtonGroup, Feedback, HintToggle, HintContent, InfoNote, ExampleCalc, PageHeader } from './WorksheetComponents';
 import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, WorksheetCheckGroup, WorksheetHint, CompendiumRef, InteractiveComponent } from '@/lib/worksheet-schema';
-import { PixelGrid, BitVisualizer, TruthTableBuilder, EncodingExercise, HuffmanTreeBuilder, LZ77Simulator, LZ78Simulator, CompressionTable } from './InteractiveComponents';
+import { PixelGrid, BitVisualizer, TruthTableBuilder, EncodingExercise, HuffmanTreeBuilder, LZ77Simulator, LZ78Simulator, CompressionTable, XorCalculator, AsymmetricFlowVisualizer, ChoiceMatrix, DropdownChoice } from './InteractiveComponents';
 
 interface MatchResult {
   type: 'bold' | 'code' | 'linebreak';
@@ -167,6 +167,31 @@ function renderHints(hints: WorksheetHint[]) {
   ));
 }
 
+function renderCompendiumRefs(refs: Array<CompendiumRef | string>) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {refs.map((cr: CompendiumRef | string, i: number) => {
+        const ref = typeof cr === 'string' ? cr : cr.ref;
+        const label = typeof cr === 'string' ? cr : cr.label;
+        return (
+          <Link
+            key={i}
+            href={`/compendium/${ref}`}
+            className="compendium-ref-link inline-flex items-center gap-1.5 text-xs bg-[var(--accent-light)] text-[var(--accent-dark)] px-2.5 py-1 rounded-lg no-underline hover:bg-[var(--accent)] hover:text-white transition-colors font-medium"
+            target="_blank"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            {label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 function renderInteractiveComponent(interactive: InteractiveComponent) {
   switch (interactive.type) {
     case 'pixelGrid':
@@ -185,6 +210,14 @@ function renderInteractiveComponent(interactive: InteractiveComponent) {
       return <LZ78Simulator key={interactive.props.fieldId} props={interactive.props} />;
     case 'compressionTable':
       return <CompressionTable key={interactive.props.fieldId} props={interactive.props} />;
+    case 'xorCalculator':
+      return <XorCalculator key={interactive.props.fieldId} props={interactive.props} />;
+    case 'asymmetricFlow':
+      return <AsymmetricFlowVisualizer key={interactive.props.fieldId} props={interactive.props} />;
+    case 'choiceMatrix':
+      return <ChoiceMatrix key={interactive.props.fieldId} props={interactive.props} />;
+    case 'dropdownChoice':
+      return <DropdownChoice key={interactive.props.fieldId} props={interactive.props} />;
     default:
       return null;
   }
@@ -218,10 +251,18 @@ function renderSection(section: WorksheetSection, idx: number) {
         <Section key={`interactive-${idx}`} number={section.number} title={section.title ? renderMarkdown(section.title) as React.ReactNode : undefined}>
           {section.content && renderContent(section.content)}
           {section.interactive && renderInteractiveComponent(section.interactive)}
+          {section.fields?.map(field => renderField(field))}
+          {section.table && renderTable(section.table)}
           {section.checkGroups?.map(cg => (
             <CheckGroupButtons key={cg.id} checkGroup={cg} />
           ))}
+          {(!section.checkGroups || section.checkGroups.length === 0) && section.resets && section.resets.length > 0 && (
+            <ButtonGroup>
+              <ResetButton ids={section.resets}>Zurücksetzen</ResetButton>
+            </ButtonGroup>
+          )}
           {section.hints && section.hints.length > 0 && renderHints(section.hints)}
+          {section.compendiumRefs && section.compendiumRefs.length > 0 && renderCompendiumRefs(section.compendiumRefs)}
         </Section>
       );
 
@@ -241,32 +282,11 @@ function renderSection(section: WorksheetSection, idx: number) {
             </ButtonGroup>
           )}
           {section.hints && section.hints.length > 0 && renderHints(section.hints)}
-          {section.compendiumRefs && section.compendiumRefs.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {section.compendiumRefs.map((cr: CompendiumRef | string, i: number) => {
-                const ref = typeof cr === 'string' ? cr : cr.ref;
-                const label = typeof cr === 'string' ? cr : cr.label;
-                return (
-                  <Link
-                    key={i}
-                    href={`/compendium/${ref}`}
-                    className="compendium-ref-link inline-flex items-center gap-1.5 text-xs bg-[var(--accent-light)] text-[var(--accent-dark)] px-2.5 py-1 rounded-lg no-underline hover:bg-[var(--accent)] hover:text-white transition-colors font-medium"
-                    target="_blank"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                    </svg>
-                    {label}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+          {section.compendiumRefs && section.compendiumRefs.length > 0 && renderCompendiumRefs(section.compendiumRefs)}
         </Section>
       );
+    }
   }
-}
 
 function DynamicWorksheetContent({ data, breadcrumbItems }: { data: WorksheetData; breadcrumbItems: Array<{ label: string; href?: string }> }) {
   return (

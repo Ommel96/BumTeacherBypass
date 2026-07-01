@@ -36,6 +36,11 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* ── Edit tables ── */
 .edit-table {
   width: 100%;
@@ -1036,6 +1041,52 @@ body {
 .bit-toggle:hover {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.choice-matrix-cell {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.choice-matrix-cell:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.choice-selected {
+  background: var(--accent);
+  border-color: var(--accent-dark);
+  color: white;
+}
+
+.choice-correct {
+  background: var(--success-bg);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.choice-wrong {
+  background: var(--error-bg);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.choice-missed {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+  opacity: 0.6;
 }
 
 .bit-results {
