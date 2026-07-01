@@ -100,6 +100,8 @@ export interface LZ77SimulatorProps {
   lookaheadSize: number;
   solution?: LZ77Triple[];
   stepByStep?: boolean;
+  direction?: 'encode' | 'decode';
+  decodeInput?: string;
 }
 
 export interface LZ77Triple {
@@ -127,6 +129,46 @@ export interface CompressionTableRow {
   [key: string]: string | number | undefined;
 }
 
+export interface XorCalculatorProps {
+  fieldId: string;
+  bits?: number;
+  inputA: string;
+  inputB: string;
+  solution?: string;
+}
+
+export interface AsymmetricFlowProps {
+  fieldId: string;
+  sender: string;
+  receiver: string;
+  message: string;
+  steps?: Array<{ label: string; description: string }>;
+}
+
+export interface ChoiceMatrixRow {
+  question: string;
+  correctAnswers: string[];
+}
+
+export interface ChoiceMatrixProps {
+  fieldId: string;
+  columns: string[];
+  rows: ChoiceMatrixRow[];
+  multipleSelection?: boolean;
+}
+
+export interface DropdownChoiceRow {
+  question: string;
+  options: string[];
+  correctAnswers: string[];
+}
+
+export interface DropdownChoiceProps {
+  fieldId: string;
+  rows: DropdownChoiceRow[];
+  multipleSelection?: boolean;
+}
+
 export type InteractiveComponent = 
   | { type: 'pixelGrid'; props: PixelGridProps }
   | { type: 'bitVisualizer'; props: BitVisualizerProps }
@@ -135,7 +177,11 @@ export type InteractiveComponent =
   | { type: 'huffmanTreeBuilder'; props: HuffmanTreeProps }
   | { type: 'lz77Simulator'; props: LZ77SimulatorProps }
   | { type: 'lz78Simulator'; props: CompressionTableProps }
-  | { type: 'compressionTable'; props: CompressionTableProps };
+  | { type: 'compressionTable'; props: CompressionTableProps }
+  | { type: 'xorCalculator'; props: XorCalculatorProps }
+  | { type: 'asymmetricFlow'; props: AsymmetricFlowProps }
+  | { type: 'choiceMatrix'; props: ChoiceMatrixProps }
+  | { type: 'dropdownChoice'; props: DropdownChoiceProps };
 
 export interface WorksheetSection {
   type: 'section' | 'story' | 'info' | 'example' | 'interactive';

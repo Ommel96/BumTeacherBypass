@@ -19,6 +19,8 @@ export interface DocumentRow {
   semester: string;
   module_number: string;
   topic: string;
+  processing_step: string;
+  processing_timings: string;
   created_at: string;
   updated_at: string;
 }
@@ -101,6 +103,22 @@ export function updateDocumentStatus(id: string, status: string): void {
     UPDATE documents SET status = ?, updated_at = datetime('now') WHERE id = ?
   `);
   stmt.run(status, id);
+}
+
+export function updateProcessingStep(id: string, step: string): void {
+  const db = getDb();
+  const stmt = db.prepare(`
+    UPDATE documents SET processing_step = ?, updated_at = datetime('now') WHERE id = ?
+  `);
+  stmt.run(step, id);
+}
+
+export function updateProcessingTimings(id: string, timings: Record<string, number>): void {
+  const db = getDb();
+  const stmt = db.prepare(`
+    UPDATE documents SET processing_timings = ?, updated_at = datetime('now') WHERE id = ?
+  `);
+  stmt.run(JSON.stringify(timings), id);
 }
 
 export function updateDocumentCategory(id: string, year: string, semester: string, moduleNumber: string, topic: string): void {

@@ -50,7 +50,9 @@ function extractJSON(text: string): unknown {
   if (fenceMatch) {
     try {
       return JSON.parse(fenceMatch[1].trim());
-    } catch {}
+    } catch (e) {
+      console.error('extractJSON: fence match found but JSON.parse failed. Content length:', fenceMatch[1].length, 'Last 200 chars:', fenceMatch[1].slice(-200));
+    }
   }
 
   const greedyFenceMatch = trimmed.match(/```(?:json)?\s*\n([\s\S]*)\n\s*```/);
@@ -58,6 +60,37 @@ function extractJSON(text: string): unknown {
     try {
       return JSON.parse(greedyFenceMatch[1].trim());
     } catch {}
+  }
+
+  // Handle unclosed code fences — model output may be truncated
+  const unclosedFence = trimmed.match(/```(?:json)?\s*\n([\s\S]*)/);
+  if (unclosedFence) {
+    const content = unclosedFence[1].trim();
+    // Try to find the matching closing brace
+    const firstBrace = content.indexOf('{');
+    if (firstBrace >= 0) {
+      let depth = 0;
+      let inStr = false;
+      let esc = false;
+      for (let i = firstBrace; i < content.length; i++) {
+        const ch = content[i];
+        if (esc) { esc = false; continue; }
+        if (ch === '\\' && inStr) { esc = true; continue; }
+        if (ch === '"') { inStr = !inStr; continue; }
+        if (inStr) continue;
+        if (ch === '{') depth++;
+        else if (ch === '}') depth--;
+        if (depth === 0) {
+          try {
+            return JSON.parse(content.substring(firstBrace, i + 1));
+          } catch (e) {
+            console.error('extractJSON: unclosed fence bracket match failed. Content length:', i + 1, 'Last 200 chars:', content.substring(firstBrace, i + 1).slice(-200));
+            break;
+          }
+        }
+      }
+      console.error('extractJSON: unclosed fence, no matching close brace found. Content may be truncated.');
+    }
   }
 
   const firstBrace = trimmed.indexOf('{');
@@ -118,10 +151,12 @@ function extractJSON(text: string): unknown {
 export class AIProvider {
   private config: ProviderConfig;
   private enrichmentConfig?: ProviderConfig;
+  private reviewerConfig?: ProviderConfig;
 
-  constructor(config: ProviderConfig, enrichmentConfig?: ProviderConfig) {
+  constructor(config: ProviderConfig, enrichmentConfig?: ProviderConfig, reviewerConfig?: ProviderConfig) {
     this.config = config;
     this.enrichmentConfig = enrichmentConfig;
+    this.reviewerConfig = reviewerConfig;
   }
 
   private buildStructurePrompt(): string {
@@ -169,82 +204,118 @@ RULES:
       : '';
 
     const compendiumHint = compendiumEntries && compendiumEntries.length > 0
-      ? `\n\nAVAILABLE COMPENDIUM ENTRIES (link to these in compendiumRefs using their id as "ref" and their title as "label"):\n${compendiumEntries.map(e => `- ref: "${e.id}", title: "${e.title}", keywords: ${e.keywords}`).join('\n')}`
+      ? `\n\nAVAILABLE COMPENDIUM ENTRIES (link to these in compendiumRefs using their id as "ref" and their title as "label"):\n${compendiumEntries.map(e => `- ref: "${e.id}", title: "${e.title}"`).join('\n')}`
       : '';
 
-    return `You are enriching an educational worksheet with solutions and interactive components. The worksheet structure has already been created in Pass 1. Your job in Pass 2 is to ADD:
-1. Expected answers via checkGroups for every "text" field
-2. Interactive components (pixelGrid, bitVisualizer, truthTable, encodingExercise, huffmanTreeBuilder, lz77Simulator, lz78Simulator, compressionTable) where the content calls for them
-3. Helpful hints
-4. Compendium reference links
+    return `You are enriching an educational worksheet. The structure (Pass 1) is given below. Return ONLY a PATCH JSON object with additions — do NOT repeat the full worksheet. Keep it compact.
 
-RESPOND WITH ONLY THE COMPLETE JSON OBJECT (the full worksheet with your additions). No markdown, no code fences.
-
-INPUT WORKSHEET (Pass 1 output):
+INPUT WORKSHEET (Pass 1):
 ${structuredWorksheet}
 ${toolsHint}
 ${compendiumHint}
 
-YOUR TASK — Add these to the worksheet:
+Return a JSON object with this EXACT structure (only include keys you actually change/add):
+{
+  "sections": [
+    {
+      "number": "1",
+      "type": "interactive",
+      "interactive": {"type": "lz77Simulator", "props": {...}},
+      "removeTable": true,
+      "addFields": [{"id": "s1_f1", "label": "Resultierender Code", "type": "text", "placeholder": "z.B. (0,0,a) ..."}],
+      "checkGroups": [{"id": "cg1", "checks": [{"fieldId": "s1_f1", "expected": "correct answer", "hint": "German hint"}], "feedbackId": "fb1", "label": "Prüfen"}],
+      "hints": [{"id": "h1", "label": "Tipp", "content": "German hint text"}],
+      "compendiumRefs": [{"ref": "entry-id", "label": "German label"}]
+    }
+  ],
+  "toolGaps": []
+}
 
-A) CHECKGROUPS: For every "text" type field (NOT textarea), add a checkGroup with the expected answer:
-- "id": group id like "cg1", "cg2"
-- "checks": array of {"fieldId": "matching field id", "expected": "the correct answer", "hint": "optional German hint"}
-- "feedbackId": unique id like "fb1"
-- "label": optional, defaults to "Prüfen"
-Example: field "s1_dec42" with label "42 als Binärzahl" → checkGroup with check {"fieldId": "s1_dec42", "expected": "101010", "hint": "42 = 32+8+2"}
+RULES:
+- "number" MUST match the section number from the input worksheet
+- Only include sections that have additions or changes
+- "type": set to "interactive" if adding an interactive component, otherwise omit
+- "interactive": the component definition (see types below)
+- "removeTable": set to true if the section had a table that should be removed (interactive components render their own)
+- "addFields": NEW text fields to add to this section (for interactive sections, add a "text" field for the student's final answer). Use unique IDs.
+- "checkGroups": one per text field that needs an expected answer. "expected" MUST be the correct answer — NEVER empty. The "fieldId" must match an existing or newly added field.
+- "hints": German hints that guide without giving away the answer
+- "compendiumRefs": link to compendium entries by their exact id
 
-B) INTERACTIVE COMPONENTS — When the content involves these topics, REPLACE text fields with interactive widgets:
-- Pixel images, RLE encoding, binary grids → add "interactive" section with pixelGrid:
-  {"type": "pixelGrid", "props": {"width": 8, "height": 8, "fieldId": "pg1", "encodingType": "rle|binary|none", "encodingDirection": "row|col", "solution": [0,1,...], "labels": {"rows": [...], "cols": [...]}}}
-- Bit manipulation, binary values → add "interactive" section with bitVisualizer:
-  {"type": "bitVisualizer", "props": {"bits": 8, "fieldId": "bv1", "labels": ["128","64",...], "showDecimal": true, "showHex": true}}
-- Truth tables, logic gates (AND, OR, NOT, XOR) → add "interactive" section with truthTable:
-  {"type": "truthTable", "props": {"inputs": ["A","B"], "outputLabel": "Q = A AND B", "fieldId": "tt1"}}
-  Then add checkGroups for the truth table outputs (fieldId format: "tt1_r0", "tt1_r1", etc.)
-- Format conversion (binary↔decimal↔hex, ASCII, Morse, RLE) → add "interactive" section with encodingExercise:
-  {"type": "encodingExercise", "props": {"encodingType": "binary|hex|ascii|rle|morse", "fromFormat": "Dezimal", "toFormat": "Binär", "examples": [...], "exercises": [...], "fieldId": "enc1"}}
-- Huffman coding, frequency tables, binary trees → add "interactive" section with huffmanTreeBuilder:
-  {"type": "huffmanTreeBuilder", "props": {"fieldId": "ht1", "initialString": "SCHAFFHAUSEN", "frequencyTable": {"S": 2, "C": 1, ...}, "solution": {"char": undefined, "freq": 12, "left": {...}, "right": {...}, "code": ""}}}
-  If solution is omitted, students fill in codes manually. frequencyTable is auto-generated from initialString if omitted.
-- LZ77 compression, sliding window, buffer/lookahead → add "interactive" section with lz77Simulator:
-  {"type": "lz77Simulator", "props": {"fieldId": "lz1", "inputString": "MUSTERRABARBAR", "bufferSize": 6, "lookaheadSize": 4, "stepByStep": true}}
-- LZ78 compression, dictionary encoding → add "interactive" section with lz78Simulator:
-  {"type": "lz78Simulator", "props": {"fieldId": "lz2", "algorithm": "lz78", "direction": "encode", "inputString": "RADLADERMUSTER", "solution": [{"step": 1, "dictionaryEntry": "R", "output": "(0,R)"}, ...]}}
-- LZW compression, dictionary tables → add "interactive" section with compressionTable:
-  {"type": "compressionTable", "props": {"fieldId": "ct1", "algorithm": "lzw", "direction": "encode", "inputString": "ABABABA", "solution": [{"step": 1, "dictionaryEntry": "AB", "output": "65"}, ...]}}
-  compressionTable can also be used for lz77/lz78 when you want a fillable table format instead of step-by-step simulator
+CRITICAL: Every interactive section MUST have an "addFields" with at least one "text" field for the student's final answer, AND a matching checkGroup with the correct "expected" value.
 
-C) HINTS — Add hints that guide without giving away the answer:
-{"id": "hint1", "label": "optional button text", "content": "hint text in German"}
+INTERACTIVE COMPONENT TYPES:
+- pixelGrid: {"type": "pixelGrid", "props": {"width": 8, "height": 8, "fieldId": "pg1", "encodingType": "rle|binary|none", "encodingDirection": "row|col", "solution": [0,1,...], "labels": {"rows": [...], "cols": [...]}}}
+- bitVisualizer: {"type": "bitVisualizer", "props": {"bits": 8, "fieldId": "bv1", "labels": ["128","64",...], "showDecimal": true, "showHex": true}}
+- truthTable: {"type": "truthTable", "props": {"inputs": ["A","B"], "outputLabel": "Q = A AND B", "fieldId": "tt1"}}
+- encodingExercise: {"type": "encodingExercise", "props": {"encodingType": "binary|hex|ascii|rle|morse", "fromFormat": "Dezimal", "toFormat": "Binär", "examples": [...], "exercises": [...], "fieldId": "enc1"}}
+- huffmanTreeBuilder: {"type": "huffmanTreeBuilder", "props": {"fieldId": "ht1", "initialString": "SCHAFFHAUSEN", "frequencyTable": {"S": 2, "C": 1}}}
+- lz77Simulator (ENCODE): {"type": "lz77Simulator", "props": {"fieldId": "lz1", "inputString": "MUSTERRABARBAR", "bufferSize": 6, "lookaheadSize": 4, "stepByStep": true, "direction": "encode"}}
+- lz77Simulator (DECODE): {"type": "lz77Simulator", "props": {"fieldId": "lz2", "inputString": "", "decodeInput": "(0,0,B) (0,0,A)...", "bufferSize": 6, "lookaheadSize": 4, "direction": "decode"}}
+- lz78Simulator: {"type": "lz78Simulator", "props": {"fieldId": "lz3", "algorithm": "lz78", "direction": "encode", "inputString": "RADLADERMUSTER", "solution": [{"step": 1, "dictionaryEntry": "R", "output": "(0,R)"}]}}
+- compressionTable: {"type": "compressionTable", "props": {"fieldId": "ct1", "algorithm": "lzw", "direction": "encode", "inputString": "ABABABA", "solution": [{"step": 1, "dictionaryEntry": "AB", "output": "65"}]}}
+- xorCalculator: {"type": "xorCalculator", "props": {"fieldId": "xor1", "bits": 8, "inputA": "01001111", "inputB": "01000011", "solution": "00001100"}}
+  Use when: XOR operations, bitwise XOR, exclusive-or, comparing two binary sequences bit by bit
+- asymmetricFlow: {"type": "asymmetricFlow", "props": {"fieldId": "af1", "sender": "Alice", "receiver": "Bob", "message": "Hallo", "steps": [{"label": "Schritt", "description": "..."}]}}
+  Use when: asymmetric encryption, public/private key exchange, Alice/Bob scenarios, RSA flow visualization
+- choiceMatrix: {"type": "choiceMatrix", "props": {"fieldId": "cm1", "columns": ["Wahr", "Falsch"], "rows": [{"question": "Berlin ist die Hauptstadt von Deutschland.", "correctAnswers": ["Wahr"]}], "multipleSelection": false}}
+  Use when: true/false questions, yes/no questions, multiple choice with clickable cells. Columns can be any values (Wahr/Falsch, Ja/Nein, A/B/C/D). Set multipleSelection: true when more than one answer per row is correct. correctAnswers contains the column values that are right.
+- dropdownChoice: {"type": "dropdownChoice", "props": {"fieldId": "dc1", "rows": [{"question": "Welches Protokoll...", "options": ["TCP", "UDP", "ICMP"], "correctAnswers": ["TCP"]}], "multipleSelection": false}}
+  Use when: questions where student picks from a dropdown list, or checkbox-style selection. Set multipleSelection: true for multi-select (renders checkboxes instead of dropdown). correctAnswers contains the option values that are right.
 
-D) COMPENDIUM REFS — Link to reference topics from the compendium:
-{"ref": "compendium-entry-id", "label": "Short German label"}
-Use the EXACT "ref" id from the AVAILABLE COMPENDIUM ENTRIES list above. Place compendiumRefs in sections where the content relates to the referenced topic. Every section that discusses a topic covered by a compendium entry MUST include a compendiumRefs array.
+toolGaps: only include if content needs a component not listed above. Format: [{"name": "englishName", "reason": "German reason", "contentExample": "example", "suggestedProps": "description"}]
 
-IMPORTANT:
-- Change section type from "section" to "interactive" when adding an interactive component
-- Keep ALL existing fields, content, and structure from Pass 1
-- Every "text" field MUST have a matching check in a checkGroup
-- "textarea" fields should NOT have checkGroups
-- Return the COMPLETE worksheet JSON, not just the additions
-
-E) TOOL GAPS — If you encounter content that would benefit from an interactive component NOT listed above (pixelGrid, bitVisualizer, truthTable, encodingExercise), describe it. After the worksheet JSON, add a "toolGaps" array:
-"toolGaps": [
-  {
-    "name": "descriptive English name for the missing tool (e.g. 'dragAndDrop', 'numberLine', 'circuitBuilder')",
-    "reason": "Why this tool would help (in German)",
-    "contentExample": "Brief example of the content that needs it",
-    "suggestedProps": "What props/config the tool would need"
-  }
-]
-Only include toolGaps if you genuinely need a component that does not exist. Do NOT list the 4 existing tools as gaps.`;
+RESPOND WITH ONLY THE JSON PATCH. No markdown, no code fences. Start with { and end with }.`;
   }
 
-  async processPage(rawText: string, pageNumber: number, totalPages: number, compendiumEntries?: Array<{ id: string; title: string; keywords: string }>): Promise<ProviderResponse> {
+  private buildReviewPrompt(enrichedWorksheet: string, compendiumEntries?: Array<{ id: string; title: string }>): string {
+    const compendiumInfo = compendiumEntries && compendiumEntries.length > 0
+      ? `\n\nAVAILABLE COMPENDIUM ENTRIES (validate compendiumRefs "ref" against these IDs):\n${compendiumEntries.map(e => `- ${e.id}: ${e.title}`).join('\n')}`
+      : '';
+
+    return `You are a quality reviewer for educational worksheets in German. You are given a worksheet that has already been structured (Pass 1) and enriched (Pass 2). Your job in Pass 3 is to REVIEW the worksheet and fix ALL issues.
+
+Check for these problems and fix ALL that you find:
+
+1. EMPTY EXPECTED VALUES: Every check in a checkGroup MUST have a non-empty "expected" value containing the correct answer. If any are empty, compute the correct answer from the worksheet content and fill it in. This is the MOST IMPORTANT check — empty expected values make the "Prüfen" button useless.
+
+2. MISSING CHECKGROUPS: Every "text" field (NOT textarea) MUST have a checkGroup. If any text fields lack a checkGroup, add one with the correct expected answer.
+
+3. INTERACTIVE COMPONENT CORRECTNESS:
+   - Every section with type "interactive" MUST have an "interactive" property with a valid type
+   - For lz77Simulator: if the task is DECODING (giving triples to decode), the props MUST include "direction": "decode" and "decodeInput" with the triple string. If the task is ENCODING, use "direction": "encode" with "inputString"
+   - For lz77Simulator/lz78Simulator/compressionTable: the section should NOT have a "table" property (the component renders its own table). Remove any stale "table" from interactive sections
+   - Verify "inputString" matches the actual word from the original document content, not a made-up word
+   - Verify "bufferSize" and "lookaheadSize" match what the document specifies
+
+4. ORPHANED/DUPLICATE FIELD IDs: Every field should have a unique "id" across the entire worksheet. Remove or rename duplicates.
+
+5. MISSING COMPENDIUM REFS: If a section discusses a topic that has compendium entries, add compendiumRefs. If compendium refs exist but the "ref" doesn't match any compendium entry ID, fix it.${compendiumInfo}
+
+6. MISSING HINTS: If a section has difficult content but no hints, add at least one German hint.
+
+7. FORMATTING: Ensure all text content uses proper German spelling and grammar.
+
+8. CHECKGROUP HINTS: Each check should have a meaningful "hint" in German that guides without giving away the answer.
+
+9. EMPTY CONTENT: Every section MUST have a "content" string. If missing or null, set to "".
+
+RESPOND WITH ONLY THE COMPLETE CORRECTED JSON OBJECT. No markdown, no code fences, no explanation. The JSON must start with { and end with }.
+
+INPUT WORKSHEET (enriched, may have issues):
+${enrichedWorksheet}`;
+  }
+
+  async processPage(rawText: string, pageNumber: number, totalPages: number, compendiumEntries?: Array<{ id: string; title: string; keywords: string }>, onStep?: (step: string) => void): Promise<ProviderResponse> {
+    onStep?.('pass1');
     const structureResult = await this.callProvider(this.buildStructurePrompt(), `Page ${pageNumber} of ${totalPages}:\n\n${rawText}`);
     const structured = extractJSON(structureResult) as ProviderResponse;
     console.log(`Pass 1 (structure): ${structured?.sections?.length || 0} sections, title: "${structured?.title || 'N/A'}"`);
+
+    if (!structured || !structured.title || !Array.isArray(structured.sections) || structured.sections.length === 0) {
+      console.error('Pass 1 (structure) produced invalid result. Raw response (first 500 chars):', structureResult.substring(0, 500));
+      return structured || { title: `Page ${pageNumber}`, content: '', sections: [] };
+    }
 
     const structuredStr = JSON.stringify(structured, null, 2);
     const detectedTools = analyzeTextForToolHints(rawText);
@@ -254,34 +325,122 @@ Only include toolGaps if you genuinely need a component that does not exist. Do 
     const enrichmentPrompt = this.buildEnrichmentPrompt(structuredStr, detectedTools.map(t => t.type), compendiumEntries);
     const enrichmentCfg = this.enrichmentConfig || this.config;
 
+    onStep?.('pass2');
     let enrichedResult: string;
     try {
-      enrichedResult = await this.callProviderWithConfig(enrichmentCfg, enrichmentPrompt, 'Add solutions, interactive components, hints, and compendium refs to this worksheet.');
+      enrichedResult = await this.callProviderWithConfig(enrichmentCfg, enrichmentPrompt, 'Return only the JSON patch with additions for this worksheet.');
     } catch (err) {
-      console.error('Pass 2 (enrichment) failed, using Pass 1 result:', err);
+      console.error('Pass 2 (enrichment) API call failed, using Pass 1 result:', err);
       return structured;
     }
 
     try {
-      const enriched = extractJSON(enrichedResult) as ProviderResponse & { toolGaps?: Array<{ name: string; reason: string; contentExample: string; suggestedProps: string }> };
-      const enrichedSections = enriched?.sections as Array<Record<string, unknown>> | undefined;
-      console.log(`Pass 2 (enrichment): ${enrichedSections?.length || 0} sections, types: ${(enrichedSections || []).map(s => s.type).join(', ')}, checkGroups: ${(enrichedSections || []).map(s => Array.isArray(s.checkGroups) ? (s.checkGroups as unknown[]).length : 0).join(', ')}`);
-      if (enriched && enriched.title && Array.isArray(enriched.sections)) {
-        if (enriched.toolGaps && Array.isArray(enriched.toolGaps) && enriched.toolGaps.length > 0) {
-          saveToolGaps(enriched.toolGaps.map(g => ({
-            ...g,
-            detectedAt: new Date().toISOString(),
-          })));
-          console.log(`Detected ${enriched.toolGaps.length} tool gap(s): ${enriched.toolGaps.map(g => g.name).join(', ')}`);
-        }
-        const { toolGaps, ...worksheetData } = enriched;
-        return worksheetData;
+      const patch = extractJSON(enrichedResult) as {
+        sections?: Array<Record<string, unknown>>;
+        toolGaps?: Array<{ name: string; reason: string; contentExample: string; suggestedProps: string }>;
+      };
+      const patchSections = patch?.sections || [];
+      console.log(`Pass 2 (enrichment patch): ${patchSections.length} section patches, checkGroups: ${patchSections.map(s => Array.isArray(s.checkGroups) ? (s.checkGroups as unknown[]).length : 0).join(', ')}, interactive: ${patchSections.filter(s => s.interactive).length}`);
+
+      // Apply patch to structured worksheet
+      const merged = this.applyEnrichmentPatch(structured, patch);
+      const mergedSections = merged.sections as Array<Record<string, unknown>>;
+      console.log(`Pass 2 (merged): ${mergedSections.length} sections, types: ${mergedSections.map(s => s.type).join(', ')}, checkGroups: ${mergedSections.map(s => Array.isArray(s.checkGroups) ? (s.checkGroups as unknown[]).length : 0).join(', ')}`);
+
+      if (patch.toolGaps && Array.isArray(patch.toolGaps) && patch.toolGaps.length > 0) {
+        saveToolGaps(patch.toolGaps.map(g => ({
+          ...g,
+          detectedAt: new Date().toISOString(),
+        })));
+        console.log(`Detected ${patch.toolGaps.length} tool gap(s): ${patch.toolGaps.map(g => g.name).join(', ')}`);
       }
+
+      if (this.reviewerConfig) {
+        onStep?.('pass3');
+        try {
+          const reviewPrompt = this.buildReviewPrompt(JSON.stringify(merged, null, 2), compendiumEntries);
+          console.log(`Pass 3 (review): starting review of ${mergedSections.length} sections`);
+          const reviewResult = await this.callProviderWithConfig(this.reviewerConfig, reviewPrompt, 'Review and fix this worksheet for correctness and completeness.');
+          const reviewed = extractJSON(reviewResult) as ProviderResponse;
+          if (reviewed && reviewed.title && Array.isArray(reviewed.sections) && reviewed.sections.length > 0) {
+            const reviewedSections = reviewed.sections as Array<Record<string, unknown>>;
+            const reviewCGs = reviewedSections.map(s => Array.isArray(s.checkGroups) ? (s.checkGroups as unknown[]).length : 0);
+            const reviewInteractive = reviewedSections.filter(s => s.type === 'interactive').length;
+            console.log(`Pass 3 (review): ${reviewedSections.length} sections, checkGroups: ${reviewCGs.join(', ')}, interactive: ${reviewInteractive}`);
+            return reviewed;
+          }
+          console.error('Pass 3 (review) produced invalid result, using Pass 2 merged result');
+        } catch (err) {
+          console.error('Pass 3 (review) failed, using Pass 2 merged result:', err);
+        }
+      }
+
+      return merged;
     } catch (err) {
       console.error('Pass 2 (enrichment) JSON parse failed, using Pass 1 result:', err);
     }
 
     return structured;
+  }
+
+  private applyEnrichmentPatch(worksheet: ProviderResponse, patch: { sections?: Array<Record<string, unknown>> }): ProviderResponse {
+    const sections = (worksheet.sections || []) as Array<Record<string, unknown>>;
+    const patchSections = patch.sections || [];
+    
+    // Build a lookup by section number
+    const patchByNumber = new Map<string, Record<string, unknown>>();
+    for (const ps of patchSections) {
+      const num = String(ps.number);
+      if (num) patchByNumber.set(num, ps);
+    }
+
+    const mergedSections = sections.map(section => {
+      const num = String(section.number);
+      const patchSection = patchByNumber.get(num);
+      if (!patchSection) return section;
+
+      const merged = { ...section };
+
+      // Change type if specified
+      if (patchSection.type) {
+        merged.type = patchSection.type;
+      }
+
+      // Add interactive component
+      if (patchSection.interactive) {
+        merged.interactive = patchSection.interactive;
+      }
+
+      // Remove table if requested
+      if (patchSection.removeTable) {
+        delete merged.table;
+      }
+
+      // Add new fields
+      if (patchSection.addFields && Array.isArray(patchSection.addFields)) {
+        const existingFields = (merged.fields || []) as unknown[];
+        merged.fields = [...existingFields, ...patchSection.addFields];
+      }
+
+      // Merge checkGroups (replace or add)
+      if (patchSection.checkGroups && Array.isArray(patchSection.checkGroups)) {
+        merged.checkGroups = patchSection.checkGroups;
+      }
+
+      // Merge hints
+      if (patchSection.hints && Array.isArray(patchSection.hints)) {
+        merged.hints = patchSection.hints;
+      }
+
+      // Merge compendiumRefs
+      if (patchSection.compendiumRefs && Array.isArray(patchSection.compendiumRefs)) {
+        merged.compendiumRefs = patchSection.compendiumRefs;
+      }
+
+      return merged;
+    });
+
+    return { ...worksheet, sections: mergedSections };
   }
 
   private async callProvider(systemPrompt: string, userMessage: string): Promise<string> {
@@ -359,6 +518,7 @@ Only include toolGaps if you genuinely need a component that does not exist. Do 
         ],
         stream: false,
         format: 'json',
+        options: { num_predict: 32768 },
       }),
       signal: AbortSignal.timeout(900000),
     });
@@ -389,6 +549,7 @@ Only include toolGaps if you genuinely need a component that does not exist. Do 
         ],
         stream: true,
         format: 'json',
+        options: { num_predict: 32768 },
       }),
       signal: AbortSignal.timeout(900000),
     });

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, InteractiveComponent } from '@/lib/worksheet-schema';
+import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, InteractiveComponent, LZ77SimulatorProps, XorCalculatorProps, AsymmetricFlowProps, ChoiceMatrixProps, DropdownChoiceProps } from '@/lib/worksheet-schema';
 
 interface MatchResult {
   type: 'bold' | 'code' | 'linebreak';
@@ -391,12 +391,15 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
       );
     }
     case 'lz77Simulator': {
-      const { fieldId, inputString } = interactive.props;
-      const savedStep = parseInt(fields[fieldId] || '0', 10) || 0;
+      const { fieldId, inputString, decodeInput, direction } = interactive.props as LZ77SimulatorProps;
+      const isDecode = direction === 'decode';
+      const displayInput = isDecode ? (decodeInput || '') : inputString;
       return (
         <div key={fieldId} style={{ margin: '0.75rem 0' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem' }}>LZ77 Simulator — Eingabe: <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>{inputString}</code></div>
-          <div style={{ fontSize: '0.85rem', color: '#7a6f63' }}>Schritt: {savedStep}</div>
+          <div style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: '#f5ecd4', color: '#8b6508', border: '1px solid #b8860b', marginBottom: '0.5rem' }}>
+            LZ77 — {isDecode ? 'Dekodierung' : 'Kodierung'}
+          </div>
+          <div style={{ fontSize: '0.85rem' }}>Eingabe: <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{displayInput}</code></div>
         </div>
       );
     }
@@ -410,6 +413,74 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
             {algoLabel} — {direction === 'encode' ? 'Kodierung' : 'Dekodierung'}
           </div>
           <div style={{ fontSize: '0.85rem' }}>Eingabe: <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{inputString}</code></div>
+        </div>
+      );
+    }
+    case 'xorCalculator': {
+      const { fieldId, bits = 8, inputA, inputB } = interactive.props as XorCalculatorProps;
+      return (
+        <div key={fieldId} style={{ margin: '0.75rem 0' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem' }}>XOR-Rechner</div>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.85rem' }}>
+            <div>A: {inputA.padStart(bits, '0')}</div>
+            <div>B: {inputB.padStart(bits, '0')}</div>
+            <div style={{ marginTop: '0.25rem' }}>⊕ Ergebnis: {'_'.repeat(bits)}</div>
+          </div>
+        </div>
+      );
+    }
+    case 'asymmetricFlow': {
+      const { fieldId, sender, receiver, message } = interactive.props as AsymmetricFlowProps;
+      return (
+        <div key={fieldId} style={{ margin: '0.75rem 0' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem' }}>Asymmetrische Verschlüsselung — {sender} → {receiver}</div>
+          <div style={{ fontSize: '0.85rem' }}>Nachricht: <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>{message}</code></div>
+        </div>
+      );
+    }
+    case 'choiceMatrix': {
+      const { fieldId, columns, rows } = interactive.props as ChoiceMatrixProps;
+      return (
+        <div key={fieldId} style={{ margin: '0.75rem 0', overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem', width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '0.3rem 0.5rem' }}>Frage</th>
+                {columns.map(col => <th key={col} style={{ textAlign: 'center', borderBottom: '1px solid #ccc', padding: '0.3rem' }}>{col}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i}>
+                  <td style={{ borderBottom: '1px solid #eee', padding: '0.3rem 0.5rem' }}>{row.question}</td>
+                  {columns.map(col => <td key={col} style={{ textAlign: 'center', borderBottom: '1px solid #eee', padding: '0.3rem' }}><span style={{ display: 'inline-block', width: '1.25rem', height: '1.25rem', border: '1px solid #999', borderRadius: '3px' }}></span></td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case 'dropdownChoice': {
+      const { fieldId, rows, multipleSelection } = interactive.props as DropdownChoiceProps;
+      return (
+        <div key={fieldId} style={{ margin: '0.75rem 0' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem', width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '0.3rem 0.5rem' }}>Frage</th>
+                <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '0.3rem 0.5rem' }}>Antwort{multipleSelection ? 'en' : ''}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i}>
+                  <td style={{ borderBottom: '1px solid #eee', padding: '0.3rem 0.5rem' }}>{row.question}</td>
+                  <td style={{ borderBottom: '1px solid #eee', padding: '0.3rem 0.5rem', color: '#999' }}>__________</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       );
     }

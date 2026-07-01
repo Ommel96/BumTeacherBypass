@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { getPage, updatePageContent, updatePageTitle, updatePageWorksheetData, getPagesByDocument, getDocument } from '@/lib/document-store';
+import { getPage, updatePageContent, updatePageTitle, updatePageWorksheetData, getPagesByDocument, getDocument, updateDocumentStatus, updateProcessingStep, updateProcessingTimings } from '@/lib/document-store';
 import { regeneratePage } from '@/lib/openai-processor';
 import { getProviderConfigForRole, getProviderConfig } from '@/lib/providers-store';
 import { listCompendiumEntries } from '@/lib/compendium-store';
@@ -58,7 +58,40 @@ export async function POST(
       return NextResponse.json({ error: 'Page not found' }, { status: 404 });
     }
 
-    const providerConfig = getProviderConfigForRole('default');
+    const body = await request.json().catch(() => ({}));
+    const { enrichmentModel, reviewerModel } = body as { enrichmentModel?: string; reviewerModel?: string };
+
+    let providerConfig = getProviderConfigForRole('default');
+    if (body.providerModel && typeof body.providerModel === 'string') {
+      const [pid, modelOverride] = body.providerModel.includes(':') ? body.providerModel.split(':') : [body.providerModel, undefined];
+      providerConfig = getProviderConfig(pid);
+      if (modelOverride) providerConfig.model = modelOverride;
+    }
+
+    let enrichmentConfig: import('@/lib/ai-provider').ProviderConfig | undefined;
+    if (enrichmentModel) {
+      const [pid, modelOverride] = enrichmentModel.includes(':') ? enrichmentModel.split(':') : [enrichmentModel, undefined];
+      enrichmentConfig = getProviderConfig(pid);
+      if (modelOverride) enrichmentConfig.model = modelOverride;
+    } else {
+      const settings = await import('@/lib/settings-store').then(m => m.getSettings());
+      if (settings.enrichmentProviderId) {
+        enrichmentConfig = getProviderConfigForRole('enrichment');
+      }
+    }
+
+    let reviewerConfig: import('@/lib/ai-provider').ProviderConfig | undefined;
+    if (reviewerModel) {
+      const [pid, modelOverride] = reviewerModel.includes(':') ? reviewerModel.split(':') : [reviewerModel, undefined];
+      reviewerConfig = getProviderConfig(pid);
+      if (modelOverride) reviewerConfig.model = modelOverride;
+    } else {
+      const settings = await import('@/lib/settings-store').then(m => m.getSettings());
+      if (settings.reviewerProviderId) {
+        reviewerConfig = getProviderConfigForRole('reviewer');
+      }
+    }
+
     const allPages = getPagesByDocument(page.document_id);
 
     let compendiumEntries: Array<{ id: string; title: string; keywords: string }> = [];
@@ -70,22 +103,34 @@ export async function POST(
       }
     } catch {}
 
-    const result = await regeneratePage(page.raw_text, page.page_number, allPages.length, providerConfig, undefined, compendiumEntries);
+    updateDocumentStatus(page.document_id, 'processing');
+    updateProcessingStep(page.document_id, 'pass1');
+    updateProcessingTimings(page.document_id, {});
 
-    updatePageContent(params.id, result.content);
-    updatePageTitle(params.id, result.title);
-    updatePageWorksheetData(params.id, result.worksheet_data);
+    const timings: Record<string, number> = {};
 
-    return NextResponse.json({
-      page: {
-        ...page,
-        content: result.content,
-        title: result.title,
-        worksheet_data: result.worksheet_data,
-      },
-    });
+    (async () => {
+      try {
+        const result = await regeneratePage(page.raw_text, page.page_number, allPages.length, providerConfig, enrichmentConfig, compendiumEntries, reviewerConfig, timings, (updated) => updateProcessingTimings(page.document_id, updated));
+
+        updatePageContent(params.id, result.content);
+        updatePageTitle(params.id, result.title);
+        updatePageWorksheetData(params.id, result.worksheet_data);
+
+        timings.total = Object.values(timings).reduce((a, b) => a + b, 0);
+        updateProcessingTimings(page.document_id, timings);
+        updateDocumentStatus(page.document_id, 'processed');
+        updateProcessingStep(page.document_id, 'done');
+      } catch (err) {
+        console.error('Regenerate page error:', err);
+        updateDocumentStatus(page.document_id, 'error');
+        updateProcessingStep(page.document_id, 'error');
+      }
+    })();
+
+    return NextResponse.json({ ok: true, status: 'processing' });
   } catch (error) {
-    console.error('Regenerate page error:', error);
+    console.error('Regenerate route error:', error);
     return NextResponse.json({ error: 'Failed to regenerate page' }, { status: 500 });
   }
 }

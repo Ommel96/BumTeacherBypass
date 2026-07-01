@@ -71,10 +71,12 @@ These are components we may want to add in the future:
 
 ### lz77Simulator
 - **Type**: `lz77Simulator`
-- **Purpose**: Step-by-step LZ77 sliding window compression visualization. Shows buffer and lookahead window moving through the input string.
-- **Props**: `fieldId`, `inputString`, `bufferSize`, `lookaheadSize`, `solution` (optional array of triples), `stepByStep`
-- **Detection patterns**: LZ77, Sliding Window, gleitendes Fenster, Suchpuffer, Rückwärtsreferenz, Tripelkodierung
-- **AI trigger**: Content about LZ77 algorithm, sliding window compression, buffer/lookahead encoding
+- **Purpose**: LZ77 sliding window compression visualization. Supports both ENCODE (shows step-by-step buffer/lookahead/output) and DECODE (students fill in buffer state and output per triple, plus final decoded text).
+- **Props**: `fieldId`, `inputString`, `bufferSize`, `lookaheadSize`, `solution` (optional array of triples), `stepByStep`, `direction` ('encode'|'decode'), `decodeInput` (triple string for decode mode)
+- **Detection patterns**: LZ77, Sliding Window, gleitendes Fenster, Suchpuffer, Rückwärtsreferenz, Tripelkodierung, Dekodieren
+- **AI trigger**: Content about LZ77 algorithm, sliding window compression, buffer/lookahead encoding OR decoding triples
+- **Encode mode**: Shows step-by-step visualization with buffer/lookahead/output. Student enters final code string in a text field.
+- **Decode mode**: Shows triples to decode. Student fills in buffer state and output per step, plus final decoded text.
 
 ### lz78Simulator
 - **Type**: `lz78Simulator`
@@ -89,6 +91,36 @@ These are components we may want to add in the future:
 - **Props**: `fieldId`, `algorithm` ('lz77'|'lz78'|'lzw'), `direction` ('encode'|'decode'), `inputString`, `bufferSize`, `lookaheadSize`, `solution` (optional array of CompressionTableRow)
 - **Detection patterns**: Kompressionstabelle, Dekodierungstabelle, Kodierungstabelle, Kompressionsverfahren
 - **AI trigger**: Content about compression algorithms that need tabular step-by-step input
+
+### xorCalculator
+- **Type**: `xorCalculator`
+- **Purpose**: Interactive XOR calculator. Shows two binary inputs bit-by-bit, student fills in each XOR result bit and the final result string.
+- **Props**: `fieldId`, `bits` (default 8), `inputA` (binary string), `inputB` (binary string), `solution` (optional, expected XOR result)
+- **Detection patterns**: XOR, Exklusiv-Oder, bitwise XOR, XOR-Verknüpfung, XOR-Operation
+- **AI trigger**: Content about XOR operations, bitwise comparisons, exclusive-or logic on binary sequences
+
+### asymmetricFlow
+- **Type**: `asymmetricFlow`
+- **Purpose**: Step-by-step visualizer for asymmetric encryption flow (Alice/Bob scenario). Shows key generation, public key exchange, encryption, transmission, and decryption.
+- **Props**: `fieldId`, `sender` (e.g. "Alice"), `receiver` (e.g. "Bob"), `message` (the plaintext), `steps` (optional array of {label, description})
+- **Detection patterns**: asymmetrische Verschlüsselung, Public Key, Private Key, Schlüsselpaar, Alice/Bob, RSA
+- **AI trigger**: Content about asymmetric encryption, public/private key exchange, RSA flow, key distribution scenarios
+
+### choiceMatrix
+- **Type**: `choiceMatrix`
+- **Purpose**: Interactive multiple-choice table. Questions on the left, clickable cells extend to the right for each possible answer (Wahr/Falsch, Ja/Nein, A/B/C/D, etc.). Supports single or multiple correct answers per row.
+- **Props**: `fieldId`, `columns` (array of column headers, e.g. ["Wahr", "Falsch"]), `rows` (array of {question, correctAnswers[]}), `multipleSelection` (boolean, false = single selection per row, true = multiple)
+- **Detection patterns**: Wahr/Falsch, True/False, Multiple Choice, Mehrfachauswahl, Kreuztabelle, zutreffend kreuzen, Ja/Nein
+- **AI trigger**: Content with true/false questions, yes/no tables, multiple choice grids, cross-matching exercises
+- **Checking**: "Prüfen" button validates all rows. Correct selections turn green, wrong turn red, missed correct answers highlighted.
+
+### dropdownChoice
+- **Type**: `dropdownChoice`
+- **Purpose**: Interactive question table with dropdown or checkbox selection. Questions on the left, answer selection on the right. Single-select renders a dropdown, multi-select renders checkboxes. Supports multiple correct answers per row.
+- **Props**: `fieldId`, `rows` (array of {question, options[], correctAnswers[]}), `multipleSelection` (boolean, false = dropdown single-select, true = checkbox multi-select)
+- **Detection patterns**: Dropdown, Auswahl, Wähle aus, Welche der folgenden, Ordne zu, Auswahlmöglichkeit
+- **AI trigger**: Content with selection questions, matching exercises, "choose the correct answer" prompts
+- **Checking**: "Prüfen" button validates all rows. Correct selections turn green, wrong turn red, missed correct answers highlighted.
 - Interactive number line for integer/fraction visualization
 - Detection: Zahlengerade, Brüche, Intervall
 
