@@ -23,29 +23,45 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { documentId } = body;
+  const { documentId, documentIds } = body;
 
-  if (!documentId) {
-    return NextResponse.json({ error: 'Missing documentId' }, { status: 400 });
+  // Accept either a single documentId or an array of documentIds
+  let docIds: string[];
+  if (Array.isArray(documentIds) && documentIds.length > 0) {
+    docIds = documentIds.filter(Boolean);
+  } else if (documentId) {
+    docIds = [documentId];
+  } else {
+    return NextResponse.json({ error: 'Missing documentId or documentIds' }, { status: 400 });
   }
 
-  const doc = getDocument(documentId);
-  if (!doc) {
+  // Collect text from all related documents
+  const docs = docIds.map(id => getDocument(id)).filter((d): d is NonNullable<typeof d> => d !== null && d !== undefined);
+  if (docs.length === 0) {
     return NextResponse.json({ error: 'Document not found' }, { status: 404 });
   }
 
-  const pages = getPagesByDocument(documentId);
-  const rawText = pages.map(p => p.raw_text || p.content || '').filter(Boolean).join('\n');
+  // Use the first document's module/topic for all (they should share the same module/topic)
+  const primaryDoc = docs[0]!;
+
+  // Gather text from all related documents
+  const allTexts: string[] = [];
+  for (const doc of docs) {
+    const pages = getPagesByDocument(doc.id);
+    const text = pages.map(p => p.raw_text || p.content || '').filter(Boolean).join('\n');
+    if (text.trim()) allTexts.push(text);
+  }
+  const rawText = allTexts.join('\n\n---\n\n');
 
   if (!rawText.trim()) {
-    return NextResponse.json({ error: 'No text content in document' }, { status: 400 });
+    return NextResponse.json({ error: 'No text content in documents' }, { status: 400 });
   }
 
   try {
     const config = getProviderConfigForRole('compendium');
     const provider = new AIProvider(config);
 
-    const existingEntries = listCompendiumEntries(doc.module_number, doc.topic).map(e => ({
+    const existingEntries = listCompendiumEntries(primaryDoc.module_number, primaryDoc.topic).map(e => ({
       title: e.title,
       content: e.content,
       keywords: e.keywords,
@@ -57,18 +73,20 @@ export async function POST(request: NextRequest) {
       webResearch = await researchTopic(keywords);
     } catch {}
 
-    const generated = await provider.generateCompendiumEntries(rawText, doc.module_number, doc.topic, existingEntries, webResearch);
+    const generated = await provider.generateCompendiumEntries(rawText, primaryDoc.module_number, primaryDoc.topic, existingEntries, webResearch);
 
+    const allDocIds = docIds.join(',');
     const upsertedIds: string[] = [];
     for (const entry of generated) {
       const id = upsertCompendiumEntry({
         id: '',
-        module_number: doc.module_number,
-        topic: doc.topic,
+        module_number: primaryDoc.module_number,
+        topic: primaryDoc.topic,
         title: entry.title,
         content: entry.content,
         keywords: (entry.keywords || []).join(','),
-        source_doc_ids: documentId,
+        interactive_examples: JSON.stringify(entry.interactive_examples || []),
+        source_doc_ids: allDocIds,
       });
       upsertedIds.push(id);
     }

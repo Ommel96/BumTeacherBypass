@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
+import type { GenericComponentProps } from '@/lib/worksheet-schema';
+
+import { WorksheetProvider } from '@/components/worksheet/WorksheetProvider';
+
+const GenericComponent = dynamic(() => import('@/components/worksheet/InteractiveComponents').then(m => m.GenericComponent), { ssr: false });
+
+interface InteractiveExample {
+  label: string;
+  component: { type: 'custom'; props: GenericComponentProps };
+}
 
 interface RelatedEntry {
   id: string;
@@ -18,6 +29,7 @@ interface CompendiumDetail {
   title: string;
   content: string;
   keywords: string;
+  interactive_examples: string;
   source_doc_ids: string;
   created_at: string;
   related: RelatedEntry[];
@@ -31,6 +43,7 @@ function renderContent(text: string): React.ReactNode {
   let orderedItems: string[] = [];
   let tableRows: string[][] = [];
   let tableHeader: string[] | null = null;
+  let codeBlockLines: string[] | null = null;
 
   const flushList = () => {
     if (listItems.length > 0) {
@@ -69,10 +82,52 @@ function renderContent(text: string): React.ReactNode {
     tableRows = [];
   };
 
+  const flushCodeBlock = () => {
+    if (codeBlockLines && codeBlockLines.length > 0) {
+      elements.push(
+        <pre key={key++} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem 1rem', margin: '0.75rem 0', overflowX: 'auto', fontSize: '0.85rem', lineHeight: 1.6, fontFamily: 'JetBrains Mono, monospace', color: 'var(--text)' }}>
+          <code>{codeBlockLines.join('\n')}</code>
+        </pre>
+      );
+    }
+    codeBlockLines = null;
+  };
+
   const isSeparatorRow = (cells: string[]) => cells.every(c => /^[\s-:]+$/.test(c.trim()));
 
   for (const line of lines) {
     const trimmed = line.trim();
+
+    // Handle fenced code blocks (``` or `)
+    if (trimmed.startsWith('```')) {
+      flushList();
+      flushTable();
+      if (codeBlockLines !== null) {
+        // Closing fence
+        flushCodeBlock();
+      } else {
+        // Opening fence
+        codeBlockLines = [];
+      }
+      continue;
+    }
+
+    // Handle single-backtick code blocks (some models use ` instead of ```)
+    if (codeBlockLines === null && trimmed === '`') {
+      flushList();
+      flushTable();
+      codeBlockLines = [];
+      continue;
+    }
+    if (codeBlockLines !== null && trimmed === '`') {
+      flushCodeBlock();
+      continue;
+    }
+
+    if (codeBlockLines !== null) {
+      codeBlockLines.push(line);
+      continue;
+    }
 
     if (!trimmed) {
       flushList();
@@ -123,6 +178,7 @@ function renderContent(text: string): React.ReactNode {
   }
   flushList();
   flushTable();
+  flushCodeBlock();
 
   return <>{elements}</>;
 }
@@ -189,11 +245,11 @@ export default function CompendiumDetailPage() {
     if (!entry?.source_doc_ids) return;
     setRegenerating(true);
     try {
-      const docId = String(entry.source_doc_ids).split(',')[0];
+      const docIds = String(entry.source_doc_ids).split(',').filter(Boolean);
       const res = await fetch('/api/compendium', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentId: docId }),
+        body: JSON.stringify({ documentIds: docIds }),
       });
       if (!res.ok) throw new Error(`Regenerate failed: ${res.status}`);
       await fetchEntry();
@@ -298,6 +354,30 @@ export default function CompendiumDetailPage() {
         <div className="prose max-w-none text-[var(--text)] text-sm leading-relaxed">
           {renderContent(entry.content)}
         </div>
+
+        {entry.interactive_examples && (() => {
+          try {
+            const examples = JSON.parse(entry.interactive_examples) as InteractiveExample[];
+            if (!Array.isArray(examples) || examples.length === 0) return null;
+            return (
+              <div className="mt-6 pt-6 border-t border-[var(--border)]">
+                <h3 className="font-serif text-lg font-bold mb-4 text-[var(--accent-dark)]">Interaktive Beispiele</h3>
+                <WorksheetProvider worksheetKey={`compendium-${entry.id}`}>
+                  <div className="space-y-4">
+                    {examples.map((ex, i) => (
+                      <div key={i} className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-4">
+                        <div className="font-semibold text-sm mb-3 text-[var(--accent-dark)]">{ex.label}</div>
+                        {ex.component?.type === 'custom' && ex.component?.props && (
+                          <GenericComponent props={ex.component.props} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </WorksheetProvider>
+              </div>
+            );
+          } catch { return null; }
+        })()}
       </div>
 
       {entry.source_doc_ids && (

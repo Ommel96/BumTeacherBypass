@@ -31,6 +31,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     title: existing.title,
     content: body.content ?? existing.content,
     keywords: body.keywords ?? existing.keywords,
+    interactive_examples: body.interactive_examples ?? existing.interactive_examples,
     source_doc_ids: body.source_doc_ids ?? existing.source_doc_ids,
   });
 

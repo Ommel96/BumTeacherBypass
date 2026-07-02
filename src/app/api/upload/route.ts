@@ -69,6 +69,10 @@ export async function POST(request: NextRequest) {
 
     const { id, filePath } = await saveUploadedFile(file, { year, semester, module_number: moduleNumber, topic });
 
+    // Mark as processing immediately so the frontend shows the loading tracker
+    updateDocumentStatus(id, 'processing');
+    updateProcessingStep(id, 'extracting');
+
     const processingPromise = (async () => {
       const timings: Record<string, number> = {};
       const startTime = Date.now();
@@ -152,6 +156,7 @@ export async function POST(request: NextRequest) {
                   title: entry.title,
                   content: entry.content,
                   keywords: (entry.keywords || []).join(','),
+                  interactive_examples: JSON.stringify(entry.interactive_examples || []),
                   source_doc_ids: id,
                 });
               }

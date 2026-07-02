@@ -73,9 +73,10 @@ function getOrCreateDb(): Database.Database {
       title       TEXT NOT NULL,
       content     TEXT NOT NULL DEFAULT '',
       keywords    TEXT NOT NULL DEFAULT '',
+      interactive_examples TEXT NOT NULL DEFAULT '',
       source_doc_ids TEXT NOT NULL DEFAULT '',
       created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE INDEX IF NOT EXISTS idx_compendium_module ON compendium(module_number, topic);
@@ -130,6 +131,12 @@ function getOrCreateDb(): Database.Database {
   const pageCols = pageInfo.map(c => c.name);
   if (!pageCols.includes('worksheet_data')) {
     db.exec("ALTER TABLE pages ADD COLUMN worksheet_data TEXT");
+  }
+
+  const compendiumInfo = db.prepare("PRAGMA table_info(compendium)").all() as Array<{ name: string }>;
+  const compendiumCols = compendiumInfo.map(c => c.name);
+  if (!compendiumCols.includes('interactive_examples')) {
+    db.exec("ALTER TABLE compendium ADD COLUMN interactive_examples TEXT NOT NULL DEFAULT ''");
   }
 
   if (!globalForDb._migrated_providers) {

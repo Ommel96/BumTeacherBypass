@@ -169,7 +169,141 @@ export interface DropdownChoiceProps {
   multipleSelection?: boolean;
 }
 
-export type InteractiveComponent = 
+// ─── Generic / custom component DSL ───
+// A composable layout tree that the AI can assemble when no named component fits.
+// The GenericComponent renderer interprets this tree using the existing useWorksheet hook.
+
+export interface PrimitiveBase {
+  id?: string;
+}
+
+export interface DisplayPrimitive extends PrimitiveBase {
+  type: 'display';
+  content: string;
+  format?: 'text' | 'code' | 'mono';
+  className?: string;
+}
+
+export interface InputPrimitive extends PrimitiveBase {
+  type: 'input';
+  fieldId: string;
+  label?: string;
+  placeholder?: string;
+  inputType?: 'text' | 'number' | 'password';
+  maxLength?: number;
+  width?: string;
+  mono?: boolean;
+}
+
+export interface TextareaPrimitive extends PrimitiveBase {
+  type: 'textarea';
+  fieldId: string;
+  label?: string;
+  placeholder?: string;
+  rows?: number;
+}
+
+export interface TablePrimitive extends PrimitiveBase {
+  type: 'table';
+  columns: Array<{ key: string; label: string; editable?: boolean; width?: string }>;
+  rows: Array<Record<string, string>>;
+  fieldId: string;
+}
+
+export interface ToggleGridPrimitive extends PrimitiveBase {
+  type: 'toggleGrid';
+  fieldId: string;
+  columns: string[];
+  rows: Array<{ label: string; correctAnswers: string[] }>;
+  multipleSelection?: boolean;
+}
+
+export interface DropdownPrimitive extends PrimitiveBase {
+  type: 'dropdown';
+  fieldId: string;
+  rows: Array<{ question: string; options: string[]; correctAnswers: string[] }>;
+  multipleSelection?: boolean;
+}
+
+export interface StepperPrimitive extends PrimitiveBase {
+  type: 'stepper';
+  fieldId: string;
+  steps: Array<{ label: string; description?: string; inputPlaceholder?: string }>;
+}
+
+export interface CodeLinePrimitive extends PrimitiveBase {
+  type: 'codeLine';
+  fieldId: string;
+  cells: Array<{ label?: string; fieldId?: string; editable: boolean; value?: string; width?: string; maxLength?: number }>;
+}
+
+export interface CheckButtonPrimitive extends PrimitiveBase {
+  type: 'checkButton';
+  checks: Array<{ fieldId: string; expected: string; hint?: string; opts?: { normalize?: boolean; contains?: boolean } }>;
+  feedbackId: string;
+  label?: string;
+}
+
+export interface ResetButtonPrimitive extends PrimitiveBase {
+  type: 'resetButton';
+  fieldIds: string[];
+  label?: string;
+}
+
+export interface SolutionButtonPrimitive extends PrimitiveBase {
+  type: 'solutionButton';
+  fieldId: string;
+  solution: string;
+  label?: string;
+}
+
+export interface RowPrimitive extends PrimitiveBase {
+  type: 'row';
+  children: GenericPrimitive[];
+  gap?: string;
+  align?: 'start' | 'center' | 'end' | 'stretch';
+  wrap?: boolean;
+}
+
+export interface ColPrimitive extends PrimitiveBase {
+  type: 'col';
+  children: GenericPrimitive[];
+  gap?: string;
+  align?: 'start' | 'center' | 'end' | 'stretch';
+}
+
+export interface RepeatPrimitive extends PrimitiveBase {
+  type: 'repeat';
+  fieldId: string;
+  count: number;
+  child: GenericPrimitive;
+  labelTemplate?: string;
+  fieldIdTemplate?: string;
+  startIndex?: number;
+}
+
+export type GenericPrimitive =
+  | DisplayPrimitive
+  | InputPrimitive
+  | TextareaPrimitive
+  | TablePrimitive
+  | ToggleGridPrimitive
+  | DropdownPrimitive
+  | StepperPrimitive
+  | CodeLinePrimitive
+  | CheckButtonPrimitive
+  | ResetButtonPrimitive
+  | SolutionButtonPrimitive
+  | RowPrimitive
+  | ColPrimitive
+  | RepeatPrimitive;
+
+export interface GenericComponentProps {
+  fieldId: string;
+  layout: GenericPrimitive[];
+}
+
+export type InteractiveComponent =
   | { type: 'pixelGrid'; props: PixelGridProps }
   | { type: 'bitVisualizer'; props: BitVisualizerProps }
   | { type: 'truthTable'; props: TruthTableProps }
@@ -181,7 +315,8 @@ export type InteractiveComponent =
   | { type: 'xorCalculator'; props: XorCalculatorProps }
   | { type: 'asymmetricFlow'; props: AsymmetricFlowProps }
   | { type: 'choiceMatrix'; props: ChoiceMatrixProps }
-  | { type: 'dropdownChoice'; props: DropdownChoiceProps };
+  | { type: 'dropdownChoice'; props: DropdownChoiceProps }
+  | { type: 'custom'; props: GenericComponentProps };
 
 export interface WorksheetSection {
   type: 'section' | 'story' | 'info' | 'example' | 'interactive';
@@ -254,7 +389,7 @@ export function validateWorksheetData(data: unknown): { valid: boolean; errors: 
     if (s.type === 'section' && !s.title) {
       errors.push(`Section ${i}: section type requires title`);
     }
-    if (s.interactive && typeof s.interactive === 'object' && !['pixelGrid', 'bitVisualizer', 'truthTable', 'encodingExercise', 'huffmanTreeBuilder', 'lz77Simulator', 'lz78Simulator', 'compressionTable'].includes((s.interactive as Record<string, unknown>).type as string)) {
+    if (s.interactive && typeof s.interactive === 'object' && !['pixelGrid', 'bitVisualizer', 'truthTable', 'encodingExercise', 'huffmanTreeBuilder', 'lz77Simulator', 'lz78Simulator', 'compressionTable', 'xorCalculator', 'asymmetricFlow', 'choiceMatrix', 'dropdownChoice', 'custom'].includes((s.interactive as Record<string, unknown>).type as string)) {
       errors.push(`Section ${i}: invalid interactive type "${(s.interactive as Record<string, unknown>).type}"`);
     }
     if (s.fields && !Array.isArray(s.fields)) {

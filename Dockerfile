@@ -20,6 +20,8 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+RUN apk add --no-cache su-exec
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -36,8 +38,6 @@ RUN mkdir -p /app/data/uploads && chown -R nextjs:nodejs /app/data
 COPY --chown=nextjs:nodejs docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
-USER nextjs
-
 EXPOSE 3847
 
 ENV PORT=3847
@@ -46,5 +46,6 @@ ENV HOSTNAME="0.0.0.0"
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3847/ || exit 1
 
+# Start as root so the entrypoint can fix volume permissions, then drop to nextjs
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "server.js"]

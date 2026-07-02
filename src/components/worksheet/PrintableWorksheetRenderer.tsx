@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, InteractiveComponent, LZ77SimulatorProps, XorCalculatorProps, AsymmetricFlowProps, ChoiceMatrixProps, DropdownChoiceProps } from '@/lib/worksheet-schema';
+import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, InteractiveComponent, LZ77SimulatorProps, XorCalculatorProps, AsymmetricFlowProps, ChoiceMatrixProps, DropdownChoiceProps, GenericComponentProps, GenericPrimitive } from '@/lib/worksheet-schema';
 
 interface MatchResult {
   type: 'bold' | 'code' | 'linebreak';
@@ -484,9 +484,151 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
         </div>
       );
     }
+    case 'custom': {
+      const { fieldId, layout } = interactive.props as GenericComponentProps;
+      return (
+        <div key={fieldId} style={{ margin: '0.75rem 0' }}>
+          {layout.map((primitive, i) => renderPrintablePrimitive(primitive, `${fieldId}_${i}`))}
+        </div>
+      );
+    }
     default:
       return null;
   }
+}
+
+function renderPrintablePrimitive(p: GenericPrimitive, keyPrefix: string): React.ReactNode {
+  switch (p.type) {
+    case 'display':
+      if (p.format === 'code' || p.format === 'mono') return <code key={keyPrefix} style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.85rem' }}>{p.content}</code>;
+      return <div key={keyPrefix} style={{ fontSize: '0.9rem', margin: '0.3rem 0' }}>{p.content}</div>;
+    case 'input':
+      return (
+        <div key={keyPrefix} style={{ margin: '0.3rem 0' }}>
+          {p.label && <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{p.label}</div>}
+          <div style={{ borderBottom: '1px solid #999', minWidth: p.width || '8rem', height: '1.5rem', display: 'inline-block' }} />
+        </div>
+      );
+    case 'textarea':
+      return (
+        <div key={keyPrefix} style={{ margin: '0.3rem 0' }}>
+          {p.label && <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{p.label}</div>}
+          <div style={{ border: '1px solid #999', borderRadius: '4px', minHeight: `${(p.rows || 3) * 1.5}rem`, width: '100%' }} />
+        </div>
+      );
+    case 'table': {
+      return (
+        <div key={keyPrefix} style={{ margin: '0.3rem 0', overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem', width: '100%' }}>
+            <thead><tr>{p.columns.map(col => <th key={col.key} style={{ borderBottom: '1px solid #ccc', padding: '0.3rem 0.5rem', textAlign: 'left' }}>{col.label}</th>)}</tr></thead>
+            <tbody>
+              {p.rows.map((row, ri) => (
+                <tr key={ri}>
+                  {p.columns.map(col => <td key={col.key} style={{ borderBottom: '1px solid #eee', padding: '0.3rem 0.5rem', color: col.editable ? '#999' : 'inherit' }}>{col.editable ? '________' : (row[col.key] || '')}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case 'toggleGrid': {
+      return (
+        <div key={keyPrefix} style={{ margin: '0.3rem 0', overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+            <thead><tr><th style={{ textAlign: 'left', padding: '0.3rem 0.5rem', borderBottom: '1px solid #ccc' }}></th>{p.columns.map(col => <th key={col} style={{ textAlign: 'center', padding: '0.3rem 0.5rem', borderBottom: '1px solid #ccc' }}>{col}</th>)}</tr></thead>
+            <tbody>
+              {p.rows.map((row, ri) => (
+                <tr key={ri}>
+                  <td style={{ padding: '0.3rem 0.5rem', borderBottom: '1px solid #eee' }}>{row.label}</td>
+                  {p.columns.map(col => <td key={col} style={{ textAlign: 'center', padding: '0.3rem 0.5rem', borderBottom: '1px solid #eee', color: '#999' }}>○</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case 'dropdown': {
+      return (
+        <div key={keyPrefix} style={{ margin: '0.3rem 0' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem', width: '100%' }}>
+            <thead><tr><th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '0.3rem 0.5rem' }}>Frage</th><th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '0.3rem 0.5rem' }}>Antwort</th></tr></thead>
+            <tbody>
+              {p.rows.map((row, i) => (
+                <tr key={i}>
+                  <td style={{ borderBottom: '1px solid #eee', padding: '0.3rem 0.5rem' }}>{row.question}</td>
+                  <td style={{ borderBottom: '1px solid #eee', padding: '0.3rem 0.5rem', color: '#999' }}>__________</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case 'stepper': {
+      return (
+        <div key={keyPrefix} style={{ margin: '0.3rem 0' }}>
+          {p.steps.map((s, i) => (
+            <div key={i} style={{ display: 'flex', gap: '0.5rem', margin: '0.2rem 0' }}>
+              <span style={{ fontWeight: 600 }}>{i + 1}.</span>
+              <div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{s.label}</div>
+                {s.description && <div style={{ fontSize: '0.8rem', color: '#666' }}>{s.description}</div>}
+                <div style={{ borderBottom: '1px solid #999', minWidth: '10rem', height: '1.2rem', marginTop: '0.2rem' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    case 'codeLine': {
+      return (
+        <div key={keyPrefix} style={{ display: 'flex', gap: '0.25rem', margin: '0.2rem 0', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.9rem' }}>
+          {p.cells.map((cell, i) => {
+            if (!cell.editable) return <span key={i} style={{ fontWeight: 600 }}>{cell.value || cell.label}</span>;
+            return <span key={i} style={{ borderBottom: '1px solid #999', minWidth: cell.width || '1.5rem', textAlign: 'center', color: '#999' }}>_</span>;
+          })}
+        </div>
+      );
+    }
+    case 'row':
+      return <div key={keyPrefix} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>{p.children.map((child, i) => renderPrintablePrimitive(child, `${keyPrefix}_${i}`))}</div>;
+    case 'col':
+      return <div key={keyPrefix} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>{p.children.map((child, i) => renderPrintablePrimitive(child, `${keyPrefix}_${i}`))}</div>;
+    case 'repeat': {
+      const start = p.startIndex || 0;
+      const items: React.ReactNode[] = [];
+      for (let i = 0; i < p.count; i++) {
+        const idx = start + i;
+        const fieldId = (p.fieldIdTemplate || `${keyPrefix}_i{idx}`).replace('{idx}', String(idx));
+        const expanded = JSON.parse(JSON.stringify(p.child)) as GenericPrimitive;
+        substitutePrintableFieldIds(expanded, fieldId);
+        items.push(renderPrintablePrimitive(expanded, `${keyPrefix}_${i}`));
+      }
+      return <div key={keyPrefix} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>{items}</div>;
+    }
+    case 'checkButton':
+    case 'resetButton':
+    case 'solutionButton':
+      return null; // No buttons in print view
+    default:
+      return null;
+  }
+}
+
+function substitutePrintableFieldIds(node: unknown, fieldId: string) {
+  if (!node || typeof node !== 'object') return;
+  const record = node as Record<string, unknown>;
+  if (typeof record.fieldId === 'string' && record.fieldId.includes('{idx}')) {
+    record.fieldId = record.fieldId.replace('{idx}', (fieldId.split('_i').pop() || ''));
+  } else if (typeof record.fieldId === 'string' && record.fieldId === '__auto__') {
+    record.fieldId = fieldId;
+  }
+  if (Array.isArray(record.children)) for (const child of record.children) substitutePrintableFieldIds(child, fieldId);
+  if (record.child) substitutePrintableFieldIds(record.child, fieldId);
+  if (Array.isArray(record.cells)) for (const cell of record.cells) substitutePrintableFieldIds(cell, fieldId);
+  if (Array.isArray(record.checks)) for (const check of record.checks) substitutePrintableFieldIds(check, fieldId);
 }
 
 function renderSection(section: WorksheetSection, idx: number, fields: Record<string, string>) {

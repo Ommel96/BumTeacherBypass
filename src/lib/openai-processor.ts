@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { insertPage, updateDocumentStatus, updateProcessingStep } from './document-store';
 import { AIProvider, type ProviderConfig } from './ai-provider';
-import { getResolvedProviderConfig, getSettings } from './settings-store';
+import { getSettings } from './settings-store';
 import { getProviderConfigForRole } from './providers-store';
 import type { WorksheetData, WorksheetField, WorksheetSection, WorksheetCheckGroup, WorksheetHint } from './worksheet-schema';
 import { validateWorksheetData, normalizeWorksheetData } from './worksheet-schema';

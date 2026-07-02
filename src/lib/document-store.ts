@@ -218,7 +218,7 @@ export function restorePageVersion(pageId: string, versionId: string): void {
 
 export async function deleteDocument(id: string): Promise<void> {
   const db = getDb();
-  db.prepare('DELETE FROM pages WHERE document_id = ?').run(id);
+  // FK ON DELETE CASCADE handles pages and page_versions automatically
   db.prepare('DELETE FROM documents WHERE id = ?').run(id);
 
   try {

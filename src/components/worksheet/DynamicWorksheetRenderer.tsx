@@ -5,7 +5,7 @@ import React from 'react';
 import { WorksheetProvider, useWorksheet } from './WorksheetProvider';
 import { Breadcrumb, Section, Story, InputField, TableInput, GivenCell, LabelCell, CheckButton, ResetButton, ButtonGroup, Feedback, HintToggle, HintContent, InfoNote, ExampleCalc, PageHeader } from './WorksheetComponents';
 import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, WorksheetCheckGroup, WorksheetHint, CompendiumRef, InteractiveComponent } from '@/lib/worksheet-schema';
-import { PixelGrid, BitVisualizer, TruthTableBuilder, EncodingExercise, HuffmanTreeBuilder, LZ77Simulator, LZ78Simulator, CompressionTable, XorCalculator, AsymmetricFlowVisualizer, ChoiceMatrix, DropdownChoice } from './InteractiveComponents';
+import { PixelGrid, BitVisualizer, TruthTableBuilder, EncodingExercise, HuffmanTreeBuilder, LZ77Simulator, LZ78Simulator, CompressionTable, XorCalculator, AsymmetricFlowVisualizer, ChoiceMatrix, DropdownChoice, GenericComponent } from './InteractiveComponents';
 
 interface MatchResult {
   type: 'bold' | 'code' | 'linebreak';
@@ -218,6 +218,8 @@ function renderInteractiveComponent(interactive: InteractiveComponent) {
       return <ChoiceMatrix key={interactive.props.fieldId} props={interactive.props} />;
     case 'dropdownChoice':
       return <DropdownChoice key={interactive.props.fieldId} props={interactive.props} />;
+    case 'custom':
+      return <GenericComponent key={interactive.props.fieldId} props={interactive.props} />;
     default:
       return null;
   }

@@ -285,10 +285,20 @@ export default function DocumentDetailPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => {
-      if (data?.document?.status === 'processing') fetchData();
-    }, 2000);
-    return () => clearInterval(interval);
+    let timer: ReturnType<typeof setTimeout>;
+    let delay = 2000;
+    const MAX_DELAY = 15000;
+    const tick = () => {
+      if (data?.document?.status === 'processing') {
+        fetchData();
+        delay = Math.min(delay * 1.5, MAX_DELAY);
+        timer = setTimeout(tick, delay);
+      } else {
+        delay = 2000;
+      }
+    };
+    timer = setTimeout(tick, delay);
+    return () => clearTimeout(timer);
   }, [fetchData, data?.document?.status]);
 
   useEffect(() => {

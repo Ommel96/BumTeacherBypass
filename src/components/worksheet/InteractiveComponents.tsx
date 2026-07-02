@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useWorksheet } from './WorksheetProvider';
-import type { PixelGridProps, BitVisualizerProps, TruthTableProps, EncodingExerciseProps, HuffmanTreeProps, LZ77SimulatorProps, LZ77Triple, CompressionTableProps, XorCalculatorProps, AsymmetricFlowProps, ChoiceMatrixProps, DropdownChoiceProps } from '@/lib/worksheet-schema';
+import type { PixelGridProps, BitVisualizerProps, TruthTableProps, EncodingExerciseProps, HuffmanTreeProps, LZ77SimulatorProps, LZ77Triple, CompressionTableProps, XorCalculatorProps, AsymmetricFlowProps, ChoiceMatrixProps, DropdownChoiceProps, GenericComponentProps, GenericPrimitive, DisplayPrimitive, InputPrimitive, TextareaPrimitive, TablePrimitive, ToggleGridPrimitive, DropdownPrimitive, StepperPrimitive, CodeLinePrimitive, CheckButtonPrimitive, ResetButtonPrimitive, SolutionButtonPrimitive, RowPrimitive, ColPrimitive, RepeatPrimitive } from '@/lib/worksheet-schema';
 
 export function PixelGrid({ props }: { props: PixelGridProps }) {
   const { fields, setFieldValue, checkField, feedbacks } = useWorksheet();
@@ -631,10 +631,6 @@ export function LZ77Simulator({ props }: { props: LZ77SimulatorProps }) {
   const { fields, setFieldValue, feedbacks } = useWorksheet();
   const { fieldId, inputString, bufferSize, lookaheadSize, solution, stepByStep = true, direction = 'encode', decodeInput } = props;
 
-  if (direction === 'decode') {
-    return <LZ77Decoder fieldId={fieldId} decodeInput={decodeInput || inputString} bufferSize={bufferSize} lookaheadSize={lookaheadSize} solution={solution} />;
-  }
-
   const savedStep = useMemo(() => {
     const v = fields[fieldId] || '0';
     return parseInt(v, 10) || 0;
@@ -677,6 +673,10 @@ export function LZ77Simulator({ props }: { props: LZ77SimulatorProps }) {
     }
     return result;
   }, [inputString, bufferSize, lookaheadSize]);
+
+  if (direction === 'decode') {
+    return <LZ77Decoder fieldId={fieldId} decodeInput={decodeInput || inputString} bufferSize={bufferSize} lookaheadSize={lookaheadSize} solution={solution} />;
+  }
 
   const fb = feedbacks[fieldId];
 
@@ -1532,6 +1532,451 @@ export function DropdownChoice({ props }: { props: DropdownChoiceProps }) {
           {fb === 'ok' ? 'Alle korrekt!' : 'Noch nicht ganz richtig. Überprüfe die markierten Felder.'}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── GenericComponent: renders a composable layout tree from primitives ───
+
+interface WkCtx {
+  fields: Record<string, string>;
+  setFieldValue: (id: string, value: string) => void;
+  resetFields: (ids: string[]) => void;
+  checkFields: (checks: Array<{ fieldId: string; expected: string; hint?: string; opts?: { normalize?: boolean; contains?: boolean } }>, feedbackId: string) => void;
+  feedbacks: Record<string, { type: 'success' | 'error'; msg: string }>;
+}
+
+function renderDisplay(p: DisplayPrimitive) {
+  if (p.format === 'code' || p.format === 'mono') {
+    return <code key={p.id} className={p.className} style={{ fontFamily: 'JetBrains Mono, monospace' }}>{p.content}</code>;
+  }
+  return <div key={p.id} className={p.className}>{p.content}</div>;
+}
+
+function renderInput(p: InputPrimitive, ctx: WkCtx) {
+  const fb = ctx.feedbacks[p.fieldId];
+  return (
+    <div key={p.id || p.fieldId} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+      {p.label && <label className="block text-sm font-medium text-[var(--text)]">{p.label}</label>}
+      <input
+        type={p.inputType || 'text'}
+        value={ctx.fields[p.fieldId] || ''}
+        onChange={e => ctx.setFieldValue(p.fieldId, e.target.value)}
+        placeholder={p.placeholder}
+        maxLength={p.maxLength}
+        className={`px-3 py-2 border rounded-lg bg-[var(--input-bg)] text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-light)] transition-all ${p.mono ? 'font-mono' : ''} ${fb ? (fb.type === 'success' ? 'border-[var(--success)] bg-[var(--success-bg)]' : 'border-[var(--error)] bg-[var(--error-bg)]') : 'border-[var(--border)]'}`}
+        style={p.width ? { width: p.width } : undefined}
+      />
+      {fb && <span className={`text-xs ${fb.type === 'success' ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>{fb.msg}</span>}
+    </div>
+  );
+}
+
+function renderTextarea(p: TextareaPrimitive, ctx: WkCtx) {
+  return (
+    <div key={p.id || p.fieldId} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+      {p.label && <label className="block text-sm font-medium text-[var(--text)]">{p.label}</label>}
+      <textarea
+        value={ctx.fields[p.fieldId] || ''}
+        onChange={e => ctx.setFieldValue(p.fieldId, e.target.value)}
+        placeholder={p.placeholder}
+        rows={p.rows || 3}
+        className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-light)] transition-all"
+      />
+    </div>
+  );
+}
+
+function renderTable(p: TablePrimitive, ctx: WkCtx) {
+  return (
+    <div key={p.id} style={{ overflowX: 'auto' }}>
+      <table className="edit-table">
+        <thead>
+          <tr>
+            {p.columns.map(col => <th key={col.key} style={col.width ? { width: col.width } : undefined}>{col.label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {p.rows.map((row, ri) => (
+            <tr key={ri}>
+              {p.columns.map(col => {
+                const cellFieldId = `${p.fieldId}_r${ri}_${col.key}`;
+                if (col.editable) {
+                  const fb = ctx.feedbacks[cellFieldId];
+                  return (
+                    <td key={col.key}>
+                      <input
+                        type="text"
+                        value={ctx.fields[cellFieldId] || ''}
+                        onChange={e => ctx.setFieldValue(cellFieldId, e.target.value)}
+                        placeholder="..."
+                        className={`encoding-exercise-input-field ${fb ? (fb.type === 'success' ? 'border-[var(--success)] bg-[var(--success-bg)]' : 'border-[var(--error)] bg-[var(--error-bg)]') : ''}`}
+                      />
+                    </td>
+                  );
+                }
+                return <td key={col.key} className="given-cell">{row[col.key] ?? ''}</td>;
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function renderToggleGrid(p: ToggleGridPrimitive, ctx: WkCtx) {
+  const { fieldId, columns, rows, multipleSelection = false } = p;
+
+  const getSelected = (rowIdx: number): string[] => {
+    const raw = ctx.fields[`${fieldId}_r${rowIdx}`] || '';
+    try { return JSON.parse(raw) as string[]; } catch { return []; }
+  };
+
+  const toggleCell = (rowIdx: number, col: string) => {
+    const selected = getSelected(rowIdx);
+    let next: string[];
+    if (selected.includes(col)) { next = selected.filter(c => c !== col); }
+    else if (multipleSelection) { next = [...selected, col]; }
+    else { next = [col]; }
+    ctx.setFieldValue(`${fieldId}_r${rowIdx}`, JSON.stringify(next));
+  };
+
+  const checkAll = () => {
+    let allCorrect = true;
+    rows.forEach((row, rowIdx) => {
+      const selected = getSelected(rowIdx);
+      const correct = row.correctAnswers;
+      const isCorrect = selected.length === correct.length && correct.every(c => selected.includes(c));
+      if (!isCorrect) allCorrect = false;
+      ctx.setFieldValue(`${fieldId}_r${rowIdx}_fb`, isCorrect ? 'correct' : 'wrong');
+    });
+    ctx.setFieldValue(`${fieldId}_check`, allCorrect ? 'ok' : 'fail');
+  };
+
+  const fb = ctx.fields[`${fieldId}_check`];
+
+  return (
+    <div key={p.id} style={{ overflowX: 'auto' }}>
+      <table className="edit-table">
+        <thead>
+          <tr>
+            <th style={{ textAlign: 'left', minWidth: '12rem' }}>{''}</th>
+            {columns.map(col => <th key={col} style={{ textAlign: 'center', minWidth: '4rem' }}>{col}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIdx) => {
+            const selected = getSelected(rowIdx);
+            const rowFb = ctx.fields[`${fieldId}_r${rowIdx}_fb`];
+            return (
+              <tr key={rowIdx}>
+                <td style={{ textAlign: 'left', padding: '0.6rem 0.75rem', fontSize: '0.9rem' }}>{row.label}</td>
+                {columns.map(col => {
+                  const isSelected = selected.includes(col);
+                  const isCorrect = row.correctAnswers.includes(col);
+                  let cellClass = 'choice-matrix-cell';
+                  if (rowFb === 'correct' || rowFb === 'wrong') {
+                    if (isSelected && isCorrect) cellClass += ' choice-correct';
+                    else if (isSelected && !isCorrect) cellClass += ' choice-wrong';
+                    else if (!isSelected && isCorrect) cellClass += ' choice-missed';
+                  } else if (isSelected) { cellClass += ' choice-selected'; }
+                  return (
+                    <td key={col} style={{ textAlign: 'center', padding: '0.25rem' }}>
+                      <button type="button" onClick={() => toggleCell(rowIdx, col)} className={cellClass}>
+                        {isSelected ? '✓' : ''}
+                      </button>
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+        <button type="button" onClick={checkAll} className="pixel-solution-btn">Prüfen</button>
+        <button type="button" onClick={() => {
+          rows.forEach((_, rowIdx) => { ctx.setFieldValue(`${fieldId}_r${rowIdx}`, JSON.stringify([])); ctx.setFieldValue(`${fieldId}_r${rowIdx}_fb`, ''); });
+          ctx.setFieldValue(`${fieldId}_check`, '');
+        }} className="pixel-reset-btn">Zurücksetzen</button>
+      </div>
+      {fb && (
+        <div className={`feedback mt-3 p-3 rounded-lg text-sm font-medium ${fb === 'ok' ? 'bg-[var(--success-bg)] text-[var(--success)]' : 'bg-[var(--error-bg)] text-[var(--error)]'}`}>
+          {fb === 'ok' ? 'Alle korrekt!' : 'Noch nicht ganz richtig.'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function renderDropdown(p: DropdownPrimitive, ctx: WkCtx) {
+  const { fieldId, rows, multipleSelection = false } = p;
+
+  const getSelected = (rowIdx: number): string[] => {
+    if (!multipleSelection) { const v = ctx.fields[`${fieldId}_r${rowIdx}`] || ''; return v ? [v] : []; }
+    const raw = ctx.fields[`${fieldId}_r${rowIdx}`] || ''; try { return JSON.parse(raw) as string[]; } catch { return []; }
+  };
+  const setSelected = (rowIdx: number, vals: string[]) => ctx.setFieldValue(`${fieldId}_r${rowIdx}`, multipleSelection ? JSON.stringify(vals) : (vals[0] || ''));
+
+  const checkAll = () => {
+    let allCorrect = true;
+    rows.forEach((row, rowIdx) => {
+      const selected = getSelected(rowIdx);
+      const isCorrect = selected.length === row.correctAnswers.length && row.correctAnswers.every(c => selected.includes(c));
+      if (!isCorrect) allCorrect = false;
+      ctx.setFieldValue(`${fieldId}_r${rowIdx}_fb`, isCorrect ? 'correct' : 'wrong');
+    });
+    ctx.setFieldValue(`${fieldId}_check`, allCorrect ? 'ok' : 'fail');
+  };
+
+  const fb = ctx.fields[`${fieldId}_check`];
+
+  return (
+    <div key={p.id}>
+      <table className="edit-table">
+        <thead><tr><th style={{ textAlign: 'left', minWidth: '14rem' }}>Frage</th><th style={{ textAlign: 'left', minWidth: '12rem' }}>Antwort{multipleSelection ? 'en' : ''}</th></tr></thead>
+        <tbody>
+          {rows.map((row, rowIdx) => {
+            const selected = getSelected(rowIdx);
+            const rowFb = ctx.fields[`${fieldId}_r${rowIdx}_fb`];
+            const selectClass = `w-full px-3 py-2 border rounded-lg bg-[var(--input-bg)] text-sm outline-none transition-all ${rowFb === 'correct' ? 'border-[var(--success)] bg-[var(--success-bg)] text-[var(--success)]' : rowFb === 'wrong' ? 'border-[var(--error)] bg-[var(--error-bg)] text-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-light)]'}`;
+            return (
+              <tr key={rowIdx}>
+                <td style={{ textAlign: 'left', padding: '0.6rem 0.75rem', fontSize: '0.9rem' }}>{row.question}</td>
+                <td style={{ padding: '0.4rem' }}>
+                  {multipleSelection ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {row.options.map(opt => {
+                        const isSelected = selected.includes(opt);
+                        const isCorrect = row.correctAnswers.includes(opt);
+                        let optClass = 'px-3 py-1.5 border rounded-lg text-sm cursor-pointer transition-all text-left ';
+                        if (rowFb === 'correct' || rowFb === 'wrong') {
+                          if (isSelected && isCorrect) optClass += 'border-[var(--success)] bg-[var(--success-bg)] text-[var(--success)]';
+                          else if (isSelected && !isCorrect) optClass += 'border-[var(--error)] bg-[var(--error-bg)] text-[var(--error)]';
+                          else if (!isSelected && isCorrect) optClass += 'border-[var(--accent)] bg-[var(--accent-light)] text-[var(--accent-dark)]';
+                          else optClass += 'border-[var(--border)] text-[var(--text-muted)]';
+                        } else {
+                          optClass += isSelected ? 'border-[var(--accent)] bg-[var(--accent-light)] text-[var(--accent-dark)]' : 'border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]';
+                        }
+                        return (
+                          <button key={opt} type="button" onClick={() => {
+                            let next: string[]; if (isSelected) next = selected.filter(s => s !== opt); else next = [...selected, opt];
+                            setSelected(rowIdx, next); ctx.setFieldValue(`${fieldId}_r${rowIdx}_fb`, '');
+                          }} className={optClass}>
+                            <span style={{ display: 'inline-block', width: '1.25rem' }}>{isSelected ? '☑' : '☐'}</span>{opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <select
+                      value={ctx.fields[`${fieldId}_r${rowIdx}`] || ''}
+                      onChange={e => { ctx.setFieldValue(`${fieldId}_r${rowIdx}`, e.target.value); ctx.setFieldValue(`${fieldId}_r${rowIdx}_fb`, ''); }}
+                      className={selectClass}
+                    >
+                      <option value="">— Bitte wählen —</option>
+                      {row.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+        <button type="button" onClick={checkAll} className="pixel-solution-btn">Prüfen</button>
+        <button type="button" onClick={() => { rows.forEach((_, rowIdx) => { setSelected(rowIdx, []); ctx.setFieldValue(`${fieldId}_r${rowIdx}_fb`, ''); }); ctx.setFieldValue(`${fieldId}_check`, ''); }} className="pixel-reset-btn">Zurücksetzen</button>
+      </div>
+      {fb && (
+        <div className={`feedback mt-3 p-3 rounded-lg text-sm font-medium ${fb === 'ok' ? 'bg-[var(--success-bg)] text-[var(--success)]' : 'bg-[var(--error-bg)] text-[var(--error)]'}`}>
+          {fb === 'ok' ? 'Alle korrekt!' : 'Noch nicht ganz richtig.'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function renderStepper(p: StepperPrimitive, ctx: WkCtx) {
+  const { fieldId, steps } = p;
+  const currentStep = parseInt(ctx.fields[`${fieldId}_step`] || '0', 10) || 0;
+  const fb = ctx.feedbacks[fieldId];
+
+  return (
+    <div key={p.id}>
+      <div style={{ marginBottom: '1rem' }}>
+        {steps.map((s, i) => {
+          const isDone = i < currentStep;
+          const isActive = i === currentStep;
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem', opacity: isActive ? 1 : isDone ? 0.6 : 0.4 }}>
+              <div style={{ flexShrink: 0, width: '1.75rem', height: '1.75rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, background: isDone ? 'var(--success-bg)' : isActive ? 'var(--accent)' : 'var(--surface)', color: isDone ? 'var(--success)' : isActive ? 'white' : 'var(--text-muted)', border: `2px solid ${isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--border)'}` }}>
+                {isDone ? '✓' : i + 1}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: isActive ? 'var(--accent-dark)' : 'var(--text)' }}>{s.label}</div>
+                {s.description && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{s.description}</div>}
+                {isActive && s.inputPlaceholder && (
+                  <input type="text" value={ctx.fields[`${fieldId}_step${i}`] || ''} onChange={e => ctx.setFieldValue(`${fieldId}_step${i}`, e.target.value)} placeholder={s.inputPlaceholder} className="w-full mt-1 px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-sm outline-none focus:border-[var(--accent)]" />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button type="button" onClick={() => ctx.setFieldValue(`${fieldId}_step`, String(Math.max(0, currentStep - 1)))} disabled={currentStep <= 0} className="pixel-reset-btn" style={{ opacity: currentStep <= 0 ? 0.5 : 1 }}>← Zurück</button>
+        <span style={{ alignSelf: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Schritt {currentStep} / {steps.length}</span>
+        <button type="button" onClick={() => ctx.setFieldValue(`${fieldId}_step`, String(Math.min(steps.length, currentStep + 1)))} disabled={currentStep >= steps.length} className="pixel-solution-btn" style={{ opacity: currentStep >= steps.length ? 0.5 : 1 }}>Weiter →</button>
+      </div>
+      <button type="button" onClick={() => { ctx.setFieldValue(`${fieldId}_step`, '0'); for (let i = 0; i < steps.length; i++) ctx.setFieldValue(`${fieldId}_step${i}`, ''); }} className="pixel-reset-btn" style={{ marginTop: '0.5rem' }}>Zurücksetzen</button>
+      {fb && (
+        <div className={`feedback mt-3 p-3 rounded-lg text-sm font-medium ${fb.type === 'success' ? 'bg-[var(--success-bg)] text-[var(--success)]' : 'bg-[var(--error-bg)] text-[var(--error)]'}`}>{fb.msg}</div>
+      )}
+    </div>
+  );
+}
+
+function renderCodeLine(p: CodeLinePrimitive, ctx: WkCtx) {
+  return (
+    <div key={p.id} className="xor-calculator-container" style={{ fontFamily: 'JetBrains Mono, monospace', overflowX: 'auto' }}>
+      <table className="edit-table">
+        <tbody>
+          <tr>
+            {p.cells.map((cell, i) => {
+              if (!cell.editable) {
+                return <td key={i} style={{ textAlign: 'center', padding: '0.4rem', fontSize: '1.1rem', fontWeight: 600 }}>{cell.value || cell.label}</td>;
+              }
+              const cellFieldId = cell.fieldId || `${p.fieldId}_c${i}`;
+              const cellFb = ctx.feedbacks[cellFieldId];
+              return (
+                <td key={i} style={{ textAlign: 'center', padding: '0.2rem' }}>
+                  <input
+                    type="text"
+                    maxLength={cell.maxLength || 1}
+                    value={ctx.fields[cellFieldId] || ''}
+                    onChange={e => ctx.setFieldValue(cellFieldId, e.target.value)}
+                    className={`encoding-exercise-input-field ${cellFb ? (cellFb.type === 'success' ? 'border-[var(--success)] bg-[var(--success-bg)]' : 'border-[var(--error)] bg-[var(--error-bg)]') : ''}`}
+                    style={{ width: cell.width || '2rem', textAlign: 'center', padding: '0.3rem', fontSize: '1.1rem', fontWeight: 600 }}
+                  />
+                </td>
+              );
+            })}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function renderCheckButton(p: CheckButtonPrimitive, ctx: WkCtx) {
+  const fb = ctx.feedbacks[p.feedbackId];
+  return (
+    <div key={p.id}>
+      <button type="button" onClick={() => ctx.checkFields(p.checks, p.feedbackId)} className="pixel-solution-btn">{p.label || 'Prüfen'}</button>
+      {fb && (
+        <div className={`feedback mt-2 p-2 rounded-lg text-sm font-medium ${fb.type === 'success' ? 'bg-[var(--success-bg)] text-[var(--success)]' : 'bg-[var(--error-bg)] text-[var(--error)]'}`}>
+          {fb.msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function renderResetButton(p: ResetButtonPrimitive, ctx: WkCtx) {
+  return <button key={p.id} type="button" onClick={() => ctx.resetFields(p.fieldIds)} className="pixel-reset-btn">{p.label || 'Zurücksetzen'}</button>;
+}
+
+function renderSolutionButton(p: SolutionButtonPrimitive, ctx: WkCtx) {
+  return <button key={p.id} type="button" onClick={() => ctx.setFieldValue(p.fieldId, p.solution)} className="pixel-solution-btn">{p.label || 'Lösung anzeigen'}</button>;
+}
+
+function renderRow(p: RowPrimitive, ctx: WkCtx) {
+  return (
+    <div key={p.id} style={{ display: 'flex', flexDirection: 'row', gap: p.gap || '0.5rem', alignItems: p.align || 'center', flexWrap: p.wrap ? 'wrap' : 'nowrap' }}>
+      {p.children.map((child, i) => renderPrimitive(child, ctx, i))}
+    </div>
+  );
+}
+
+function renderCol(p: ColPrimitive, ctx: WkCtx) {
+  return (
+    <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: p.gap || '0.5rem', alignItems: p.align || 'stretch' }}>
+      {p.children.map((child, i) => renderPrimitive(child, ctx, i))}
+    </div>
+  );
+}
+
+function renderRepeat(p: RepeatPrimitive, ctx: WkCtx) {
+  const start = p.startIndex || 0;
+  const count = p.count;
+  const items: React.ReactNode[] = [];
+  for (let i = 0; i < count; i++) {
+    const idx = start + i;
+    const fieldId = (p.fieldIdTemplate || `${p.fieldId}_i{idx}`).replace('{idx}', String(idx));
+    const label = p.labelTemplate ? p.labelTemplate.replace('{idx}', String(idx)) : undefined;
+    const expanded = expandTemplate(p.child, idx, fieldId, label);
+    items.push(renderPrimitive(expanded, ctx, i));
+  }
+  return <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>{items}</div>;
+}
+
+function expandTemplate(primitive: GenericPrimitive, _index: number, fieldId: string, label?: string): GenericPrimitive {
+  const clone = JSON.parse(JSON.stringify(primitive)) as GenericPrimitive;
+  substituteFieldIds(clone, fieldId, label);
+  return clone;
+}
+
+function substituteFieldIds(node: unknown, fieldId: string, label?: string) {
+  if (!node || typeof node !== 'object') return;
+  const record = node as Record<string, unknown>;
+  if (typeof record.fieldId === 'string' && record.fieldId.includes('{idx}')) {
+    record.fieldId = record.fieldId.replace('{idx}', (fieldId.split('_i').pop() || ''));
+  } else if (typeof record.fieldId === 'string' && record.fieldId === '__auto__') {
+    record.fieldId = fieldId;
+  }
+  if (label && typeof record.label === 'string' && record.label.includes('{idx}')) {
+    record.label = record.label.replace('{idx}', label);
+  }
+  if (Array.isArray(record.children)) for (const child of record.children) substituteFieldIds(child, fieldId, label);
+  if (record.child) substituteFieldIds(record.child, fieldId, label);
+  if (Array.isArray(record.cells)) for (const cell of record.cells) substituteFieldIds(cell, fieldId, label);
+  if (Array.isArray(record.checks)) for (const check of record.checks) substituteFieldIds(check, fieldId, label);
+}
+
+function renderPrimitive(p: GenericPrimitive, ctx: WkCtx, index: number): React.ReactNode {
+  switch (p.type) {
+    case 'display': return renderDisplay(p);
+    case 'input': return renderInput(p, ctx);
+    case 'textarea': return renderTextarea(p, ctx);
+    case 'table': return renderTable(p, ctx);
+    case 'toggleGrid': return renderToggleGrid(p, ctx);
+    case 'dropdown': return renderDropdown(p, ctx);
+    case 'stepper': return renderStepper(p, ctx);
+    case 'codeLine': return renderCodeLine(p, ctx);
+    case 'checkButton': return renderCheckButton(p, ctx);
+    case 'resetButton': return renderResetButton(p, ctx);
+    case 'solutionButton': return renderSolutionButton(p, ctx);
+    case 'row': return renderRow(p, ctx);
+    case 'col': return renderCol(p, ctx);
+    case 'repeat': return renderRepeat(p, ctx);
+    default: return null;
+  }
+}
+
+export function GenericComponent({ props }: { props: GenericComponentProps }) {
+  const ws = useWorksheet();
+  const ctx: WkCtx = {
+    fields: ws.fields,
+    setFieldValue: ws.setFieldValue,
+    resetFields: ws.resetFields,
+    checkFields: ws.checkFields,
+    feedbacks: ws.feedbacks,
+  };
+  return (
+    <div className="generic-component-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {props.layout.map((primitive, i) => renderPrimitive(primitive, ctx, i))}
     </div>
   );
 }
