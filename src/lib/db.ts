@@ -2,7 +2,6 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import Database from 'better-sqlite3';
-import { seedWorksheets } from './seed';
 
 // ── Data directory ──
 // Use /app/data (Docker volume mount). The entrypoint chowns it to the nextjs user.
@@ -240,8 +239,18 @@ function getOrCreateDb(): Database.Database {
     if (orphaned.changes > 0) {
       console.log(`Recovery: reset ${orphaned.changes} orphaned document(s) from 'processing' to 'error'`);
     }
+    // The preinstalled seed worksheets were removed from the app — clean up any
+    // rows left behind by earlier versions (pages cascade via FK).
+    try {
+      const removedSeeds = db.prepare("DELETE FROM documents WHERE id LIKE 'seed-%'").run();
+      db.prepare("DELETE FROM worksheet_data WHERE worksheet LIKE 'seed-%'").run();
+      if (removedSeeds.changes > 0) {
+        console.log(`Cleanup: removed ${removedSeeds.changes} preinstalled seed worksheet(s)`);
+      }
+    } catch (e) {
+      console.warn('Cleanup of seed worksheets failed:', e);
+    }
     globalForDb._seeded = true;
-    seedWorksheets();
   }
 
   return db;
