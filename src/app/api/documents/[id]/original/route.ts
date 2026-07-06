@@ -1,10 +1,11 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDocument } from '@/lib/document-store';
+import { DATA_DIR } from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads');
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 
 export async function GET(
   request: NextRequest,

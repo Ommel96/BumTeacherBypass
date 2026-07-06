@@ -70,10 +70,18 @@ export async function POST(request: NextRequest) {
     const keywords = rawText.substring(0, 500).split(/\s+/).filter(w => w.length > 4).slice(0, 5);
     let webResearch = '';
     try {
-      webResearch = await researchTopic(keywords);
+      webResearch = await Promise.race([
+        researchTopic(keywords),
+        new Promise<string>((resolve) => setTimeout(() => resolve(''), 15000)),
+      ]);
     } catch {}
 
-    const generated = await provider.generateCompendiumEntries(rawText, primaryDoc.module_number, primaryDoc.topic, existingEntries, webResearch);
+    const generated = await Promise.race([
+      provider.generateCompendiumEntries(rawText, primaryDoc.module_number, primaryDoc.topic, existingEntries, webResearch),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Compendium generation timed out after 90s')), 90000)
+      ),
+    ]);
 
     const allDocIds = docIds.join(',');
     const upsertedIds: string[] = [];

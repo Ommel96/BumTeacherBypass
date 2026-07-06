@@ -2,7 +2,8 @@
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useWorksheet } from './WorksheetProvider';
-import type { PixelGridProps, BitVisualizerProps, TruthTableProps, EncodingExerciseProps, HuffmanTreeProps, LZ77SimulatorProps, LZ77Triple, CompressionTableProps, XorCalculatorProps, AsymmetricFlowProps, ChoiceMatrixProps, DropdownChoiceProps, GenericComponentProps, GenericPrimitive, DisplayPrimitive, InputPrimitive, TextareaPrimitive, TablePrimitive, ToggleGridPrimitive, DropdownPrimitive, StepperPrimitive, CodeLinePrimitive, CheckButtonPrimitive, ResetButtonPrimitive, SolutionButtonPrimitive, RowPrimitive, ColPrimitive, RepeatPrimitive } from '@/lib/worksheet-schema';
+import { Latex, LatexText } from '@/components/katex-renderer';
+import type { PixelGridProps, BitVisualizerProps, TruthTableProps, EncodingExerciseProps, HuffmanTreeProps, LZ77SimulatorProps, LZ77Triple, CompressionTableProps, XorCalculatorProps, AsymmetricFlowProps, ChoiceMatrixProps, DropdownChoiceProps, GenericComponentProps, GenericPrimitive, DisplayPrimitive, InputPrimitive, TextareaPrimitive, TablePrimitive, ToggleGridPrimitive, DropdownPrimitive, StepperPrimitive, CodeLinePrimitive, CheckButtonPrimitive, ResetButtonPrimitive, SolutionButtonPrimitive, RowPrimitive, ColPrimitive, RepeatPrimitive, FormulaDisplayPrimitive, StepCalculatorPrimitive, FlowDiagramPrimitive, KeyValueGridPrimitive, CalloutPrimitive } from '@/lib/worksheet-schema';
 
 export function PixelGrid({ props }: { props: PixelGridProps }) {
   const { fields, setFieldValue, checkField, feedbacks } = useWorksheet();
@@ -1548,16 +1549,24 @@ interface WkCtx {
 
 function renderDisplay(p: DisplayPrimitive) {
   if (p.format === 'code' || p.format === 'mono') {
+    // Multi-line code blocks need block layout with preserved whitespace
+    if (p.content.includes('\n')) {
+      return (
+        <pre key={p.id} className={p.className} style={{ fontFamily: 'JetBrains Mono, monospace', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.6rem 0.8rem', margin: 0, overflowX: 'auto', fontSize: '0.85rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+          {p.content}
+        </pre>
+      );
+    }
     return <code key={p.id} className={p.className} style={{ fontFamily: 'JetBrains Mono, monospace' }}>{p.content}</code>;
   }
-  return <div key={p.id} className={p.className}>{p.content}</div>;
+  return <div key={p.id} className={p.className}><LatexText text={p.content} /></div>;
 }
 
 function renderInput(p: InputPrimitive, ctx: WkCtx) {
   const fb = ctx.feedbacks[p.fieldId];
   return (
     <div key={p.id || p.fieldId} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-      {p.label && <label className="block text-sm font-medium text-[var(--text)]">{p.label}</label>}
+      {p.label && <label className="block text-sm font-medium text-[var(--text)]"><LatexText text={p.label} /></label>}
       <input
         type={p.inputType || 'text'}
         value={ctx.fields[p.fieldId] || ''}
@@ -1575,7 +1584,7 @@ function renderInput(p: InputPrimitive, ctx: WkCtx) {
 function renderTextarea(p: TextareaPrimitive, ctx: WkCtx) {
   return (
     <div key={p.id || p.fieldId} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-      {p.label && <label className="block text-sm font-medium text-[var(--text)]">{p.label}</label>}
+      {p.label && <label className="block text-sm font-medium text-[var(--text)]"><LatexText text={p.label} /></label>}
       <textarea
         value={ctx.fields[p.fieldId] || ''}
         onChange={e => ctx.setFieldValue(p.fieldId, e.target.value)}
@@ -1593,7 +1602,7 @@ function renderTable(p: TablePrimitive, ctx: WkCtx) {
       <table className="edit-table">
         <thead>
           <tr>
-            {p.columns.map(col => <th key={col.key} style={col.width ? { width: col.width } : undefined}>{col.label}</th>)}
+            {p.columns.map(col => <th key={col.key} style={col.width ? { width: col.width } : undefined}><LatexText text={col.label} /></th>)}
           </tr>
         </thead>
         <tbody>
@@ -1615,7 +1624,7 @@ function renderTable(p: TablePrimitive, ctx: WkCtx) {
                     </td>
                   );
                 }
-                return <td key={col.key} className="given-cell">{row[col.key] ?? ''}</td>;
+                return <td key={col.key} className="given-cell"><LatexText text={row[col.key] ?? ''} /></td>;
               })}
             </tr>
           ))}
@@ -1662,7 +1671,7 @@ function renderToggleGrid(p: ToggleGridPrimitive, ctx: WkCtx) {
         <thead>
           <tr>
             <th style={{ textAlign: 'left', minWidth: '12rem' }}>{''}</th>
-            {columns.map(col => <th key={col} style={{ textAlign: 'center', minWidth: '4rem' }}>{col}</th>)}
+            {columns.map(col => <th key={col} style={{ textAlign: 'center', minWidth: '4rem' }}><LatexText text={col} /></th>)}
           </tr>
         </thead>
         <tbody>
@@ -1671,7 +1680,7 @@ function renderToggleGrid(p: ToggleGridPrimitive, ctx: WkCtx) {
             const rowFb = ctx.fields[`${fieldId}_r${rowIdx}_fb`];
             return (
               <tr key={rowIdx}>
-                <td style={{ textAlign: 'left', padding: '0.6rem 0.75rem', fontSize: '0.9rem' }}>{row.label}</td>
+                <td style={{ textAlign: 'left', padding: '0.6rem 0.75rem', fontSize: '0.9rem' }}><LatexText text={row.label} /></td>
                 {columns.map(col => {
                   const isSelected = selected.includes(col);
                   const isCorrect = row.correctAnswers.includes(col);
@@ -1743,7 +1752,7 @@ function renderDropdown(p: DropdownPrimitive, ctx: WkCtx) {
             const selectClass = `w-full px-3 py-2 border rounded-lg bg-[var(--input-bg)] text-sm outline-none transition-all ${rowFb === 'correct' ? 'border-[var(--success)] bg-[var(--success-bg)] text-[var(--success)]' : rowFb === 'wrong' ? 'border-[var(--error)] bg-[var(--error-bg)] text-[var(--error)]' : 'border-[var(--border)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-light)]'}`;
             return (
               <tr key={rowIdx}>
-                <td style={{ textAlign: 'left', padding: '0.6rem 0.75rem', fontSize: '0.9rem' }}>{row.question}</td>
+                <td style={{ textAlign: 'left', padding: '0.6rem 0.75rem', fontSize: '0.9rem' }}><LatexText text={row.question} /></td>
                 <td style={{ padding: '0.4rem' }}>
                   {multipleSelection ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
@@ -1764,7 +1773,7 @@ function renderDropdown(p: DropdownPrimitive, ctx: WkCtx) {
                             let next: string[]; if (isSelected) next = selected.filter(s => s !== opt); else next = [...selected, opt];
                             setSelected(rowIdx, next); ctx.setFieldValue(`${fieldId}_r${rowIdx}_fb`, '');
                           }} className={optClass}>
-                            <span style={{ display: 'inline-block', width: '1.25rem' }}>{isSelected ? '☑' : '☐'}</span>{opt}
+                            <span style={{ display: 'inline-block', width: '1.25rem' }}>{isSelected ? '☑' : '☐'}</span><LatexText text={opt} />
                           </button>
                         );
                       })}
@@ -1815,8 +1824,8 @@ function renderStepper(p: StepperPrimitive, ctx: WkCtx) {
                 {isDone ? '✓' : i + 1}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: isActive ? 'var(--accent-dark)' : 'var(--text)' }}>{s.label}</div>
-                {s.description && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{s.description}</div>}
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: isActive ? 'var(--accent-dark)' : 'var(--text)' }}><LatexText text={s.label} /></div>
+                {s.description && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}><LatexText text={s.description} /></div>}
                 {isActive && s.inputPlaceholder && (
                   <input type="text" value={ctx.fields[`${fieldId}_step${i}`] || ''} onChange={e => ctx.setFieldValue(`${fieldId}_step${i}`, e.target.value)} placeholder={s.inputPlaceholder} className="w-full mt-1 px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-sm outline-none focus:border-[var(--accent)]" />
                 )}
@@ -1893,8 +1902,9 @@ function renderSolutionButton(p: SolutionButtonPrimitive, ctx: WkCtx) {
 }
 
 function renderRow(p: RowPrimitive, ctx: WkCtx) {
+  // Wrap by default — AI-generated rows regularly overflow on narrow screens otherwise
   return (
-    <div key={p.id} style={{ display: 'flex', flexDirection: 'row', gap: p.gap || '0.5rem', alignItems: p.align || 'center', flexWrap: p.wrap ? 'wrap' : 'nowrap' }}>
+    <div key={p.id} style={{ display: 'flex', flexDirection: 'row', gap: p.gap || '0.5rem', alignItems: p.align || 'center', flexWrap: p.wrap === false ? 'nowrap' : 'wrap' }}>
       {p.children.map((child, i) => renderPrimitive(child, ctx, i))}
     </div>
   );
@@ -1945,6 +1955,438 @@ function substituteFieldIds(node: unknown, fieldId: string, label?: string) {
   if (Array.isArray(record.checks)) for (const check of record.checks) substituteFieldIds(check, fieldId, label);
 }
 
+// ─── Compendium visualization primitives ───
+
+// AI-generated "latex"/"expression" fields should be raw LaTeX, but models often
+// wrap them in \(..\) / \[..\] / $..$ delimiters or mix delimited math with text.
+function stripOuterMathDelimiters(tex: string): string {
+  const t = tex.trim();
+  const m = t.match(/^\\\(([\s\S]*)\\\)$/) || t.match(/^\\\[([\s\S]*)\\\]$/)
+    || t.match(/^\$\$([\s\S]*)\$\$$/) || t.match(/^\$([\s\S]*)\$$/);
+  if (m && !/\\[()[\]]|\$/.test(m[1])) return m[1].trim();
+  return t;
+}
+
+// Render a raw-LaTeX field; falls back to mixed text+math rendering when the
+// value still contains embedded \(..\) delimiters after unwrapping.
+function MathExpression({ tex, display = false }: { tex: string; display?: boolean }) {
+  const t = stripOuterMathDelimiters(tex);
+  if (/\\[([]|\$/.test(t.replace(/\\[a-zA-Z]+/g, ''))) return <LatexText text={t} />;
+  return <Latex tex={t} display={display} />;
+}
+
+function renderFormulaDisplay(p: FormulaDisplayPrimitive) {
+  const isBlock = p.display !== 'inline';
+  return (
+    <div key={p.id} style={isBlock ? { textAlign: 'center', margin: '0.75rem 0' } : { display: 'inline' }}>
+      <MathExpression tex={p.latex} display={isBlock} />
+      {p.caption && (
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+          {p.caption}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepCalculator({ p }: { p: StepCalculatorPrimitive }) {
+  const [revealedSteps, setRevealedSteps] = useState(p.interactive ? 0 : p.steps.length);
+  return (
+    <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-4">
+      {p.title && (
+        <div className="font-semibold text-sm mb-3 text-[var(--accent-dark)]">{p.title}</div>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        {p.steps.map((step, i) => {
+          const visible = i < revealedSteps;
+          return (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem',
+                opacity: visible ? 1 : 0.3,
+                transition: 'opacity 0.3s',
+              }}
+            >
+              <span
+                style={{
+                  flexShrink: 0,
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  borderRadius: '50%',
+                  background: 'var(--accent)',
+                  color: 'white',
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 600,
+                }}
+              >
+                {i + 1}
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{step.label}</span>
+                <div style={{ fontSize: '0.9rem' }}>
+                  <MathExpression tex={step.expression} />
+                </div>
+                {step.result && (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--accent-dark)', fontWeight: 600 }}>
+                    → <LatexText text={step.result} />
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {p.interactive && revealedSteps < p.steps.length && (
+        <button
+          type="button"
+          onClick={() => setRevealedSteps(s => s + 1)}
+          style={{
+            marginTop: '0.75rem',
+            padding: '0.35rem 0.85rem',
+            fontSize: '0.8rem',
+            border: '1px solid var(--accent)',
+            borderRadius: '6px',
+            background: 'transparent',
+            color: 'var(--accent)',
+            cursor: 'pointer',
+          }}
+        >
+          Nächster Schritt →
+        </button>
+      )}
+      {p.interactive && revealedSteps > 0 && revealedSteps >= p.steps.length && (
+        <button
+          type="button"
+          onClick={() => setRevealedSteps(0)}
+          style={{
+            marginTop: '0.75rem',
+            padding: '0.35rem 0.85rem',
+            fontSize: '0.8rem',
+            border: '1px solid var(--border)',
+            borderRadius: '6px',
+            background: 'transparent',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+          }}
+        >
+          ↺ Von vorne
+        </button>
+      )}
+    </div>
+  );
+}
+
+function renderStepCalculator(p: StepCalculatorPrimitive) {
+  return <StepCalculator key={p.id} p={p} />;
+}
+
+function renderFlowDiagram(p: FlowDiagramPrimitive) {
+  const isHorizontal = p.direction !== 'vertical';
+  const nodeMap = new Map(p.nodes.map(n => [n.id, n]));
+
+  // Build adjacency: for each node, what edges go out
+  const outgoing = new Map<string, typeof p.edges>();
+  for (const edge of p.edges) {
+    if (!outgoing.has(edge.from)) outgoing.set(edge.from, []);
+    outgoing.get(edge.from)!.push(edge);
+  }
+
+  // Find root nodes (no incoming edges)
+  const incomingSet = new Set(p.edges.map(e => e.to));
+  const roots = p.nodes.filter(n => !incomingSet.has(n.id));
+
+  // BFS layout: assign each node to a level
+  const levels: string[][] = [];
+  const visited = new Set<string>();
+  let current = roots.map(r => r.id);
+  while (current.length > 0) {
+    levels.push(current);
+    for (const id of current) visited.add(id);
+    const next: string[] = [];
+    for (const id of current) {
+      for (const edge of outgoing.get(id) || []) {
+        if (!visited.has(edge.to)) next.push(edge.to);
+      }
+    }
+    current = Array.from(new Set(next));
+  }
+  // Add any unvisited nodes as their own level
+  for (const n of p.nodes) {
+    if (!visited.has(n.id)) levels.push([n.id]);
+  }
+
+  // Constants for SVG layout
+  const nodeWidth = 130;
+  const nodeHeight = 50;
+  const levelGap = 80;   // gap between levels
+  const siblingGap = 30; // gap between siblings in same level
+  const padding = 20;
+
+  // For horizontal: levels go left→right, siblings stack vertically
+  // For vertical: levels go top→bottom, siblings stack horizontally
+  const levelExtent = levels.length * (nodeWidth + levelGap) - levelGap + padding * 2;
+  const maxSiblings = Math.max(...levels.map(l => l.length), 1);
+  const siblingExtent = maxSiblings * (nodeWidth + siblingGap) - siblingGap + padding * 2;
+
+  const svgWidth = isHorizontal ? levelExtent : siblingExtent;
+  const svgHeight = isHorizontal ? siblingExtent : levelExtent;
+
+  // Compute pixel positions for each node
+  const pixelPositions = new Map<string, { cx: number; cy: number; w: number; h: number }>();
+  levels.forEach((level, li) => {
+    const levelSiblingExtent = level.length * (nodeWidth + siblingGap) - siblingGap;
+    const startOffset = (isHorizontal
+      ? svgHeight - levelSiblingExtent - padding * 2
+      : svgWidth - levelSiblingExtent - padding * 2) / 2 + padding;
+    level.forEach((nodeId, ni) => {
+      const levelPos = padding + li * (nodeWidth + levelGap) + nodeWidth / 2;
+      const siblingPos = startOffset + ni * (nodeWidth + siblingGap) + nodeWidth / 2;
+      const cx = isHorizontal ? levelPos : siblingPos;
+      const cy = isHorizontal ? siblingPos : levelPos;
+      pixelPositions.set(nodeId, { cx, cy, w: nodeWidth, h: nodeHeight });
+    });
+  });
+
+  // Render a node as SVG content
+  const renderNodeSvg = (nodeId: string): React.ReactNode => {
+    const node = nodeMap.get(nodeId);
+    const pos = pixelPositions.get(nodeId);
+    if (!node || !pos) return null;
+
+    const x = pos.cx - pos.w / 2;
+    const y = pos.cy - pos.h / 2;
+    const fill = node.highlight ? 'var(--accent-light)' : 'white';
+    const stroke = node.highlight ? 'var(--accent)' : 'var(--border)';
+    const strokeWidth = node.highlight ? 2.5 : 1.5;
+
+    let shapeEl: React.ReactNode = null;
+    if (node.shape === 'circle') {
+      shapeEl = <ellipse cx={pos.cx} cy={pos.cy} rx={pos.w / 2} ry={pos.h / 2} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />;
+    } else if (node.shape === 'diamond') {
+      const pts = `${pos.cx},${y} ${x + pos.w},${pos.cy} ${pos.cx},${y + pos.h} ${x},${pos.cy}`;
+      shapeEl = <polygon points={pts} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />;
+    } else {
+      shapeEl = <rect x={x} y={y} width={pos.w} height={pos.h} rx={8} ry={8} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />;
+    }
+
+    // Labels containing inline LaTeX \(..\) can't be drawn as SVG <text> —
+    // render those through KaTeX inside a foreignObject instead.
+    if (/\\[([]/.test(node.label)) {
+      return (
+        <g key={nodeId}>
+          {shapeEl}
+          <foreignObject x={x} y={y} width={pos.w} height={pos.h} style={{ pointerEvents: 'none' }}>
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                fontSize: 11,
+                lineHeight: 1.2,
+                padding: '0 6px',
+                overflow: 'hidden',
+                color: node.highlight ? 'var(--accent-dark)' : 'var(--text)',
+                fontWeight: node.highlight ? 600 : 400,
+              }}
+            >
+              <span><LatexText text={node.label} /></span>
+            </div>
+          </foreignObject>
+        </g>
+      );
+    }
+
+    // Split long labels into multiple lines (max ~18 chars per line)
+    const words = node.label.split(/\s+/);
+    const splitLabel: string[] = [];
+    let currentLine = '';
+    for (const word of words) {
+      if ((currentLine + ' ' + word).trim().length > 18 && currentLine) {
+        splitLabel.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = (currentLine + ' ' + word).trim();
+      }
+    }
+    if (currentLine) splitLabel.push(currentLine);
+
+    return (
+      <g key={nodeId}>
+        {shapeEl}
+        {splitLabel.map((line, li) => (
+          <text
+            key={li}
+            x={pos.cx}
+            y={pos.cy - (splitLabel.length - 1) * 7 + li * 14}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={11}
+            fill={node.highlight ? 'var(--accent-dark)' : 'var(--text)'}
+            fontWeight={node.highlight ? 600 : 400}
+          >
+            {line}
+          </text>
+        ))}
+      </g>
+    );
+  };
+
+  // Edge labels are plain SVG text — strip any LaTeX delimiters the AI slipped in
+  const plainEdgeLabel = (label: string) => label.replace(/\\[()[\]]/g, '');
+
+  // Render an edge as an SVG arrow
+  const renderEdgeSvg = (edge: typeof p.edges[0], idx: number): React.ReactNode => {
+    const from = pixelPositions.get(edge.from);
+    const to = pixelPositions.get(edge.to);
+    if (!from || !to) return null;
+
+    // Calculate edge endpoints — connect from edge of source node to edge of target node
+    const dx = to.cx - from.cx;
+    const dy = to.cy - from.cy;
+
+    let startX = from.cx;
+    let startY = from.cy;
+    let endX = to.cx;
+    let endY = to.cy;
+
+    if (isHorizontal) {
+      // Horizontal flow: edges exit left/right sides of nodes
+      startX = from.cx + (dx > 0 ? from.w / 2 : -from.w / 2);
+      endX = to.cx + (dx > 0 ? -to.w / 2 : to.w / 2);
+    } else {
+      // Vertical flow: edges exit top/bottom sides of nodes
+      startY = from.cy + (dy > 0 ? from.h / 2 : -from.h / 2);
+      endY = to.cy + (dy > 0 ? -to.h / 2 : to.h / 2);
+    }
+
+    // Curved path for non-adjacent connections, straight for adjacent
+    const isAdjacent = isHorizontal
+      ? Math.abs(from.cx - to.cx) <= (nodeWidth + levelGap + 10)
+      : Math.abs(from.cy - to.cy) <= (nodeHeight + levelGap + 10);
+
+    let pathEl: React.ReactNode;
+
+    if (isAdjacent) {
+      pathEl = (
+        <>
+          <line x1={startX} y1={startY} x2={endX} y2={endY} stroke="var(--text-muted)" strokeWidth={1.5} markerEnd="url(#flowArrowhead)" />
+          {edge.label && (
+            <text x={(startX + endX) / 2} y={(startY + endY) / 2 - 6} textAnchor="middle" fontSize={9} fill="var(--text-muted)" fontStyle="italic">
+              {plainEdgeLabel(edge.label)}
+            </text>
+          )}
+        </>
+      );
+    } else {
+      // Curved path for non-adjacent connections
+      const midX = (startX + endX) / 2;
+      const midY = (startY + endY) / 2;
+      const ctrlX = isHorizontal ? midX : startX + (dx > 0 ? 30 : -30);
+      const ctrlY = isHorizontal ? startY + (dy > 0 ? 30 : -30) : midY;
+      const d = `M ${startX} ${startY} Q ${ctrlX} ${ctrlY} ${endX} ${endY}`;
+      pathEl = (
+        <>
+          <path d={d} fill="none" stroke="var(--text-muted)" strokeWidth={1.5} markerEnd="url(#flowArrowhead)" />
+          {edge.label && (
+            <text x={midX} y={midY - 6} textAnchor="middle" fontSize={9} fill="var(--text-muted)" fontStyle="italic">
+              {plainEdgeLabel(edge.label)}
+            </text>
+          )}
+        </>
+      );
+    }
+
+    return <g key={`edge-${idx}`}>{pathEl}</g>;
+  };
+
+  return (
+    <div key={p.id} className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-4" style={{ overflowX: 'auto' }}>
+      <svg width={svgWidth} height={svgHeight} style={{ maxWidth: '100%' }}>
+        <defs>
+          <marker id="flowArrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="var(--text-muted)" />
+          </marker>
+        </defs>
+        {/* Render edges first (behind nodes) */}
+        {p.edges.map((edge, idx) => renderEdgeSvg(edge, idx))}
+        {/* Render nodes on top */}
+        {p.nodes.map(node => renderNodeSvg(node.id))}
+      </svg>
+    </div>
+  );
+}
+
+function renderKeyValueGrid(p: KeyValueGridPrimitive) {
+  const [col0, col1] = p.columns || ['Eigenschaft', 'Wert'];
+  return (
+    <div key={p.id} className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-4">
+      {p.title && (
+        <div className="font-semibold text-sm mb-3 text-[var(--accent-dark)]">{p.title}</div>
+      )}
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+        <thead>
+          <tr>
+            <th style={{ textAlign: 'left', padding: '0.4rem 0.5rem', borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>{col0}</th>
+            <th style={{ textAlign: 'left', padding: '0.4rem 0.5rem', borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>{col1}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {p.rows.map((row, i) => (
+            <tr key={i} style={row.highlight ? { background: 'var(--accent-light)' } : undefined}>
+              <td style={{ padding: '0.4rem 0.5rem', borderBottom: '1px solid var(--border)', fontWeight: row.highlight ? 600 : 400, color: row.highlight ? 'var(--accent-dark)' : 'var(--text)' }}>
+                <LatexText text={row.key} />
+              </td>
+              <td style={{ padding: '0.4rem 0.5rem', borderBottom: '1px solid var(--border)', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem' }}>
+                <LatexText text={row.value} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function renderCallout(p: CalloutPrimitive) {
+  const styles: Record<string, { bg: string; border: string; color: string; icon: string }> = {
+    info:    { bg: '#e7f0fe', border: '#4a90d9', color: '#1a4480', icon: 'ℹ' },
+    warning: { bg: '#fef3cd', border: '#e0a800', color: '#856404', icon: '⚠' },
+    success: { bg: '#d4edda', border: '#28a745', color: '#155724', icon: '✓' },
+    tip:     { bg: '#fce7f3', border: '#c026d3', color: '#86198f', icon: '💡' },
+  };
+  const s = styles[p.variant] || styles.info;
+  return (
+    <div
+      key={p.id}
+      style={{
+        background: s.bg,
+        borderLeft: `4px solid ${s.border}`,
+        borderRadius: '0 8px 8px 0',
+        padding: '0.6rem 0.85rem',
+        margin: '0.5rem 0',
+        display: 'flex',
+        gap: '0.5rem',
+        alignItems: 'flex-start',
+      }}
+    >
+      <span style={{ fontSize: '1rem', lineHeight: 1.4 }}>{s.icon}</span>
+      <div style={{ flex: 1, fontSize: '0.85rem', color: s.color }}>
+        {p.title && <div style={{ fontWeight: 600, marginBottom: '0.2rem' }}>{p.title}</div>}
+        <div><LatexText text={p.content} /></div>
+      </div>
+    </div>
+  );
+}
+
 function renderPrimitive(p: GenericPrimitive, ctx: WkCtx, index: number): React.ReactNode {
   switch (p.type) {
     case 'display': return renderDisplay(p);
@@ -1961,7 +2403,37 @@ function renderPrimitive(p: GenericPrimitive, ctx: WkCtx, index: number): React.
     case 'row': return renderRow(p, ctx);
     case 'col': return renderCol(p, ctx);
     case 'repeat': return renderRepeat(p, ctx);
+    case 'formulaDisplay': return renderFormulaDisplay(p);
+    case 'stepCalculator': return renderStepCalculator(p);
+    case 'flowDiagram': return renderFlowDiagram(p);
+    case 'keyValueGrid': return renderKeyValueGrid(p);
+    case 'callout': return renderCallout(p);
     default: return null;
+  }
+}
+
+// One malformed AI-generated primitive must not blank the entire component —
+// contain render errors to the primitive that caused them.
+class PrimitiveErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error) {
+    console.error('GenericComponent primitive render error:', error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', border: '1px dashed var(--border)', borderRadius: '6px', padding: '0.4rem 0.6rem' }}>
+          ⚠ Dieses Element konnte nicht angezeigt werden.
+        </div>
+      );
+    }
+    return this.props.children;
   }
 }
 
@@ -1976,7 +2448,11 @@ export function GenericComponent({ props }: { props: GenericComponentProps }) {
   };
   return (
     <div className="generic-component-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      {props.layout.map((primitive, i) => renderPrimitive(primitive, ctx, i))}
+      {props.layout.map((primitive, i) => (
+        <PrimitiveErrorBoundary key={i}>
+          {renderPrimitive(primitive, ctx, i)}
+        </PrimitiveErrorBoundary>
+      ))}
     </div>
   );
 }

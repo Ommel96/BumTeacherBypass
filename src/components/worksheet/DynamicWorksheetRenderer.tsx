@@ -6,23 +6,36 @@ import { WorksheetProvider, useWorksheet } from './WorksheetProvider';
 import { Breadcrumb, Section, Story, InputField, TableInput, GivenCell, LabelCell, CheckButton, ResetButton, ButtonGroup, Feedback, HintToggle, HintContent, InfoNote, ExampleCalc, PageHeader } from './WorksheetComponents';
 import type { WorksheetData, WorksheetSection, WorksheetField, WorksheetTable, WorksheetCheckGroup, WorksheetHint, CompendiumRef, InteractiveComponent } from '@/lib/worksheet-schema';
 import { PixelGrid, BitVisualizer, TruthTableBuilder, EncodingExercise, HuffmanTreeBuilder, LZ77Simulator, LZ78Simulator, CompressionTable, XorCalculator, AsymmetricFlowVisualizer, ChoiceMatrix, DropdownChoice, GenericComponent } from './InteractiveComponents';
+import { Latex } from '@/components/katex-renderer';
 
 interface MatchResult {
-  type: 'bold' | 'code' | 'linebreak';
+  type: 'bold' | 'code' | 'linebreak' | 'math-inline' | 'math-display';
   index: number;
   length: number;
   content: string;
 }
 
+// Models emit math as \(..\), \[..\], $..$ or $$..$$ — normalize to \(..\)/\[..\]
+// and collapse newlines inside display blocks so the matcher below sees them whole.
+// Single-$ requires non-space content on both ends so prose like "5 $ Rabatt" is untouched.
+function normalizeMathDelimiters(text: string): string {
+  return text
+    .replace(/\$\$([\s\S]+?)\$\$/g, (_, m: string) => `\\[${m.trim()}\\]`)
+    .replace(/(^|[^\\$])\$([^\s$\n](?:[^$\n]*[^\s$\n])?)\$(?!\$)/g, (_, pre: string, m: string) => `${pre}\\(${m}\\)`)
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_, m: string) => `\\[${m.replace(/\s*\n\s*/g, ' ').trim()}\\]`);
+}
+
 function renderMarkdown(text: string): React.ReactNode {
   const parts: React.ReactNode[] = [];
-  let remaining = text;
+  let remaining = normalizeMathDelimiters(text);
   let key = 0;
 
   while (remaining.length > 0) {
     const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
     const codeMatch = remaining.match(/`(.+?)`/);
     const lineBreakMatch = remaining.match(/\n/);
+    const inlineMathMatch = remaining.match(/\\\((.+?)\\\)/);
+    const displayMathMatch = remaining.match(/\\\[(.+?)\\\]/);
 
     const candidates: MatchResult[] = [];
 
@@ -34,6 +47,12 @@ function renderMarkdown(text: string): React.ReactNode {
     }
     if (lineBreakMatch && lineBreakMatch.index !== undefined) {
       candidates.push({ type: 'linebreak', index: lineBreakMatch.index, length: 1, content: '' });
+    }
+    if (inlineMathMatch && inlineMathMatch.index !== undefined) {
+      candidates.push({ type: 'math-inline', index: inlineMathMatch.index, length: inlineMathMatch[0].length, content: inlineMathMatch[1] });
+    }
+    if (displayMathMatch && displayMathMatch.index !== undefined) {
+      candidates.push({ type: 'math-display', index: displayMathMatch.index, length: displayMathMatch[0].length, content: displayMathMatch[1] });
     }
 
     let earliest: MatchResult | null = null;
@@ -52,13 +71,20 @@ function renderMarkdown(text: string): React.ReactNode {
 
     switch (earliest.type) {
       case 'bold':
-        parts.push(<strong key={key++}>{earliest.content}</strong>);
+        parts.push(<strong key={key++}>{renderMarkdown(earliest.content)}</strong>);
         break;
       case 'code':
         parts.push(<code key={key++}>{earliest.content}</code>);
         break;
       case 'linebreak':
         parts.push(<br key={key++} />);
+        break;
+      case 'math-inline':
+        parts.push(<Latex key={key++} tex={earliest.content} />);
+        break;
+      case 'math-display':
+        // span with block display — valid inside <p>, unlike a div
+        parts.push(<span key={key++} style={{ display: 'block', textAlign: 'center', margin: '0.5rem 0' }}><Latex tex={earliest.content} display /></span>);
         break;
     }
 

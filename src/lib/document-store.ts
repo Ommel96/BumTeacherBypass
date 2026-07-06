@@ -1,9 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import getDb from './db';
+import getDb, { DATA_DIR } from './db';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads');
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 
 export function slugify(s: string): string {
   return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9äöüß-]/g, '');

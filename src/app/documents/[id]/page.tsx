@@ -470,9 +470,9 @@ export default function DocumentDetailPage() {
 
       {/* Category editor */}
       <div className="mb-6 bg-white border border-[var(--border)] rounded-xl p-4" id="category">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-serif text-lg font-bold">{doc.filename}</div>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <div className="font-serif text-lg font-bold break-all">{doc.filename}</div>
             <div className="text-sm text-[var(--text-muted)]">
             {doc.year && doc.semester && doc.module_number && doc.topic
               ? `${doc.year}. Lehrjahr · Semester ${doc.semester} · Modul ${doc.module_number} · ${doc.topic}`

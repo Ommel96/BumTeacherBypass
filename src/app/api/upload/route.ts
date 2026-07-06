@@ -8,6 +8,8 @@ import { getProviderConfigForRole, getProviderConfig } from '@/lib/providers-sto
 import { AIProvider } from '@/lib/ai-provider';
 import { upsertCompendiumEntry, listCompendiumEntries } from '@/lib/compendium-store';
 import { researchTopic } from '@/lib/web-research';
+import { renderImageBasedPages } from '@/lib/pdf-images';
+import type { VisionImage } from '@/lib/ai-provider';
 import path from 'path';
 
 export const maxDuration = 300;
@@ -125,55 +127,107 @@ export async function POST(request: NextRequest) {
 
         if (textPages.length > 0 && !(textPages.length === 1 && textPages[0].trim() === '')) {
           const doc = getDocument(id);
-          let compendiumEntries: Array<{ id: string; title: string; keywords: string }> = [];
+          let compendiumEntries: Array<{ id: string; title: string; keywords: string; content?: string }> = [];
+          let compendiumPromise: Promise<Array<{ id: string; title: string; keywords: string; content?: string }>> | undefined;
+
+          // For PDFs, render image-based pages (low text) to PNG so vision-capable
+          // models can see diagrams, charts, and other visual content.
+          let pageImages: Map<number, VisionImage[]> = new Map();
+          if (ext === '.pdf' || file.type === 'application/pdf') {
+            try {
+              updateProcessingStep(id, 'rendering');
+              const imageMap = await renderImageBasedPages(filePath, textPages, 5);
+              imageMap.forEach((img, pageNum) => {
+                pageImages.set(pageNum, [img]);
+              });
+              if (pageImages.size > 0) {
+                console.log(`Vision: rendered ${pageImages.size} image-based page(s) for document ${id}`);
+              }
+            } catch (e) {
+              console.error('Vision rendering error:', e);
+            }
+          }
 
           if (doc?.module_number || doc?.topic) {
             updateProcessingStep(id, 'compendium');
             const t2 = Date.now();
-            try {
-              const existingEntries = listCompendiumEntries(doc.module_number, doc.topic).map(e => ({
-                title: e.title,
-                content: e.content,
-                keywords: e.keywords,
-              }));
 
-              const keywords = rawText.substring(0, 500).split(/\s+/).filter(w => w.length > 4).slice(0, 5);
-              let webResearch = '';
+            // Start compendium generation as a background promise — it will run
+            // concurrently with pass 1 (structure) of the worksheet pipeline.
+            // The promise resolves with compendium entries for pass 2 (enrichment).
+            compendiumPromise = (async (): Promise<Array<{ id: string; title: string; keywords: string; content?: string }>> => {
               try {
-                webResearch = await researchTopic(keywords);
+                const existingEntries = listCompendiumEntries(doc.module_number, doc.topic).map(e => ({
+                  title: e.title,
+                  content: e.content,
+                  keywords: e.keywords,
+                }));
+
+                const keywords = rawText.substring(0, 500).split(/\s+/).filter(w => w.length > 4).slice(0, 5);
+
+                // Run web research with a tight overall timeout (non-blocking if it fails)
+                let webResearch = '';
+                try {
+                  webResearch = await Promise.race([
+                    researchTopic(keywords),
+                    new Promise<string>((resolve) => setTimeout(() => resolve(''), 15000)),
+                  ]);
+                } catch (e) {
+                  console.error('Web research error:', e);
+                }
+
+                // Generate compendium entries with an overall timeout
+                const compendiumConfig = getProviderConfigForRole('compendium');
+                const compendiumProvider = new AIProvider(compendiumConfig);
+                const generated = await Promise.race([
+                  compendiumProvider.generateCompendiumEntries(rawText, doc.module_number, doc.topic, existingEntries, webResearch),
+                  new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Compendium generation timed out after 90s')), 90000)
+                  ),
+                ]);
+                for (const entry of generated) {
+                  upsertCompendiumEntry({
+                    id: '',
+                    module_number: doc.module_number,
+                    topic: doc.topic,
+                    title: entry.title,
+                    content: entry.content,
+                    keywords: (entry.keywords || []).join(','),
+                    interactive_examples: JSON.stringify(entry.interactive_examples || []),
+                    source_doc_ids: id,
+                  });
+                }
+
+                const allEntries = listCompendiumEntries(doc.module_number, doc.topic);
+                const entries = allEntries.map(e => ({ id: e.id, title: e.title, keywords: e.keywords, content: e.content }));
+                console.log(`Compendium: generated ${generated.length} entries, ${entries.length} total available for enrichment`);
+                timings.compendium = Date.now() - t2;
+                updateProcessingTimings(id, timings);
+                return entries;
               } catch (e) {
-                console.error('Web research error:', e);
+                console.error('Compendium generation error:', e);
+                timings.compendium = Date.now() - t2;
+                updateProcessingTimings(id, timings);
+                return [];
               }
+            })();
 
-              const compendiumConfig = getProviderConfigForRole('compendium');
-              const compendiumProvider = new AIProvider(compendiumConfig);
-              const generated = await compendiumProvider.generateCompendiumEntries(rawText, doc.module_number, doc.topic, existingEntries, webResearch);
-              for (const entry of generated) {
-                upsertCompendiumEntry({
-                  id: '',
-                  module_number: doc.module_number,
-                  topic: doc.topic,
-                  title: entry.title,
-                  content: entry.content,
-                  keywords: (entry.keywords || []).join(','),
-                  interactive_examples: JSON.stringify(entry.interactive_examples || []),
-                  source_doc_ids: id,
-                });
-              }
-
-              const allEntries = listCompendiumEntries(doc.module_number, doc.topic);
-              compendiumEntries = allEntries.map(e => ({ id: e.id, title: e.title, keywords: e.keywords }));
-              console.log(`Compendium: generated ${generated.length} entries, ${compendiumEntries.length} total available for enrichment`);
-            } catch (e) {
-              console.error('Compendium generation error:', e);
-            }
-            timings.compendium = Date.now() - t2;
-            updateProcessingTimings(id, timings);
+            console.log('Compendium: generation started in parallel with worksheet processing');
           } else {
             console.log(`Compendium: skipped — no module_number or topic (module=${doc?.module_number}, topic=${doc?.topic})`);
           }
 
-          await processDocumentPages(id, textPages, providerConfig, enrichmentConfig, compendiumEntries, reviewerConfig, timings, (updated) => updateProcessingTimings(id, updated));
+          await processDocumentPages(
+            id, textPages, providerConfig, enrichmentConfig, compendiumEntries,
+            reviewerConfig, timings, (updated) => updateProcessingTimings(id, updated),
+            pageImages.size > 0 ? pageImages : undefined,
+            compendiumPromise,
+          );
+          // Safety: ensure the compendium promise is settled (in case processDocumentPages
+          // returned before the promise was consumed, e.g. zero pages or early error)
+          if (compendiumPromise) {
+            try { await compendiumPromise; } catch {}
+          }
         } else {
           updateDocumentStatus(id, 'processed');
         }

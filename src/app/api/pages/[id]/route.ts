@@ -94,12 +94,12 @@ export async function POST(
 
     const allPages = getPagesByDocument(page.document_id);
 
-    let compendiumEntries: Array<{ id: string; title: string; keywords: string }> = [];
+    let compendiumEntries: Array<{ id: string; title: string; keywords: string; content?: string }> = [];
     try {
       const doc = getDocument(page.document_id);
       if (doc?.module_number || doc?.topic) {
         const entries = listCompendiumEntries(doc.module_number, doc.topic);
-        compendiumEntries = entries.map(e => ({ id: e.id, title: e.title, keywords: e.keywords }));
+        compendiumEntries = entries.map(e => ({ id: e.id, title: e.title, keywords: e.keywords, content: e.content }));
       }
     } catch {}
 

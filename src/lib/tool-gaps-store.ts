@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { DATA_DIR } from './db';
 
-const TOOL_GAPS_FILE = path.join(process.cwd(), 'data', 'tool-gaps.json');
+const TOOL_GAPS_FILE = path.join(DATA_DIR, 'tool-gaps.json');
 
 export interface ToolGap {
   name: string;

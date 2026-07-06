@@ -1,11 +1,8 @@
 #!/bin/sh
 set -e
 
-# Fix data directory permissions (volume may be mounted as root)
-if [ ! -w /app/data ]; then
-  echo "Fixing /app/data permissions..."
-  chown -R 1001:1001 /app/data
-fi
+# Always fix data directory permissions — Docker volumes mount as root
+chown -R 1001:1001 /app/data 2>/dev/null || true
 
 # Drop to nextjs user (uid 1001) and exec the main process
 exec su-exec nextjs:nodejs "$@"

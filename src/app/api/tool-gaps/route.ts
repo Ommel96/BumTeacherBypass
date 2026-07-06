@@ -16,7 +16,8 @@ export async function DELETE() {
   try {
     const fs = await import('fs');
     const path = await import('path');
-    const filePath = path.join(process.cwd(), 'data', 'tool-gaps.json');
+    const { DATA_DIR } = await import('@/lib/db');
+    const filePath = path.join(DATA_DIR, 'tool-gaps.json');
     if (fs.existsSync(filePath)) {
       fs.writeFileSync(filePath, '[]', 'utf-8');
     }

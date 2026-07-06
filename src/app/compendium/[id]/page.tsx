@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import type { GenericComponentProps } from '@/lib/worksheet-schema';
+import { Latex } from '@/components/katex-renderer';
 
 import { WorksheetProvider } from '@/components/worksheet/WorksheetProvider';
 
@@ -35,8 +36,19 @@ interface CompendiumDetail {
   related: RelatedEntry[];
 }
 
+// Models mix math syntaxes: normalize $$..$$ → \[..\], $..$ → \(..\), and collapse
+// newlines inside \[..\] blocks so the line-based renderer below sees each display
+// formula as a single line. Single-$ requires non-space content on both ends so
+// prose like "5 $ pro Stück" is left alone.
+function normalizeMath(text: string): string {
+  return text
+    .replace(/\$\$([\s\S]+?)\$\$/g, (_, m: string) => `\\[${m.trim()}\\]`)
+    .replace(/(^|[^\\$])\$([^\s$\n](?:[^$\n]*[^\s$\n])?)\$(?!\$)/g, (_, pre: string, m: string) => `${pre}\\(${m}\\)`)
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_, m: string) => `\\[${m.replace(/\s*\n\s*/g, ' ').trim()}\\]`);
+}
+
 function renderContent(text: string): React.ReactNode {
-  const lines = text.split('\n');
+  const lines = normalizeMath(text).split('\n');
   const elements: React.ReactNode[] = [];
   let key = 0;
   let listItems: string[] = [];
@@ -169,9 +181,17 @@ function renderContent(text: string): React.ReactNode {
     }
 
     flushList();
-    const headingMatch = trimmed.match(/^###\s+(.+)/) || trimmed.match(/^##\s+(.+)/) || trimmed.match(/^#\s+(.+)/);
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)/);
     if (headingMatch) {
-      elements.push(<h3 key={key++} className="font-serif text-lg font-bold mt-6 mb-2 text-[var(--accent-dark)]">{renderInline(headingMatch[1])}</h3>);
+      const level = headingMatch[1].length;
+      const content = renderInline(headingMatch[2]);
+      if (level <= 2) {
+        elements.push(<h2 key={key++} className="font-serif text-xl font-bold mt-6 mb-2 text-[var(--accent-dark)]">{content}</h2>);
+      } else if (level === 3) {
+        elements.push(<h3 key={key++} className="font-serif text-lg font-bold mt-6 mb-2 text-[var(--accent-dark)]">{content}</h3>);
+      } else {
+        elements.push(<h4 key={key++} className="font-serif text-base font-bold mt-4 mb-1.5 text-[var(--accent-dark)]">{content}</h4>);
+      }
       continue;
     }
     elements.push(<p key={key++} style={{ lineHeight: 1.7, margin: '0.5rem 0' }}>{renderInline(trimmed)}</p>);
@@ -190,14 +210,30 @@ function renderInline(text: string): React.ReactNode {
 
   while (remaining.length > 0) {
     const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    // Italic *x*: content must not start/end with whitespace (so "2 * 3 * 4" is left alone)
+    const italicMatch = remaining.match(/\*([^\s*](?:[^*\n]*[^\s*])?)\*/);
     const codeMatch = remaining.match(/`(.+?)`/);
+    // Inline LaTeX: \(...\)
+    const latexMatch = remaining.match(/\\\((.+?)\\\)/);
+    // Display LaTeX on its own: \[...\]
+    const displayMathMatch = remaining.match(/\\\[(.+?)\\\]/);
 
     const candidates: { idx: number; len: number; content: React.ReactNode }[] = [];
     if (boldMatch && boldMatch.index !== undefined) {
-      candidates.push({ idx: boldMatch.index, len: boldMatch[0].length, content: <strong key={key++}>{boldMatch[1]}</strong> });
+      candidates.push({ idx: boldMatch.index, len: boldMatch[0].length, content: <strong key={key++}>{renderInline(boldMatch[1])}</strong> });
+    }
+    // Italic only wins when it starts strictly before any bold match (so **x** isn't eaten)
+    if (italicMatch && italicMatch.index !== undefined && (!boldMatch || boldMatch.index === undefined || italicMatch.index < boldMatch.index)) {
+      candidates.push({ idx: italicMatch.index, len: italicMatch[0].length, content: <em key={key++}>{renderInline(italicMatch[1])}</em> });
     }
     if (codeMatch && codeMatch.index !== undefined) {
       candidates.push({ idx: codeMatch.index, len: codeMatch[0].length, content: <code key={key++} className="font-mono bg-[var(--accent-light)] text-[var(--accent-dark)] px-1.5 py-0.5 rounded text-sm">{codeMatch[1]}</code> });
+    }
+    if (latexMatch && latexMatch.index !== undefined) {
+      candidates.push({ idx: latexMatch.index, len: latexMatch[0].length, content: <Latex key={key++} tex={latexMatch[1]} /> });
+    }
+    if (displayMathMatch && displayMathMatch.index !== undefined) {
+      candidates.push({ idx: displayMathMatch.index, len: displayMathMatch[0].length, content: <div key={key++} className="my-1 text-center"><Latex tex={displayMathMatch[1]} display /></div> });
     }
 
     if (candidates.length === 0) {

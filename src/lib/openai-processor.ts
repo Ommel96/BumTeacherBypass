@@ -4,7 +4,7 @@ import { AIProvider, type ProviderConfig } from './ai-provider';
 import { getSettings } from './settings-store';
 import { getProviderConfigForRole } from './providers-store';
 import type { WorksheetData, WorksheetField, WorksheetSection, WorksheetCheckGroup, WorksheetHint } from './worksheet-schema';
-import { validateWorksheetData, normalizeWorksheetData } from './worksheet-schema';
+import { validateWorksheetData, normalizeWorksheetData, sanitizeInteractiveComponents } from './worksheet-schema';
 import { listCompendiumEntries } from './compendium-store';
 
 function escapeHtml(text: string): string {
@@ -119,15 +119,37 @@ function ensureCheckGroups(data: WorksheetData): WorksheetData {
   return { ...data, sections: sections as WorksheetSection[] };
 }
 
+// Ask the AI to solve questions whose checks have empty "expected" values (grading
+// would otherwise compare against an empty string) and apply the answers in place.
+async function repairEmptyExpectedValues(provider: AIProvider, data: WorksheetData, rawText: string): Promise<number> {
+  const answers = await provider.fillEmptyExpectedValues(data as unknown as Record<string, unknown>, rawText);
+  let applied = 0;
+  for (const section of data.sections as Array<WorksheetSection & { checkGroups?: WorksheetCheckGroup[] }>) {
+    for (const cg of section.checkGroups || []) {
+      for (const check of cg.checks) {
+        const answer = answers[check.fieldId];
+        if (answer && (!check.expected || check.expected.trim() === '')) {
+          check.expected = answer.expected;
+          if (answer.hint) check.hint = answer.hint;
+          applied++;
+        }
+      }
+    }
+  }
+  return applied;
+}
+
 export async function processDocumentPages(
   documentId: string,
   pages: string[],
   providerConfig?: ProviderConfig,
   enrichmentOverride?: ProviderConfig,
-  compendiumEntries?: Array<{ id: string; title: string; keywords: string }>,
+  compendiumEntries?: Array<{ id: string; title: string; keywords: string; content?: string }>,
   reviewerOverride?: ProviderConfig,
   timings?: Record<string, number>,
-  onTimingsUpdate?: (timings: Record<string, number>) => void
+  onTimingsUpdate?: (timings: Record<string, number>) => void,
+  pageImages?: Map<number, import('@/lib/ai-provider').VisionImage[]>,
+  compendiumPromise?: Promise<Array<{ id: string; title: string; keywords: string; content?: string }>>,
 ): Promise<void> {
   const settings = getSettings();
   const structureConfig = providerConfig || getProviderConfigForRole('default');
@@ -168,7 +190,7 @@ export async function processDocumentPages(
             onTimingsUpdate?.(timings);
           }
           updateProcessingStep(documentId, `${step}_page${i + 1}`);
-        });
+        }, pageImages?.get(i + 1), compendiumPromise);
 
         if (currentStep && (currentStep === 'pass1' || currentStep === 'pass2' || currentStep === 'pass3')) {
           passTimings[currentStep] = (passTimings[currentStep] || 0) + (Date.now() - stepStartTime);
@@ -179,7 +201,10 @@ export async function processDocumentPages(
         if (raw.title && Array.isArray(raw.sections)) {
           // Merge any top-level checkGroups/hints into sections before normalizing
           const merged = mergeTopLevelIntoSections(raw);
-          const normalized = normalizeWorksheetData(merged);
+          const { data: normalized, fixes: componentFixes } = sanitizeInteractiveComponents(normalizeWorksheetData(merged));
+          if (componentFixes.length > 0) {
+            console.log(`Page ${i + 1}: component sanitizer applied ${componentFixes.length} fix(es): ${componentFixes.join('; ')}`);
+          }
           const validation = validateWorksheetData(normalized);
           const sectionTypes = normalized.sections.map((s: WorksheetSection) => s.type);
           const checkGroupCounts = normalized.sections.map((s: WorksheetSection) => (s as WorksheetSection & { checkGroups?: unknown[] }).checkGroups?.length || 0);
@@ -190,7 +215,13 @@ export async function processDocumentPages(
               (s.checkGroups || []).flatMap(cg => cg.checks.filter(c => !c.expected || c.expected.trim() === ''))
             );
             if (emptyExpected.length > 0) {
-              console.warn(`Page ${i + 1}: WARNING — ${emptyExpected.length} checkGroups have empty expected values. Reviewer may not have run or failed.`);
+              console.warn(`Page ${i + 1}: ${emptyExpected.length} checks have empty expected values — running targeted answer repair`);
+              try {
+                const applied = await repairEmptyExpectedValues(provider, worksheetData, rawText);
+                if (applied > 0) console.log(`Page ${i + 1}: filled ${applied} empty expected values via repair pass`);
+              } catch (repairErr) {
+                console.error(`Page ${i + 1}: expected-value repair failed:`, repairErr);
+              }
             }
             console.log(`Page ${i + 1}: Successfully generated worksheet with ${normalized.sections.length} sections (types: ${sectionTypes.join(', ')}, checkGroups per section: ${checkGroupCounts.join(', ')}, interactive: ${interactiveCount})`);
           } else {
@@ -242,7 +273,7 @@ export async function regeneratePage(
   totalPages: number,
   providerConfig?: ProviderConfig,
   enrichmentOverride?: ProviderConfig,
-  compendiumEntries?: Array<{ id: string; title: string; keywords: string }>,
+  compendiumEntries?: Array<{ id: string; title: string; keywords: string; content?: string }>,
   reviewerOverride?: ProviderConfig,
   timings?: Record<string, number>,
   onTimingsUpdate?: (timings: Record<string, number>) => void
@@ -288,13 +319,28 @@ export async function regeneratePage(
   const raw = result as unknown as Record<string, unknown>;
   if (raw.title && Array.isArray(raw.sections)) {
     const merged = mergeTopLevelIntoSections(raw);
-    const normalized = normalizeWorksheetData(merged);
+    const { data: normalized, fixes: componentFixes } = sanitizeInteractiveComponents(normalizeWorksheetData(merged));
+    if (componentFixes.length > 0) {
+      console.log(`Regenerate: component sanitizer applied ${componentFixes.length} fix(es): ${componentFixes.join('; ')}`);
+    }
     const validation = validateWorksheetData(normalized);
     if (validation.valid) {
       worksheetData = ensureCheckGroups(normalized);
     } else {
       console.warn('Regenerate: AI response failed validation:', validation.errors);
       worksheetData = ensureCheckGroups(normalized);
+    }
+
+    const emptyExpected = (worksheetData.sections as Array<WorksheetSection & { checkGroups?: WorksheetCheckGroup[] }>).flatMap(s =>
+      (s.checkGroups || []).flatMap(cg => cg.checks.filter(c => !c.expected || c.expected.trim() === ''))
+    );
+    if (emptyExpected.length > 0) {
+      try {
+        const applied = await repairEmptyExpectedValues(provider, worksheetData, rawText);
+        if (applied > 0) console.log(`Regenerate: filled ${applied} empty expected values via repair pass`);
+      } catch (repairErr) {
+        console.error('Regenerate: expected-value repair failed:', repairErr);
+      }
     }
   }
 

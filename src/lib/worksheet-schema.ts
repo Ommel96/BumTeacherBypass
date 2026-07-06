@@ -282,6 +282,65 @@ export interface RepeatPrimitive extends PrimitiveBase {
   startIndex?: number;
 }
 
+// ─── Compendium visualization primitives ───
+// These are designed for DEMONSTRATION, not exercise.
+// They let the AI generate rich visual explanations for the compendium.
+
+export interface FormulaDisplayPrimitive extends PrimitiveBase {
+  type: 'formulaDisplay';
+  latex: string;        // KaTeX-rendered formula, e.g. "C = M^e \\bmod N"
+  caption?: string;      // Optional German caption below the formula
+  // "display" = block-level centered, "inline" = inline within text
+  display?: 'block' | 'inline';
+}
+
+export interface StepCalculatorPrimitive extends PrimitiveBase {
+  type: 'stepCalculator';
+  title?: string;
+  steps: Array<{
+    label: string;           // German description, e.g. "Berechne N = p · q"
+    expression: string;       // KaTeX expression, e.g. "N = 3 \\cdot 11 = 33"
+    result?: string;          // Final result as plain text, e.g. "N = 33"
+  }>;
+  // Optional: a "reveal" button so students can step through one at a time
+  interactive?: boolean;
+}
+
+export interface FlowDiagramPrimitive extends PrimitiveBase {
+  type: 'flowDiagram';
+  nodes: Array<{
+    id: string;
+    label: string;           // German label, can contain inline LaTeX \(...\)
+    shape?: 'box' | 'circle' | 'diamond';
+    highlight?: boolean;       // Highlight this node (e.g. the "secret" key)
+  }>;
+  edges: Array<{
+    from: string;             // node id
+    to: string;                // node id
+    label?: string;            // Optional label on the arrow
+  }>;
+  // Layout direction: "horizontal" (left→right) or "vertical" (top→bottom)
+  direction?: 'horizontal' | 'vertical';
+}
+
+export interface KeyValueGridPrimitive extends PrimitiveBase {
+  type: 'keyValueGrid';
+  title?: string;
+  rows: Array<{
+    key: string;        // German label, e.g. "Öffentlicher Schlüssel"
+    value: string;       // Value, can contain inline LaTeX
+    highlight?: boolean;  // Highlight this row
+  }>;
+  columns?: [string, string];  // Optional custom column headers
+}
+
+export interface CalloutPrimitive extends PrimitiveBase {
+  type: 'callout';
+  variant: 'info' | 'warning' | 'success' | 'tip';
+  title?: string;
+  content: string;       // Can contain inline LaTeX
+}
+
 export type GenericPrimitive =
   | DisplayPrimitive
   | InputPrimitive
@@ -296,7 +355,12 @@ export type GenericPrimitive =
   | SolutionButtonPrimitive
   | RowPrimitive
   | ColPrimitive
-  | RepeatPrimitive;
+  | RepeatPrimitive
+  | FormulaDisplayPrimitive
+  | StepCalculatorPrimitive
+  | FlowDiagramPrimitive
+  | KeyValueGridPrimitive
+  | CalloutPrimitive;
 
 export interface GenericComponentProps {
   fieldId: string;
@@ -354,6 +418,163 @@ export function normalizeWorksheetData(data: WorksheetData): WorksheetData {
     return s;
   });
   return { ...data, sections };
+}
+
+// ─── Interactive component sanitization ───
+// AI-generated components frequently contain machine-checkable mistakes: wrong XOR
+// solutions, correctAnswers that match no column/option, pixelGrid solutions of the
+// wrong length, LZ77 decode tasks without decode input, missing fieldIds. Everything
+// that can be verified deterministically is fixed here; components that are broken
+// beyond repair are removed (the section falls back to its text fields) so students
+// never see an unsolvable exercise.
+export function sanitizeInteractiveComponents(data: WorksheetData): { data: WorksheetData; fixes: string[] } {
+  const fixes: string[] = [];
+  let idCounter = 0;
+  const normKey = (v: string) => v.trim().toLowerCase();
+
+  const sections = data.sections.map((section, si) => {
+    if (!section.interactive) return section;
+    const s = { ...section };
+    const comp = s.interactive as InteractiveComponent;
+    const props = { ...(comp.props as unknown as Record<string, unknown>) };
+    const label = `section ${s.number ?? si + 1}`;
+
+    const demote = (reason: string): WorksheetSection => {
+      fixes.push(`${label}: removed ${comp.type} component — ${reason}`);
+      delete s.interactive;
+      if (s.type === 'interactive') s.type = 'section';
+      return s;
+    };
+
+    if (typeof props.fieldId !== 'string' || !props.fieldId) {
+      props.fieldId = `iact_${si + 1}_${++idCounter}`;
+      fixes.push(`${label}: generated missing fieldId for ${comp.type}`);
+    }
+
+    switch (comp.type) {
+      case 'xorCalculator': {
+        const a = String(props.inputA ?? '').trim();
+        const b = String(props.inputB ?? '').trim();
+        if (!/^[01]+$/.test(a) || !/^[01]+$/.test(b)) return demote('inputA/inputB are not binary strings');
+        const len = Math.max(a.length, b.length);
+        const pa = a.padStart(len, '0');
+        const pb = b.padStart(len, '0');
+        if (pa !== a || pb !== b) {
+          props.inputA = pa;
+          props.inputB = pb;
+          fixes.push(`${label}: padded XOR inputs to ${len} bits`);
+        }
+        const correct = Array.from({ length: len }, (_, i) => (pa[i] === pb[i] ? '0' : '1')).join('');
+        if (props.solution !== correct) {
+          if (props.solution) fixes.push(`${label}: corrected XOR solution "${props.solution}" → "${correct}"`);
+          props.solution = correct;
+        }
+        props.bits = len;
+        break;
+      }
+      case 'choiceMatrix': {
+        const columns = Array.isArray(props.columns) ? (props.columns as unknown[]).map(String) : [];
+        const rows = Array.isArray(props.rows) ? (props.rows as Array<Record<string, unknown>>) : [];
+        if (columns.length < 2 || rows.length === 0) return demote('needs at least 2 columns and 1 row');
+        const colByNorm = new Map(columns.map(c => [normKey(c), c]));
+        props.rows = rows.map((row, ri) => {
+          const answers = (Array.isArray(row.correctAnswers) ? row.correctAnswers : []).map(String);
+          const mapped = answers.map(ans => colByNorm.get(normKey(ans))).filter((v): v is string => v !== undefined);
+          if (mapped.length !== answers.length) {
+            fixes.push(`${label}: choiceMatrix row ${ri + 1} had correctAnswers not matching any column — dropped invalid entries`);
+          }
+          return { ...row, correctAnswers: mapped };
+        });
+        if ((props.rows as Array<{ correctAnswers: string[] }>).every(r => r.correctAnswers.length === 0)) {
+          return demote('no row has a valid correct answer');
+        }
+        break;
+      }
+      case 'dropdownChoice': {
+        const rows = Array.isArray(props.rows) ? (props.rows as Array<Record<string, unknown>>) : [];
+        if (rows.length === 0) return demote('no rows');
+        props.rows = rows.map((row, ri) => {
+          const options = (Array.isArray(row.options) ? row.options : []).map(String);
+          const answers = (Array.isArray(row.correctAnswers) ? row.correctAnswers : []).map(String);
+          const optByNorm = new Map(options.map(o => [normKey(o), o]));
+          const mapped: string[] = [];
+          for (const ans of answers) {
+            const hit = optByNorm.get(normKey(ans));
+            if (hit) {
+              mapped.push(hit);
+            } else {
+              options.push(ans);
+              mapped.push(ans);
+              fixes.push(`${label}: dropdownChoice row ${ri + 1} — correct answer "${ans}" was missing from options, added it`);
+            }
+          }
+          return { ...row, options, correctAnswers: mapped };
+        });
+        break;
+      }
+      case 'pixelGrid': {
+        const width = Number(props.width) || 0;
+        const height = Number(props.height) || 0;
+        if (width <= 0 || height <= 0) return demote('invalid width/height');
+        if (Array.isArray(props.solution)) {
+          const expectedLen = width * height;
+          const sol = (props.solution as unknown[]).map(v => (Number(v) ? 1 : 0));
+          if (sol.length !== expectedLen) {
+            props.solution = sol.length > expectedLen
+              ? sol.slice(0, expectedLen)
+              : [...sol, ...Array(expectedLen - sol.length).fill(0)];
+            fixes.push(`${label}: pixelGrid solution length ${sol.length} adjusted to ${expectedLen} (${width}×${height})`);
+          } else {
+            props.solution = sol;
+          }
+        }
+        break;
+      }
+      case 'lz77Simulator': {
+        const inputString = String(props.inputString ?? '').trim();
+        const decodeInput = String(props.decodeInput ?? '').trim();
+        if (props.direction === 'decode' && !decodeInput) {
+          if (inputString) {
+            props.direction = 'encode';
+            fixes.push(`${label}: lz77 decode task without decodeInput — switched to encode`);
+          } else {
+            return demote('lz77 decode without decodeInput or inputString');
+          }
+        } else if (props.direction !== 'decode' && !inputString) {
+          if (decodeInput) {
+            props.direction = 'decode';
+            fixes.push(`${label}: lz77 encode task without inputString — switched to decode`);
+          } else {
+            return demote('lz77 without inputString');
+          }
+        }
+        if (!Number(props.bufferSize) || Number(props.bufferSize) <= 0) props.bufferSize = 6;
+        if (!Number(props.lookaheadSize) || Number(props.lookaheadSize) <= 0) props.lookaheadSize = 4;
+        break;
+      }
+      case 'lz78Simulator':
+      case 'compressionTable': {
+        if (!String(props.inputString ?? '').trim()) return demote(`${comp.type} without inputString`);
+        break;
+      }
+      case 'huffmanTreeBuilder': {
+        const hasString = !!String(props.initialString ?? '').trim();
+        const freq = props.frequencyTable;
+        const hasFreq = !!freq && typeof freq === 'object' && Object.keys(freq as object).length > 0;
+        if (!hasString && !hasFreq) return demote('huffmanTreeBuilder without initialString or frequencyTable');
+        break;
+      }
+      case 'custom': {
+        if (!Array.isArray(props.layout) || (props.layout as unknown[]).length === 0) return demote('custom component without layout');
+        break;
+      }
+    }
+
+    s.interactive = { ...comp, props } as unknown as InteractiveComponent;
+    return s;
+  });
+
+  return { data: { ...data, sections }, fixes };
 }
 
 export function validateWorksheetData(data: unknown): { valid: boolean; errors: string[] } {

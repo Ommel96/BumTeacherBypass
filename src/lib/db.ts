@@ -4,10 +4,34 @@ import crypto from 'crypto';
 import Database from 'better-sqlite3';
 import { seedWorksheets } from './seed';
 
+// ── Data directory ──
+// Use /app/data (Docker volume mount). The entrypoint chowns it to the nextjs user.
 const DATA_DIR = path.join(process.cwd(), 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DB_PATH = path.join(DATA_DIR, 'worksheets.db');
+
+// Export so other modules (document-store, tool-gaps-store) use the same path
+export { DATA_DIR };
+
+// ── Clean up stale WAL/SHM files ──
+// If the database was previously opened in WAL mode, stale -wal and -shm files
+// may remain. These cause SQLITE_IOERR_SHMSIZE on Docker volumes that don't
+// support mmap. Delete them before opening so SQLite starts clean.
+try {
+  const shmPath = DB_PATH + '-shm';
+  const walPath = DB_PATH + '-wal';
+  if (fs.existsSync(shmPath)) {
+    fs.unlinkSync(shmPath);
+    console.log('SQLite: deleted stale -shm file');
+  }
+  if (fs.existsSync(walPath)) {
+    fs.unlinkSync(walPath);
+    console.log('SQLite: deleted stale -wal file');
+  }
+} catch (e) {
+  console.warn('SQLite: could not clean up stale WAL/SHM files:', e instanceof Error ? e.message : e);
+}
 
 const globalForDb = globalThis as unknown as {
   _db: Database.Database | undefined;
@@ -19,7 +43,11 @@ function getOrCreateDb(): Database.Database {
   if (globalForDb._db) return globalForDb._db;
 
   const db = new Database(DB_PATH);
-  db.pragma('journal_mode = WAL');
+  // Use DELETE journal mode (not WAL) — WAL requires mmap/shared memory which
+  // fails on many Docker volume filesystems with SQLITE_IOERR_SHMSIZE.
+  // DELETE mode works everywhere; the performance difference is negligible
+  // for this app's single-user workload.
+  db.pragma('journal_mode = DELETE');
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
 
@@ -76,7 +104,7 @@ function getOrCreateDb(): Database.Database {
       interactive_examples TEXT NOT NULL DEFAULT '',
       source_doc_ids TEXT NOT NULL DEFAULT '',
       created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE INDEX IF NOT EXISTS idx_compendium_module ON compendium(module_number, topic);
@@ -204,7 +232,14 @@ function getOrCreateDb(): Database.Database {
     `);
   } catch {}
 
+  // Recover orphaned documents: any document stuck in "processing" status
+  // from a previous server run (e.g. container restart) should be reset so
+  // the user can re-upload or the document is shown as errored.
   if (!globalForDb._seeded) {
+    const orphaned = db.prepare("UPDATE documents SET status = 'error', processing_step = 'error' WHERE status = 'processing'").run();
+    if (orphaned.changes > 0) {
+      console.log(`Recovery: reset ${orphaned.changes} orphaned document(s) from 'processing' to 'error'`);
+    }
     globalForDb._seeded = true;
     seedWorksheets();
   }

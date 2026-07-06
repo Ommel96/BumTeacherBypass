@@ -11,6 +11,13 @@ services:
     volumes:
       - db-data:/app/data
     restart: unless-stopped
+    # Fixed public resolvers: the embedded Docker DNS snapshots the host's
+    # resolv.conf at container start, so switching networks/VPN (e.g. Tailscale)
+    # after startup breaks all lookups (EAI_AGAIN) until a restart. The app only
+    # resolves public hostnames, so pinning public DNS makes it immune to that.
+    dns:
+      - 1.1.1.1
+      - 9.9.9.9
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
