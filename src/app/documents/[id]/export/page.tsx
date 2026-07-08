@@ -117,7 +117,7 @@ export default function ExportPage() {
                   fontSize: '0.85rem',
                   fontWeight: 500,
                   border: activePage === page.id ? 'none' : '1px solid #e8e2d8',
-                  background: activePage === page.id ? '#b8860b' : 'white',
+                  background: activePage === page.id ? '#a78bfa' : 'white',
                   color: activePage === page.id ? 'white' : '#7a6f63',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',

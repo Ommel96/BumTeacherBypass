@@ -2162,7 +2162,7 @@ function renderFlowDiagram(p: FlowDiagramPrimitive) {
 
     const x = pos.cx - pos.w / 2;
     const y = pos.cy - pos.h / 2;
-    const fill = node.highlight ? 'var(--accent-light)' : 'white';
+    const fill = node.highlight ? 'var(--accent-light)' : 'var(--card)';
     const stroke = node.highlight ? 'var(--accent)' : 'var(--border)';
     const strokeWidth = node.highlight ? 2.5 : 1.5;
 
@@ -2359,10 +2359,10 @@ function renderKeyValueGrid(p: KeyValueGridPrimitive) {
 
 function renderCallout(p: CalloutPrimitive) {
   const styles: Record<string, { bg: string; border: string; color: string; icon: string }> = {
-    info:    { bg: '#e7f0fe', border: '#4a90d9', color: '#1a4480', icon: 'ℹ' },
-    warning: { bg: '#fef3cd', border: '#e0a800', color: '#856404', icon: '⚠' },
-    success: { bg: '#d4edda', border: '#28a745', color: '#155724', icon: '✓' },
-    tip:     { bg: '#fce7f3', border: '#c026d3', color: '#86198f', icon: '💡' },
+    info:    { bg: 'rgba(59,130,246,0.13)', border: '#3b82f6', color: '#93c5fd', icon: 'ℹ' },
+    warning: { bg: 'rgba(245,158,11,0.13)', border: '#f59e0b', color: '#fcd34d', icon: '⚠' },
+    success: { bg: 'rgba(16,185,129,0.13)', border: '#10b981', color: '#6ee7b7', icon: '✓' },
+    tip:     { bg: 'rgba(139,92,246,0.15)', border: '#8b5cf6', color: '#c4b5fd', icon: '💡' },
   };
   const s = styles[p.variant] || styles.info;
   return (
@@ -2480,7 +2480,7 @@ function MathStepsC({ p, ctx }: { p: MathStepsPrimitive; ctx: WkCtx }) {
 // Plots functions of x and lets students draw lines (two clicks, live equation
 // readout) or plot points — the digital version of graph-paper tasks.
 
-const GRAPH_COLORS = ['#b8860b', '#4a90d9', '#28a745', '#c026d3', '#e0a800'];
+const GRAPH_COLORS = ['#a78bfa', '#60a5fa', '#34d399', '#e879f9', '#fbbf24'];
 
 function formatNum(n: number): string {
   const rounded = Math.round(n * 100) / 100;
@@ -2621,12 +2621,12 @@ function FunctionGraphC({ p, ctx }: { p: FunctionGraphPrimitive; ctx: WkCtx }) {
     const [a, b] = drawn;
     if (Math.abs(b.x - a.x) < 1e-9) {
       const { px } = toPx(a.x, 0);
-      drawnLine = <line x1={px} y1={0} x2={px} y2={H} stroke="#c026d3" strokeWidth={2} />;
+      drawnLine = <line x1={px} y1={0} x2={px} y2={H} stroke="#e879f9" strokeWidth={2} />;
     } else {
       const m = (b.y - a.y) / (b.x - a.x);
       const p1 = toPx(xMin, a.y + m * (xMin - a.x));
       const p2 = toPx(xMax, a.y + m * (xMax - a.x));
-      drawnLine = <line x1={p1.px} y1={p1.py} x2={p2.px} y2={p2.py} stroke="#c026d3" strokeWidth={2} />;
+      drawnLine = <line x1={p1.px} y1={p1.py} x2={p2.px} y2={p2.py} stroke="#e879f9" strokeWidth={2} />;
     }
   }
 
@@ -2644,7 +2644,7 @@ function FunctionGraphC({ p, ctx }: { p: FunctionGraphPrimitive; ctx: WkCtx }) {
         <svg
           ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
-          style={{ width: '100%', maxWidth: `${W}px`, background: 'white', borderRadius: '8px', border: '1px solid var(--border)', cursor: drawMode !== 'none' ? 'crosshair' : 'default', touchAction: 'manipulation' }}
+          style={{ width: '100%', maxWidth: `${W}px`, background: 'var(--card)', borderRadius: '8px', border: '1px solid var(--border)', cursor: drawMode !== 'none' ? 'crosshair' : 'default', touchAction: 'manipulation' }}
           onClick={handleClick}
         >
           {gridLines}
@@ -2663,8 +2663,8 @@ function FunctionGraphC({ p, ctx }: { p: FunctionGraphPrimitive; ctx: WkCtx }) {
             const { px, py } = toPx(pt.x, pt.y);
             return (
               <g key={`dp${i}`}>
-                <circle cx={px} cy={py} r={5.5} fill="#c026d3" stroke="white" strokeWidth={1.5} />
-                <text x={px + 8} y={py - 7} fontSize={11} fill="#86198f">({formatNum(pt.x)}|{formatNum(pt.y)})</text>
+                <circle cx={px} cy={py} r={5.5} fill="#e879f9" stroke="var(--bg)" strokeWidth={1.5} />
+                <text x={px + 8} y={py - 7} fontSize={11} fill="#f0abfc">({formatNum(pt.x)}|{formatNum(pt.y)})</text>
               </g>
             );
           })}

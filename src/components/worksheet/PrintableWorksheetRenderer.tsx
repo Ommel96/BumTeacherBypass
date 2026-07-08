@@ -81,13 +81,13 @@ function renderContent(text: string): React.ReactNode {
 function PrintableField({ field, value }: { field: WorksheetField; value: string }) {
   return (
     <div style={{ marginBottom: '1rem' }}>
-      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7a6f63', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
+      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#666e87', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
         {field.label}
       </div>
       {field.type === 'textarea' ? (
         <div style={{
           minHeight: '80px',
-          border: '1px solid #e8e2d8',
+          border: '1px solid #e4e7f2',
           borderRadius: '8px',
           padding: '0.6rem 0.75rem',
           fontFamily: 'DM Sans, sans-serif',
@@ -100,7 +100,7 @@ function PrintableField({ field, value }: { field: WorksheetField; value: string
         </div>
       ) : (
         <div style={{
-          borderBottom: '1px solid #e8e2d8',
+          borderBottom: '1px solid #e4e7f2',
           padding: '0.35rem 0',
           fontFamily: 'JetBrains Mono, monospace',
           fontSize: '0.9rem',
@@ -125,12 +125,12 @@ function PrintableTable({ table, fields }: { table: WorksheetTable; fields: Reco
           <tr>
             {table.columns.map(col => (
               <th key={col.key} style={{
-                background: '#f5ecd4',
-                color: '#8b6508',
+                background: '#d9f2ee',
+                color: '#0f766e',
                 fontWeight: 600,
                 padding: '0.5rem 0.65rem',
                 textAlign: 'left',
-                borderBottom: '2px solid #b8860b',
+                borderBottom: '2px solid #0d9488',
                 fontSize: '0.8rem',
                 letterSpacing: '0.03em',
               }}>
@@ -152,7 +152,7 @@ function PrintableTable({ table, fields }: { table: WorksheetTable; fields: Reco
                   return (
                     <td key={col.key} style={{
                       padding: '0.4rem 0.65rem',
-                      borderBottom: '1px solid #e8e2d8',
+                      borderBottom: '1px solid #e4e7f2',
                       fontFamily: 'JetBrains Mono, monospace',
                       fontSize: '0.9rem',
                     }}>
@@ -164,7 +164,7 @@ function PrintableTable({ table, fields }: { table: WorksheetTable; fields: Reco
                 return (
                   <td key={col.key} style={{
                     padding: '0.4rem 0.65rem',
-                    borderBottom: '1px solid #e8e2d8',
+                    borderBottom: '1px solid #e4e7f2',
                     fontWeight: isFirstCol ? 500 : 600,
                     fontFamily: isFirstCol ? 'DM Sans, sans-serif' : 'JetBrains Mono, monospace',
                     fontSize: '0.9rem',
@@ -218,16 +218,16 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
             <tbody>
               {Array.from({ length: height }, (_, rowIdx) => (
                 <tr key={rowIdx}>
-                  {labels?.rows && <td style={{ fontSize: '0.7rem', color: '#7a6f63', paddingRight: '0.3rem', textAlign: 'right', verticalAlign: 'middle' }}>{labels.rows[rowIdx]}</td>}
+                  {labels?.rows && <td style={{ fontSize: '0.7rem', color: '#666e87', paddingRight: '0.3rem', textAlign: 'right', verticalAlign: 'middle' }}>{labels.rows[rowIdx]}</td>}
                   {Array.from({ length: width }, (_, colIdx) => {
                     const isOn = grid[rowIdx * width + colIdx] === 1;
                     return (
                       <td key={colIdx} style={{ padding: '1px' }}>
                         <div style={{
                           width: '22px', height: '22px',
-                          border: '1.5px solid #e8e2d8',
+                          border: '1.5px solid #e4e7f2',
                           borderRadius: '3px',
-                          background: isOn ? '#b8860b' : 'white',
+                          background: isOn ? '#0d9488' : 'white',
                         }} />
                       </td>
                     );
@@ -238,20 +238,20 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
           </table>
           {encodingType && encodingType !== 'none' && (
             <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-              <div style={{ fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem' }}>
+              <div style={{ fontWeight: 600, color: '#0f766e', marginBottom: '0.3rem' }}>
                 {encodingType === 'rle' ? 'RLE-Kodierung' : 'Binärkodierung'} ({encodingDirection === 'col' ? 'Spaltenweise' : 'Zeilenweise'}):
               </div>
               {encodingDirection === 'row'
                 ? Array.from({ length: height }, (_, rowIdx) => (
                     <div key={rowIdx} style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.15rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: '#7a6f63', minWidth: '60px', textAlign: 'right' }}>{labels?.rows?.[rowIdx] ?? `Zeile ${rowIdx}`}:</span>
-                      <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.85rem', fontWeight: 600, color: '#8b6508' }}>{getEncoding(getRowData(rowIdx))}</code>
+                      <span style={{ fontSize: '0.75rem', color: '#666e87', minWidth: '60px', textAlign: 'right' }}>{labels?.rows?.[rowIdx] ?? `Zeile ${rowIdx}`}:</span>
+                      <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.85rem', fontWeight: 600, color: '#0f766e' }}>{getEncoding(getRowData(rowIdx))}</code>
                     </div>
                   ))
                 : Array.from({ length: width }, (_, colIdx) => (
                     <div key={colIdx} style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.15rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: '#7a6f63', minWidth: '60px', textAlign: 'right' }}>{labels?.cols?.[colIdx] ?? `Spalte ${colIdx}`}:</span>
-                      <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.85rem', fontWeight: 600, color: '#8b6508' }}>{getEncoding(getColData(colIdx))}</code>
+                      <span style={{ fontSize: '0.75rem', color: '#666e87', minWidth: '60px', textAlign: 'right' }}>{labels?.cols?.[colIdx] ?? `Spalte ${colIdx}`}:</span>
+                      <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.85rem', fontWeight: 600, color: '#0f766e' }}>{getEncoding(getColData(colIdx))}</code>
                     </div>
                   ))
               }
@@ -270,11 +270,11 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
           <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
             {bitValues.map((bit, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.65rem', color: '#7a6f63', fontWeight: 600, marginBottom: '0.15rem' }}>{labels?.[i] ?? String(bits - 1 - i)}</div>
+                <div style={{ fontSize: '0.65rem', color: '#666e87', fontWeight: 600, marginBottom: '0.15rem' }}>{labels?.[i] ?? String(bits - 1 - i)}</div>
                 <div style={{
                   width: '28px', height: '36px', borderRadius: '4px',
-                  border: '2px solid', borderColor: bit ? '#8b6508' : '#e8e2d8',
-                  background: bit ? '#b8860b' : 'white', color: bit ? 'white' : '#7a6f63',
+                  border: '2px solid', borderColor: bit ? '#0f766e' : '#e4e7f2',
+                  background: bit ? '#0d9488' : 'white', color: bit ? 'white' : '#666e87',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontFamily: 'JetBrains Mono, monospace', fontSize: '0.95rem', fontWeight: 700,
                 }}>
@@ -313,15 +313,15 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
             <thead>
               <tr>
-                {inputs.map(input => <th key={input} style={{ padding: '0.5rem 0.65rem', textAlign: 'center', borderBottom: '2px solid #b8860b', background: '#f5ecd4', color: '#8b6508', fontWeight: 600 }}>{input}</th>)}
-                <th style={{ padding: '0.5rem 0.65rem', textAlign: 'center', borderBottom: '2px solid #b8860b', background: '#f5ecd4', color: '#8b6508', fontWeight: 600 }}>{outputLabel}</th>
+                {inputs.map(input => <th key={input} style={{ padding: '0.5rem 0.65rem', textAlign: 'center', borderBottom: '2px solid #0d9488', background: '#d9f2ee', color: '#0f766e', fontWeight: 600 }}>{input}</th>)}
+                <th style={{ padding: '0.5rem 0.65rem', textAlign: 'center', borderBottom: '2px solid #0d9488', background: '#d9f2ee', color: '#0f766e', fontWeight: 600 }}>{outputLabel}</th>
               </tr>
             </thead>
             <tbody>
               {tableRows.map((row, ri) => (
                 <tr key={ri}>
-                  {inputs.map(input => <td key={input} style={{ padding: '0.4rem 0.65rem', borderBottom: '1px solid #e8e2d8', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{row[input]}</td>)}
-                  <td style={{ padding: '0.4rem 0.65rem', borderBottom: '1px solid #e8e2d8', textAlign: 'center' }}>{fields[`${fieldId}_r${ri}`] || '—'}</td>
+                  {inputs.map(input => <td key={input} style={{ padding: '0.4rem 0.65rem', borderBottom: '1px solid #e4e7f2', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{row[input]}</td>)}
+                  <td style={{ padding: '0.4rem 0.65rem', borderBottom: '1px solid #e4e7f2', textAlign: 'center' }}>{fields[`${fieldId}_r${ri}`] || '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -335,26 +335,26 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
         <div key={fieldId} style={{ margin: '0.75rem 0' }}>
           {examples.length > 0 && (
             <div style={{ padding: '0.6rem 0.75rem', background: '#f5f3ef', borderRadius: '8px', marginBottom: '0.75rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Beispiele:</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0f766e', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Beispiele:</div>
               {examples.map((ex, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.3rem 0', fontSize: '0.9rem' }}>
                   <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, background: 'white', padding: '0.15rem 0.4rem', borderRadius: '3px' }}>{ex.input}</code>
-                  <span style={{ color: '#b8860b', fontWeight: 700 }}>→</span>
-                  <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: '#8b6508', background: '#f5ecd4', padding: '0.15rem 0.4rem', borderRadius: '3px' }}>{ex.output}</code>
+                  <span style={{ color: '#0d9488', fontWeight: 700 }}>→</span>
+                  <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: '#0f766e', background: '#d9f2ee', padding: '0.15rem 0.4rem', borderRadius: '3px' }}>{ex.output}</code>
                 </div>
               ))}
             </div>
           )}
           {exercises.length > 0 && (
             <div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7a6f63', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Aufgaben:</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#666e87', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Aufgaben:</div>
               {exercises.map((ex, i) => {
                 const exFieldId = ex.fieldId || `${fieldId}_ex${i}`;
                 return (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0' }}>
-                    <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, background: 'white', padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #e8e2d8' }}>{ex.input}</code>
-                    <span style={{ color: '#b8860b', fontWeight: 700 }}>→</span>
-                    <div style={{ borderBottom: '1px solid #e8e2d8', minWidth: '120px', padding: '0.3rem 0', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.9rem' }}>
+                    <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, background: 'white', padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #e4e7f2' }}>{ex.input}</code>
+                    <span style={{ color: '#0d9488', fontWeight: 700 }}>→</span>
+                    <div style={{ borderBottom: '1px solid #e4e7f2', minWidth: '120px', padding: '0.3rem 0', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.9rem' }}>
                       {fields[exFieldId] || <span style={{ color: '#ccc' }}>&nbsp;</span>}
                     </div>
                   </div>
@@ -379,12 +379,12 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
       try { assignments = JSON.parse(savedValue); } catch {}
       return (
         <div key={fieldId} style={{ margin: '0.75rem 0' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Häufigkeitstabelle</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0f766e', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Häufigkeitstabelle</div>
           <table style={{ borderCollapse: 'collapse' }}>
-            <thead><tr><th style={{ padding: '0.35rem 0.6rem', borderBottom: '2px solid #b8860b', background: '#f5ecd4', color: '#8b6508' }}>Zeichen</th>{sorted.map(([ch]) => <th key={ch} style={{ padding: '0.35rem 0.6rem', borderBottom: '2px solid #b8860b', background: '#f5ecd4', color: '#8b6508' }}>{ch}</th>)}</tr></thead>
+            <thead><tr><th style={{ padding: '0.35rem 0.6rem', borderBottom: '2px solid #0d9488', background: '#d9f2ee', color: '#0f766e' }}>Zeichen</th>{sorted.map(([ch]) => <th key={ch} style={{ padding: '0.35rem 0.6rem', borderBottom: '2px solid #0d9488', background: '#d9f2ee', color: '#0f766e' }}>{ch}</th>)}</tr></thead>
             <tbody>
-              <tr><td style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7a6f63', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e8e2d8' }}>Häufigkeit</td>{sorted.map(([ch, count]) => <td key={ch} style={{ textAlign: 'center', fontWeight: 700, color: '#8b6508', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e8e2d8' }}>{count}</td>)}</tr>
-              <tr><td style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7a6f63', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e8e2d8' }}>Code</td>{sorted.map(([ch]) => <td key={ch} style={{ textAlign: 'center', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e8e2d8', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{assignments[ch] || ''}</td>)}</tr>
+              <tr><td style={{ fontSize: '0.75rem', fontWeight: 600, color: '#666e87', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e4e7f2' }}>Häufigkeit</td>{sorted.map(([ch, count]) => <td key={ch} style={{ textAlign: 'center', fontWeight: 700, color: '#0f766e', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e4e7f2' }}>{count}</td>)}</tr>
+              <tr><td style={{ fontSize: '0.75rem', fontWeight: 600, color: '#666e87', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e4e7f2' }}>Code</td>{sorted.map(([ch]) => <td key={ch} style={{ textAlign: 'center', padding: '0.3rem 0.6rem', borderBottom: '1px solid #e4e7f2', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{assignments[ch] || ''}</td>)}</tr>
             </tbody>
           </table>
         </div>
@@ -396,7 +396,7 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
       const displayInput = isDecode ? (decodeInput || '') : inputString;
       return (
         <div key={fieldId} style={{ margin: '0.75rem 0' }}>
-          <div style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: '#f5ecd4', color: '#8b6508', border: '1px solid #b8860b', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: '#d9f2ee', color: '#0f766e', border: '1px solid #0d9488', marginBottom: '0.5rem' }}>
             LZ77 — {isDecode ? 'Dekodierung' : 'Kodierung'}
           </div>
           <div style={{ fontSize: '0.85rem' }}>Eingabe: <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{displayInput}</code></div>
@@ -409,7 +409,7 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
       const algoLabel = algorithm === 'lz77' ? 'LZ77' : algorithm === 'lz78' ? 'LZ78' : 'LZW';
       return (
         <div key={fieldId} style={{ margin: '0.75rem 0' }}>
-          <div style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: '#f5ecd4', color: '#8b6508', border: '1px solid #b8860b', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: '#d9f2ee', color: '#0f766e', border: '1px solid #0d9488', marginBottom: '0.5rem' }}>
             {algoLabel} — {direction === 'encode' ? 'Kodierung' : 'Dekodierung'}
           </div>
           <div style={{ fontSize: '0.85rem' }}>Eingabe: <code style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{inputString}</code></div>
@@ -420,7 +420,7 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
       const { fieldId, bits = 8, inputA, inputB } = interactive.props as XorCalculatorProps;
       return (
         <div key={fieldId} style={{ margin: '0.75rem 0' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem' }}>XOR-Rechner</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0f766e', marginBottom: '0.3rem' }}>XOR-Rechner</div>
           <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.85rem' }}>
             <div>A: {inputA.padStart(bits, '0')}</div>
             <div>B: {inputB.padStart(bits, '0')}</div>
@@ -433,7 +433,7 @@ function renderPrintableInteractive(interactive: InteractiveComponent, fields: R
       const { fieldId, sender, receiver, message } = interactive.props as AsymmetricFlowProps;
       return (
         <div key={fieldId} style={{ margin: '0.75rem 0' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8b6508', marginBottom: '0.3rem' }}>Asymmetrische Verschlüsselung — {sender} → {receiver}</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0f766e', marginBottom: '0.3rem' }}>Asymmetrische Verschlüsselung — {sender} → {receiver}</div>
           <div style={{ fontSize: '0.85rem' }}>Nachricht: <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>{message}</code></div>
         </div>
       );
@@ -637,7 +637,7 @@ function renderSection(section: WorksheetSection, idx: number, fields: Record<st
       return (
         <div key={`story-${idx}`} style={{
           background: 'white',
-          border: '1px solid #e8e2d8',
+          border: '1px solid #e4e7f2',
           borderRadius: '12px',
           padding: '1.25rem 1.5rem',
           marginBottom: '1.25rem',
@@ -652,7 +652,7 @@ function renderSection(section: WorksheetSection, idx: number, fields: Record<st
       return (
         <div key={`info-${idx}`} style={{
           fontSize: '0.9rem',
-          color: '#7a6f63',
+          color: '#666e87',
           padding: '0.75rem',
           background: '#f0ede7',
           borderRadius: '8px',
@@ -668,7 +668,7 @@ function renderSection(section: WorksheetSection, idx: number, fields: Record<st
         <div key={`example-${idx}`} style={{
           fontFamily: 'JetBrains Mono, monospace',
           fontSize: '0.9rem',
-          background: '#f5ecd4',
+          background: '#d9f2ee',
           padding: '0.75rem',
           borderRadius: '8px',
           margin: '1rem 0',
@@ -682,7 +682,7 @@ function renderSection(section: WorksheetSection, idx: number, fields: Record<st
       return (
         <div key={`interactive-${idx}`} style={{
           background: 'white',
-          border: '1px solid #e8e2d8',
+          border: '1px solid #e4e7f2',
           borderRadius: '12px',
           padding: '1.25rem 1.5rem',
           marginBottom: '1.25rem',
@@ -691,7 +691,7 @@ function renderSection(section: WorksheetSection, idx: number, fields: Record<st
           {section.number !== undefined && section.title && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
               <div style={{
-                background: '#b8860b',
+                background: '#0d9488',
                 color: 'white',
                 width: '2rem',
                 height: '2rem',
@@ -725,7 +725,7 @@ function renderSection(section: WorksheetSection, idx: number, fields: Record<st
       return (
         <div key={`section-${idx}`} style={{
           background: 'white',
-          border: '1px solid #e8e2d8',
+          border: '1px solid #e4e7f2',
           borderRadius: '12px',
           padding: '1.25rem 1.5rem',
           marginBottom: '1.25rem',
@@ -734,7 +734,7 @@ function renderSection(section: WorksheetSection, idx: number, fields: Record<st
           {section.number !== undefined && section.title && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
               <div style={{
-                background: '#b8860b',
+                background: '#0d9488',
                 color: 'white',
                 width: '2rem',
                 height: '2rem',
@@ -811,9 +811,9 @@ export default function PrintableWorksheetRenderer({
       fontFamily: 'DM Sans, sans-serif',
       color: '#2c2520',
     }}>
-      <div style={{ textAlign: 'center', marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '2px solid #e8e2d8' }}>
+      <div style={{ textAlign: 'center', marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '2px solid #e4e7f2' }}>
         {data.label && (
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#b8860b', marginBottom: '0.5rem' }}>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#0d9488', marginBottom: '0.5rem' }}>
             {data.label}
           </div>
         )}
@@ -821,14 +821,14 @@ export default function PrintableWorksheetRenderer({
           {data.title}
         </h1>
         {data.subtitle && (
-          <p style={{ color: '#7a6f63', fontSize: '0.85rem', margin: 0 }}>{data.subtitle}</p>
+          <p style={{ color: '#666e87', fontSize: '0.85rem', margin: 0 }}>{data.subtitle}</p>
         )}
       </div>
 
       {data.sections.map((section, idx) => renderSection(section, idx, fields))}
 
       {!ready && (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#7a6f63' }}>
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#666e87' }}>
           Antworten werden geladen...
         </div>
       )}

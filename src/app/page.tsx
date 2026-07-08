@@ -29,6 +29,33 @@ const PROVIDER_LABELS: Record<string, string> = {
   'openai-compatible': 'OpenAI-Compatible',
 };
 
+interface RecentDoc {
+  id: string;
+  filename: string;
+  status: string;
+  year: string;
+  semester: string;
+  module_number: string;
+  topic: string;
+  created_at: string;
+}
+
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  processed: { label: 'Bereit', cls: 'bg-[var(--success-bg)] text-[var(--success)]' },
+  processing: { label: 'In Arbeit', cls: 'bg-[var(--accent-light)] text-[var(--accent-dark)] animate-pulse' },
+  uploaded: { label: 'Wartet', cls: 'bg-[var(--surface)] text-[var(--text-muted)]' },
+  error: { label: 'Fehler', cls: 'bg-[var(--error-bg)] text-[var(--error)]' },
+};
+
+function formatDate(iso: string): string {
+  const m = (iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : '';
+}
+
+function cleanFilename(name: string): string {
+  return name.replace(/\.(pdf|docx?|PDF|DOCX?)+$/g, '').replace(/[_-]+/g, ' ');
+}
+
 const YEAR_LABELS: Record<string, string> = {
   '1': '1. Lehrjahr',
   '2': '2. Lehrjahr',
@@ -53,10 +80,23 @@ export default function HomePage() {
   const [selectedEnrichmentModel, setSelectedEnrichmentModel] = useState('');
   const [selectedReviewerModel, setSelectedReviewerModel] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [recentDocs, setRecentDocs] = useState<RecentDoc[]>([]);
+  const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('upload') === '1') setShowUpload(true);
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/documents')
+      .then(r => r.json())
+      .then(data => {
+        const docs: RecentDoc[] = Array.isArray(data?.documents) ? data.documents : [];
+        docs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+        setRecentDocs(docs.slice(0, 6));
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -150,51 +190,47 @@ export default function HomePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      <div className="mb-8">
-        <div className="font-mono text-xs tracking-widest uppercase text-[var(--accent)] mb-2">BumTeacherBypass</div>
-        <h1 className="font-serif text-3xl font-bold text-[var(--text)] mb-2">Interaktive Arbeitsblätter</h1>
-        <p className="text-[var(--text-muted)]">Wähle ein Lehrjahr, um zu beginnen.</p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <div className="flex items-end justify-between gap-4 mb-6 pt-2">
+        <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-[var(--text)]">Arbeitsblätter</h1>
+        <Link href="/compendium" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] no-underline hover:underline">
+          Kompendium öffnen
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-6">
         {[1, 2, 3, 4].map(y => (
-          <Link
-            key={y}
-            href={`/worksheets/year-${y}`}
-            className="flex items-center gap-4 bg-white border border-[var(--border)] rounded-xl p-5 shadow-sm hover:border-[var(--accent)] hover:shadow-md transition-all no-underline text-[var(--text)]"
-          >
-            <div className="flex-shrink-0 w-12 h-12 bg-[var(--accent-light)] rounded-lg flex items-center justify-center text-[var(--accent-dark)]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-mono text-xs tracking-wider uppercase text-[var(--accent)]">{YEAR_LABELS[String(y)]}</div>
-              <div className="font-serif text-lg font-bold">Semester 1 & 2</div>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
+          <Link key={y} href={`/worksheets/year-${y}`} className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-white px-4 py-3 no-underline text-[var(--text)] hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-light)] text-[var(--accent-dark)] font-extrabold text-sm transition-transform group-hover:scale-110">{y}</span>
+            <span className="text-sm font-semibold">Lehrjahr</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"><polyline points="9 18 15 12 9 6"/></svg>
           </Link>
         ))}
       </div>
 
       {!showUpload && (
-        <div className="mt-12 p-6 bg-[var(--accent-light)] rounded-xl text-center">
-          <h2 className="font-serif text-xl font-bold text-[var(--accent-dark)] mb-2">Eigene Dokumente hochladen</h2>
-          <p className="text-[var(--accent-dark)] text-sm mb-4">Lade PDF- oder Word-Dateien hoch und lass sie von der KI in interaktive, bearbeitbare Seiten umwandeln.</p>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="inline-flex items-center gap-2 bg-[var(--accent)] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors border-none cursor-pointer"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            Dokument hochladen
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowUpload(true)}
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={e => {
+            e.preventDefault();
+            setDragOver(false);
+            const dropped = e.dataTransfer.files?.[0];
+            if (dropped) { setShowUpload(true); handleFileSelect(dropped); }
+          }}
+          className={`w-full flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 rounded-2xl border-2 border-dashed px-6 py-8 mb-8 cursor-pointer bg-white/60 transition-all ${dragOver ? 'border-[var(--accent)] bg-[var(--accent-light)] scale-[1.01]' : 'border-[var(--border)] hover:border-[var(--accent)] hover:bg-white'}`}
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-[0_4px_14px_rgba(139,92,246,0.4)]" style={{ background: 'var(--accent-grad)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </span>
+          <span className="text-center sm:text-left">
+            <span className="block font-semibold text-[var(--text)]">PDF oder Word hierher ziehen</span>
+            <span className="block text-sm text-[var(--text-muted)]">oder klicken zum Auswählen — die KI macht daraus ein interaktives Arbeitsblatt</span>
+          </span>
+        </button>
       )}
 
       {showUpload && (
@@ -349,6 +385,59 @@ export default function HomePage() {
           )}
         </div>
       )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-2">
+        {/* Recent documents */}
+        <section className="lg:col-span-2 bg-white border border-[var(--border)] rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
+            <h2 className="font-semibold text-base">Zuletzt hinzugefügt</h2>
+            {recentDocs.length > 0 && <span className="text-xs text-[var(--text-muted)]">{recentDocs.length} Dokumente</span>}
+          </div>
+          {recentDocs.length === 0 ? (
+            <div className="px-5 py-10 text-center text-sm text-[var(--text-muted)]">
+              Noch keine Dokumente — lade oben dein erstes Arbeitsblatt hoch.
+            </div>
+          ) : (
+            <div className="divide-y divide-[var(--border)]">
+              {recentDocs.map(doc => {
+                const meta = STATUS_META[doc.status] || STATUS_META.uploaded;
+                return (
+                  <Link key={doc.id} href={`/documents/${doc.id}`} className="flex items-center gap-3 px-5 py-3.5 no-underline text-[var(--text)] hover:bg-[var(--surface)] transition-colors group">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-light)] text-[var(--accent-dark)] transition-transform group-hover:scale-105">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-semibold truncate">{cleanFilename(doc.filename)}</span>
+                      <span className="block text-xs text-[var(--text-muted)] truncate">
+                        {doc.module_number ? `Modul ${doc.module_number}` : 'Ohne Modul'}{doc.topic ? ` · ${doc.topic}` : ''} · {formatDate(doc.created_at)}
+                      </span>
+                    </span>
+                    <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Right rail */}
+        <div className="flex flex-col gap-5">
+          <Link href="/compendium" className="group relative overflow-hidden rounded-2xl p-5 no-underline text-white shadow-[var(--shadow-md)]" style={{ background: 'var(--accent-grad)' }}>
+            <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(300px 140px at 15% 0%, rgba(255,255,255,0.7), transparent 60%)' }} />
+            <div className="relative">
+              <div className="flex items-center gap-2 font-semibold mb-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                Kompendium
+              </div>
+              <p className="text-sm text-white/85 m-0">Dein automatisch wachsendes Nachschlagewerk zu allen Themen.</p>
+              <span className="inline-flex items-center gap-1 text-sm font-semibold mt-3 group-hover:gap-2 transition-all">
+                Öffnen
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </span>
+            </div>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

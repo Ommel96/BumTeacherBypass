@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
@@ -307,15 +307,15 @@ function WorksheetListPage({ year, semester, moduleNumber, topic }: { year: stri
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const fetchDocs = () => {
+  const fetchDocs = useCallback(() => {
     fetch(`/api/documents?year=${year}&semester=${semester}&module_number=${moduleNumber}&topic=${topic}`)
       .then(r => r.json())
       .then(data => { setDocs(data.documents || []); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  };
+  }, [year, semester, moduleNumber, topic]);
 
-  useEffect(() => { fetchDocs(); }, [year, semester, moduleNumber, topic]);
+  useEffect(() => { fetchDocs(); }, [fetchDocs]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Dieses Arbeitsblatt löschen?')) return;

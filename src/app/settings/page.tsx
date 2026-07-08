@@ -688,7 +688,7 @@ export default function SettingsPage() {
 
       {/* Sticky save bar */}
       {hasUnsavedChanges && (
-        <div className="fixed bottom-4 left-4 right-4 z-40 max-w-3xl mx-auto">
+        <div className="fixed bottom-20 lg:bottom-4 left-4 right-4 lg:left-64 z-40 max-w-3xl mx-auto">
           <div className="bg-white border border-[var(--border)] rounded-xl shadow-lg p-4 flex items-center justify-between gap-3">
             <span className="text-sm font-medium">Ungespeicherte Änderungen</span>
             <div className="flex items-center gap-3 shrink-0">

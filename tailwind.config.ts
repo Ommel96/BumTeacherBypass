@@ -10,22 +10,24 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50: '#fdf8ec',
-          100: '#f9efd0',
-          200: '#f3da9e',
-          300: '#edc367',
-          400: '#e6ab3e',
-          500: '#d4892a',
-          600: '#b8860b',
-          700: '#996a0a',
-          800: '#7b550e',
-          900: '#654612',
+          50: '#eef1ff',
+          100: '#e0e4ff',
+          200: '#c6cdff',
+          300: '#a3acff',
+          400: '#7d82fc',
+          500: '#6366f1',
+          600: '#5457e0',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
         },
       },
       fontFamily: {
-        serif: ['Crimson Pro', 'serif'],
-        mono: ['JetBrains Mono', 'monospace'],
-        sans: ['DM Sans', 'sans-serif'],
+        // "serif" is used across the app for headings — mapped to the display
+        // stack so every heading modernizes without touching each component.
+        serif: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
       },
     },
   },

@@ -2,35 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
 
 :root {
-  --bg: #faf8f4;
-  --card: #ffffff;
-  --border: #e8e2d8;
-  --text: #2c2520;
-  --text-muted: #7a6f63;
-  --accent: #b8860b;
-  --accent-light: #f5ecd4;
-  --accent-dark: #8b6508;
-  --success: #2d6a4f;
-  --success-bg: #d8f3dc;
-  --error: #9b2226;
-  --error-bg: #fde8e8;
-  --input-bg: #fefdfb;
-  --surface: #f5f3ef;
+  color-scheme: dark;
+  --bg: #0d0f18;
+  --card: #151827;
+  --border: #272c42;
+  --text: #e9ebf5;
+  --text-muted: #9aa2bd;
+  --accent: #8b5cf6;
+  --accent-light: rgba(139, 92, 246, 0.16);
+  --accent-dark: #c4b5fd;  /* readable emphasis on dark surfaces */
+  --accent-grad: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+  --ring: rgba(139, 92, 246, 0.35);
+  --success: #34d399;
+  --success-bg: rgba(16, 185, 129, 0.14);
+  --error: #fb7185;
+  --error-bg: rgba(244, 63, 94, 0.14);
+  --input-bg: #10131f;
+  --surface: #1b1f31;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 12px 34px rgba(0, 0, 0, 0.5);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+html { scroll-behavior: smooth; }
+
 body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(1100px 520px at 88% -12%, rgba(217, 70, 239, 0.10), transparent 60%),
+    radial-gradient(950px 460px at -12% -4%, rgba(139, 92, 246, 0.10), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   line-height: 1.65;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Headings use the (remapped) serif utility — tighten them for a display feel */
+.font-serif { letter-spacing: -0.025em; }
+
+::selection { background: rgba(139, 92, 246, 0.35); color: #fff; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333a56; border-radius: 8px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: #454e73; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* Tactile buttons everywhere */
+button {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease,
+    border-color 0.15s ease, color 0.15s ease, filter 0.15s ease;
+}
+button:active:not(:disabled) { transform: scale(0.97); }
+a { transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; }
+input, textarea, select { transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease; }
+
+/* ── Motion ── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -40,6 +74,59 @@ body {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.92); }
+  60% { transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Page enter */
+main > * { animation: pageIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Modal enter (tutorial, provider editor, …) */
+[role='dialog'] > div { animation: scaleIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Check feedback pop */
+.feedback { animation: popIn 0.3s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* ── Dark remap of light-only utility classes ──
+   Components use bg-white & friends for cards; remap them to the dark surface
+   tokens instead of touching every file. text-white stays genuinely white. */
+.bg-white { background-color: var(--card) !important; }
+.hover\:bg-white:hover { background-color: var(--card) !important; }
+.bg-white\/60 { background-color: rgba(21, 24, 39, 0.6) !important; }
+.bg-white\/65, .bg-white\/75 { background-color: rgba(13, 15, 24, 0.75) !important; }
+.bg-white\/80, .bg-white\/85 { background-color: rgba(13, 15, 24, 0.85) !important; }
+.bg-gray-100, .bg-gray-300, .hover\:bg-gray-50:hover, .hover\:bg-gray-100:hover { background-color: var(--surface) !important; }
+.bg-green-100 { background-color: var(--success-bg) !important; }
+.bg-red-50 { background-color: var(--error-bg) !important; }
+.bg-amber-50 { background-color: rgba(245, 158, 11, 0.12) !important; }
+.border-amber-200 { border-color: rgba(245, 158, 11, 0.4) !important; }
+.text-amber-700, .text-amber-800 { color: #fcd34d !important; }
+.text-red-500, .text-red-700, .text-red-800 { color: var(--error) !important; }
+.hover\:text-red-500:hover, .hover\:text-red-700:hover { color: var(--error) !important; }
+.border-red-200, .hover\:border-red-400:hover { border-color: rgba(244, 63, 94, 0.45) !important; }
+.hover\:bg-red-50:hover { background-color: var(--error-bg) !important; }
 
 /* ── Edit tables ── */
 .edit-table {
@@ -69,7 +156,7 @@ body {
   font-weight: 600;
   font-size: 0.9rem;
   padding: 0.6rem 0.75rem;
-  background: rgba(184,134,11,0.04);
+  background: rgba(139,92,246,0.04);
 }
 
 .edit-table td.code,
@@ -183,7 +270,7 @@ body {
 }
 
 .chuck-box p {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 1rem;
   line-height: 1.65;
   color: var(--text);
@@ -276,7 +363,7 @@ body {
 }
 
 .symbol-cell .roman {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 1.4rem;
   font-weight: 700;
   color: var(--accent-dark);
@@ -318,7 +405,7 @@ body {
 .power-table thead th {
   background: var(--surface);
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 /* ── Bitoperatoren styles ── */
@@ -605,7 +692,7 @@ body {
 }
 
 .example-card .label {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-weight: 600;
   font-size: 0.9rem;
   margin-bottom: 0.4rem;
@@ -820,8 +907,8 @@ body {
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
-.page-content h2 { font-family: 'Crimson Pro', serif; font-size: 1.5rem; font-weight: 700; margin: 1.5rem 0 0.75rem; }
-.page-content h3 { font-family: 'Crimson Pro', serif; font-size: 1.2rem; font-weight: 600; margin: 1.5rem 0 0.75rem; }
+.page-content h2 { font-family: 'Inter', system-ui, sans-serif; font-size: 1.5rem; font-weight: 700; margin: 1.5rem 0 0.75rem; }
+.page-content h3 { font-family: 'Inter', system-ui, sans-serif; font-size: 1.2rem; font-weight: 600; margin: 1.5rem 0 0.75rem; }
 .page-content p { margin: 0.75rem 0; line-height: 1.75; }
 
 /* ── Interactive: Pixel Grid ── */
@@ -974,14 +1061,17 @@ body {
 }
 
 .pixel-solution-btn {
-  background: var(--accent-light);
-  border-color: var(--accent);
-  color: var(--accent-dark);
+  background: var(--accent-grad);
+  border: none;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(139, 92, 246, 0.35);
 }
 
 .pixel-solution-btn:hover {
-  background: var(--accent);
-  color: white;
+  filter: brightness(1.08);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.45);
+  transform: translateY(-1px);
 }
 
 /* ── Interactive: Bit Visualizer ── */

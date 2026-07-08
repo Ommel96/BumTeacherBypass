@@ -4,3 +4,11 @@ out/
 data/
 .env
 .env.local
+.git/
+.kilo/
+.claude/
+.systemprompt
+*.tsbuildinfo
+*.log
+Dockerfile
+docker-compose.yml

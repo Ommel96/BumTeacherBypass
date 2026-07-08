@@ -264,8 +264,8 @@ export default function DocumentDetailPage() {
       if (!res.ok) throw new Error('Dokument nicht gefunden');
       const json = await res.json();
       setData(json);
-      if (json.pages?.length > 0 && !activePage) {
-        setActivePage(json.pages[0].id);
+      if (json.pages?.length > 0) {
+        setActivePage(prev => prev ?? json.pages[0].id);
       }
       if (json.document) {
         setYear(json.document.year || '');

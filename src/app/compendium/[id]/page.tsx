@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
@@ -79,12 +79,12 @@ function renderContent(text: string): React.ReactNode {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
           <thead>
             <tr>{tableHeader.map((cell, i) => (
-              <th key={i} style={{ background: '#f5ecd4', color: '#8b6508', fontWeight: 600, padding: '0.5rem 0.65rem', textAlign: 'left', borderBottom: '2px solid #b8860b', fontSize: '0.8rem' }}>{renderInline(cell.trim())}</th>
+              <th key={i} style={{ background: 'rgba(139,92,246,0.16)', color: '#c4b5fd', fontWeight: 600, padding: '0.5rem 0.65rem', textAlign: 'left', borderBottom: '2px solid #a78bfa', fontSize: '0.8rem' }}>{renderInline(cell.trim())}</th>
             ))}</tr>
           </thead>
           <tbody>{tableRows.map((row, ri) => (
             <tr key={ri}>{row.map((cell, ci) => (
-              <td key={ci} style={{ padding: '0.4rem 0.65rem', borderBottom: '1px solid #e8e2d8', lineHeight: 1.5 }}>{renderInline(cell.trim())}</td>
+              <td key={ci} style={{ padding: '0.4rem 0.65rem', borderBottom: '1px solid var(--border)', lineHeight: 1.5 }}>{renderInline(cell.trim())}</td>
             ))}</tr>
           ))}</tbody>
         </table>
@@ -260,16 +260,16 @@ export default function CompendiumDetailPage() {
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
 
-  const fetchEntry = () => {
+  const fetchEntry = useCallback(() => {
     setLoading(true);
     fetch(`/api/compendium/${id}`)
       .then(r => { if (!r.ok) return null; return r.json(); })
       .then(data => { if (data && data.id) setEntry(data); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  };
+  }, [id]);
 
-  useEffect(() => { fetchEntry(); }, [id]);
+  useEffect(() => { fetchEntry(); }, [fetchEntry]);
 
   const handleDelete = async () => {
     if (!confirm('Diesen Kompendium-Eintrag löschen?')) return;

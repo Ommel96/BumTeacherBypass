@@ -151,8 +151,8 @@ export default function DocsPage() {
               <code className="font-mono text-xs bg-[var(--accent-light)] px-1 py-0.5 rounded"> npm rebuild better-sqlite3</code> mit einer unterstützten Node-Version ausführen.
             </li>
             <li>
-              <strong>Rote Warnungen beim Build:</strong> ESLint- und npm-Hinweise sind normal und brechen den Build nicht ab.
-              Entscheidend ist, ob <code className="font-mono text-xs bg-[var(--accent-light)] px-1 py-0.5 rounded">docker compose up -d --build</code> am Ende erfolgreich durchläuft.
+              <strong>„Docker Compose requires buildx plugin“ beim Build:</strong> Harmlose Meldung des Hosts — Docker fällt auf den klassischen Builder zurück.
+              Zum Beheben das buildx-Plugin installieren (Arch: <code className="font-mono text-xs bg-[var(--accent-light)] px-1 py-0.5 rounded">pacman -S docker-buildx</code>, Debian/Ubuntu: <code className="font-mono text-xs bg-[var(--accent-light)] px-1 py-0.5 rounded">apt install docker-buildx-plugin</code>).
             </li>
             <li>
               <strong>Dokument hängt in „Verarbeitung“:</strong> Nach einem Neustart wird es automatisch als Fehler markiert und kann neu verarbeitet werden.

@@ -4,13 +4,17 @@ WORKDIR /app
 
 RUN apk add --no-cache python3 make g++
 
+# Quiet, reproducible install — no update banners or audit noise in build logs
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 
 # ── Stage 2: Build ──
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -46,7 +50,7 @@ ENV PORT=3847
 ENV HOSTNAME="0.0.0.0"
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3847/ || exit 1
+  CMD wget -qO- http://127.0.0.1:3847/ || exit 1
 
 # Start as root so the entrypoint can fix volume permissions, then drop to nextjs
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
