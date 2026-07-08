@@ -8,6 +8,8 @@ services:
       - PORT=3847
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Set to require a login (recommended when the app is reachable beyond localhost)
+      - APP_PASSWORD=${APP_PASSWORD:-}
     volumes:
       - db-data:/app/data
     restart: unless-stopped

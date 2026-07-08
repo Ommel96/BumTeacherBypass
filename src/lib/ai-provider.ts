@@ -28,7 +28,7 @@ function modelSupportsVision(model: string): boolean {
 // Anthropic responses from extended-thinking models (Claude 4.5+/5 family) contain
 // thinking blocks before the text block(s). Reading content[0].text misses the
 // actual answer — collect every text block instead.
-function extractAnthropicText(data: { content?: Array<{ type?: string; text?: string }> }): string {
+export function extractAnthropicText(data: { content?: Array<{ type?: string; text?: string }> }): string {
   return (Array.isArray(data?.content) ? data.content : [])
     .filter(b => b?.type === 'text' && typeof b.text === 'string')
     .map(b => b.text as string)
@@ -219,7 +219,7 @@ function parseJsonLenient(text: string): unknown {
   }
 }
 
-function extractJSON(text: string): unknown {
+export function extractJSON(text: string): unknown {
   const trimmed = text.trim();
 
   try {
@@ -1732,5 +1732,105 @@ ${rawText.substring(0, 8000)}`;
       console.error('generateCompendiumEntries error:', error);
       return [];
     }
+  }
+
+  /**
+   * Extract Lernziele (learning goals) from a document's raw text.
+   * Returns clean German goal statements, one per goal.
+   */
+  async extractLernziele(rawText: string): Promise<string[]> {
+    const prompt = `You extract learning goals (Lernziele) from Swiss vocational school documents.
+
+The document below contains learning goals — possibly as a numbered list, bullet points, a table, or prose. Extract EVERY individual learning goal as a clean, self-contained German statement. Keep the original wording where possible; strip numbering/bullets. Do not invent goals that are not in the document. If the document contains no recognizable learning goals, return an empty list.
+
+Respond with ONLY: {"goals": ["Lernziel 1", "Lernziel 2", ...]}
+
+Document text:
+${rawText.substring(0, 8000)}`;
+
+    const responseText = await this.callProviderWithConfig(this.config, prompt, 'Extract the learning goals from this document.');
+    const parsed = extractJSON(responseText) as { goals?: unknown[] };
+    return (Array.isArray(parsed?.goals) ? parsed.goals : []).map(String).map(g => g.trim()).filter(g => g.length > 3);
+  }
+
+  /**
+   * Generate a practice exam covering the given Lernziele.
+   * Context excerpts come from the module's documents/compendium so exercises
+   * resemble what the student actually practiced. Returns raw parsed JSON —
+   * the caller validates via sanitizeExamData.
+   */
+  async generateExam(goals: string[], moduleNumber: string, contextExcerpts: string, existingTitles: string[] = []): Promise<unknown> {
+    const avoid = existingTitles.length > 0
+      ? `\n\nEXISTING EXAMS for this module (create DIFFERENT questions, do not repeat them): ${existingTitles.join('; ')}`
+      : '';
+
+    const goalsSection = goals.length > 0
+      ? `LEARNING GOALS to be tested (cover ALL of them, distribute questions across them):\n${goals.map((g, i) => `${i + 1}. ${g}`).join('\n')}`
+      : `No explicit learning goals are defined for this module. Derive the 4-8 most important competencies from the CONTEXT material below and build the exam around those — cover the breadth of the material, not just one topic. Set each question's "goal" to the competency it tests.`;
+
+    const prompt = `You are creating a German practice exam (Probeprüfung) for Swiss vocational education, module ${moduleNumber}.
+
+${goalsSection}
+
+CONTEXT from the module's worksheets and compendium (style exercises after this material; use its concrete examples, methods and difficulty level):
+${contextExcerpts.substring(0, 6000)}
+${avoid}
+
+Create 8-14 questions mixing these types:
+- "mc": multiple choice, exactly ONE correct option out of 4 plausible ones. {"id":"q1","type":"mc","goal":"<goal it tests>","question":"...","options":["...","...","...","..."],"correctIndex":0,"points":2,"explanation":"why the correct answer is right (German)"}
+- "tf": true/false statement. {"id":"q2","type":"tf","goal":"...","statement":"...","correct":true,"points":1,"explanation":"..."}
+- "short": short answer with an exact, checkable result (numbers, terms, expressions). {"id":"q3","type":"short","goal":"...","question":"...","expected":"42","accept":["zweiundvierzig"],"math":true,"points":2,"solution":"worked solution (German)"}
+  Set "math": true for numeric/algebraic answers (grading is equivalence-based: 0.75 == 3/4). "expected" as plain expression syntax (3/4, 2^5, x=3), NOT LaTeX.
+- "open": exercise requiring working/explanation, like the tasks in the module's worksheets. {"id":"q4","type":"open","goal":"...","question":"...","solution":"complete model solution (German)","criteria":"what earns the points","points":4}
+
+RULES:
+- German throughout. Use inline LaTeX \\( ... \\) for math in question/statement/solution texts.
+- Difficulty and style like the CONTEXT material — a fair test of the goals, not trick questions.
+- Wrong MC options must be plausible mistakes, not jokes.
+- Points reflect effort: tf=1, mc=1-2, short=2-3, open=3-6.
+- Compute every "expected"/"solution" carefully — a wrong answer key ruins the exam.
+- JSON ESCAPING: inside JSON strings every LaTeX backslash must be doubled ("\\\\frac", "\\\\(").
+
+Respond with ONLY: {"title": "Probeprüfung: <kurzes Thema>", "questions": [...]}`;
+
+    const cfg = this.enrichmentConfig || this.config;
+    const responseText = await this.callProviderWithConfig(cfg, prompt, 'Create the practice exam now.');
+    return extractJSON(responseText);
+  }
+
+  /**
+   * Grade free-form (open) exam answers against their model solutions.
+   * One call for all open questions of an attempt. Returns points + feedback
+   * per item, aligned by id.
+   */
+  async gradeOpenAnswers(items: Array<{ id: string; question: string; solution: string; criteria?: string; points: number; studentAnswer: string }>): Promise<Record<string, { points: number; feedback: string }>> {
+    if (items.length === 0) return {};
+    const prompt = `You are grading open exam questions for Swiss vocational education. Grade FAIRLY and consistently: full points for a correct, complete answer; partial points for partially correct work; 0 for wrong/empty. Ignore spelling. Accept equivalent formulations and correct alternative solution paths.
+
+For each item respond with the awarded points (0 to max, halves allowed) and ONE short German feedback sentence explaining the grading.
+
+QUESTIONS:
+${items.map(it => `--- id: ${it.id} (max ${it.points} Punkte)
+Frage: ${it.question}
+Musterlösung: ${it.solution}
+${it.criteria ? `Bewertungskriterien: ${it.criteria}` : ''}
+Antwort des Schülers: ${it.studentAnswer || '(keine Antwort)'}`).join('\n\n')}
+
+Respond with ONLY: {"grades": [{"id": "q4", "points": 3, "feedback": "..."}]}`;
+
+    const cfg = this.reviewerConfig || this.enrichmentConfig || this.config;
+    const responseText = await this.callProviderWithConfig(cfg, prompt, 'Grade the answers now.');
+    const parsed = extractJSON(responseText) as { grades?: Array<{ id?: string; points?: number; feedback?: string }> };
+    const result: Record<string, { points: number; feedback: string }> = {};
+    for (const g of parsed?.grades || []) {
+      if (g && typeof g.id === 'string') {
+        const max = items.find(it => it.id === g.id)?.points ?? 0;
+        result[g.id] = {
+          points: Math.max(0, Math.min(max, Number(g.points) || 0)),
+          feedback: typeof g.feedback === 'string' ? g.feedback : '',
+        };
+      }
+    }
+    return result;
   }
 }

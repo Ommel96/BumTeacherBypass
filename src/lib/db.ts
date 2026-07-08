@@ -120,6 +120,42 @@ function getOrCreateDb(): Database.Database {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS lernziele (
+      id          TEXT PRIMARY KEY,
+      module_number TEXT NOT NULL,
+      goal        TEXT NOT NULL,
+      source      TEXT NOT NULL DEFAULT 'manual',
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_lernziele_module ON lernziele(module_number);
+
+    CREATE TABLE IF NOT EXISTS exams (
+      id          TEXT PRIMARY KEY,
+      module_number TEXT NOT NULL,
+      title       TEXT NOT NULL DEFAULT '',
+      goal_ids    TEXT NOT NULL DEFAULT '[]',
+      goal_texts  TEXT NOT NULL DEFAULT '[]',
+      exam_data   TEXT NOT NULL,
+      status      TEXT NOT NULL DEFAULT 'ready',
+      error       TEXT NOT NULL DEFAULT '',
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_exams_module ON exams(module_number);
+
+    CREATE TABLE IF NOT EXISTS exam_attempts (
+      id          TEXT PRIMARY KEY,
+      exam_id     TEXT NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+      answers     TEXT NOT NULL DEFAULT '{}',
+      graded      TEXT NOT NULL DEFAULT '[]',
+      score       REAL NOT NULL DEFAULT 0,
+      max_score   REAL NOT NULL DEFAULT 0,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_exam_attempts_exam ON exam_attempts(exam_id);
+
     CREATE TABLE IF NOT EXISTS page_versions (
       id TEXT PRIMARY KEY,
       page_id TEXT NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
@@ -158,6 +194,22 @@ function getOrCreateDb(): Database.Database {
   const pageCols = pageInfo.map(c => c.name);
   if (!pageCols.includes('worksheet_data')) {
     db.exec("ALTER TABLE pages ADD COLUMN worksheet_data TEXT");
+  }
+
+  const examInfo = db.prepare("PRAGMA table_info(exams)").all() as Array<{ name: string }>;
+  const examCols = examInfo.map(c => c.name);
+  if (examCols.length > 0) {
+    if (!examCols.includes('status')) db.exec("ALTER TABLE exams ADD COLUMN status TEXT NOT NULL DEFAULT 'ready'");
+    if (!examCols.includes('error')) db.exec("ALTER TABLE exams ADD COLUMN error TEXT NOT NULL DEFAULT ''");
+    if (!examCols.includes('goal_texts')) db.exec("ALTER TABLE exams ADD COLUMN goal_texts TEXT NOT NULL DEFAULT '[]'");
+  }
+
+  // Exams stuck in "generating" from a previous server run
+  if (!globalForDb._seeded) {
+    try {
+      const stuck = db.prepare("UPDATE exams SET status = 'error', error = 'Generierung wurde unterbrochen (Neustart)' WHERE status = 'generating'").run();
+      if (stuck.changes > 0) console.log(`Recovery: reset ${stuck.changes} stuck exam generation(s)`);
+    } catch {}
   }
 
   const compendiumInfo = db.prepare("PRAGMA table_info(compendium)").all() as Array<{ name: string }>;

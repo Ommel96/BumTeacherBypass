@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { LernzieleCard } from '@/components/LernzieleCard';
 
 interface DocInfo {
   id: string;
@@ -271,10 +272,15 @@ function TopicSelectPage({ year, semester, moduleNumber }: { year: string; semes
         { label: `Modul ${moduleNumber}` },
       ]} />
 
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="font-mono text-xs tracking-widest uppercase text-[var(--accent)] mb-2">Modul {moduleNumber}</div>
         <h1 className="font-serif text-3xl font-bold text-[var(--text)] mb-2">Modul {moduleNumber}</h1>
         <p className="text-[var(--text-muted)]">Wähle ein Thema.</p>
+      </div>
+
+      <LernzieleCard moduleNumber={moduleNumber} />
+
+      <div className="mb-2">
       </div>
 
       {topics.length === 0 && (

@@ -39,10 +39,10 @@ const PROVIDER_META: Record<ProviderType, { label: string; description: string; 
 const ROLES: Array<{ key: keyof AppSettings; label: string; description: string; allowDefault: boolean }> = [
   { key: 'defaultProviderId', label: 'Standard', description: 'Wird verwendet, wenn eine Rolle keinen eigenen Anbieter hat', allowDefault: false },
   { key: 'structureProviderId', label: 'Struktur (Pass 1)', description: 'Erfasst Inhalt und Aufgaben des Dokuments', allowDefault: true },
-  { key: 'enrichmentProviderId', label: 'Anreicherung (Pass 2)', description: 'Interaktivität, Lösungen, Wissens-Checks — stärkstes Modell empfohlen', allowDefault: true },
-  { key: 'reviewerProviderId', label: 'Review (Pass 3)', description: 'Prüft Antworten und Vollständigkeit', allowDefault: true },
+  { key: 'enrichmentProviderId', label: 'Anreicherung (Pass 2)', description: 'Interaktivität, Lösungen, Wissens-Checks und Probeprüfungen — stärkstes Modell empfohlen', allowDefault: true },
+  { key: 'reviewerProviderId', label: 'Review (Pass 3)', description: 'Prüft Antworten und Vollständigkeit; bewertet offene Prüfungsfragen', allowDefault: true },
   { key: 'compendiumProviderId', label: 'Kompendium', description: 'Schreibt die Lexikon-Einträge', allowDefault: true },
-  { key: 'lightweightProviderId', label: 'Klassifizierung', description: 'Kleine Aufgaben wie die automatische Kategorisierung', allowDefault: true },
+  { key: 'lightweightProviderId', label: 'Klassifizierung', description: 'Kleine Aufgaben: Kategorisierung, Lernziel-Extraktion aus Dateien', allowDefault: true },
 ];
 
 // ─── Small building blocks ───

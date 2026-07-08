@@ -19,6 +19,7 @@ const TOC = [
   { id: 'ablauf', label: 'Vom Dokument zum Arbeitsblatt' },
   { id: 'arbeitsblaetter', label: 'Arbeitsblätter benutzen' },
   { id: 'kompendium', label: 'Kompendium' },
+  { id: 'pruefungen', label: 'Probeprüfungen' },
   { id: 'tipps', label: 'Tipps zur Modellwahl' },
   { id: 'fehlerbehebung', label: 'Fehlerbehebung' },
 ];
@@ -61,6 +62,10 @@ export default function DocsPage() {
           <p>
             Die App läuft danach auf Port 3847. Alle Daten (Datenbank, Uploads) liegen im Docker-Volume <code className="font-mono text-xs bg-[var(--accent-light)] px-1 py-0.5 rounded">db-data</code> und überleben Updates.
           </p>
+          <p>
+            <strong>Passwortschutz (empfohlen, wenn die App über localhost hinaus erreichbar ist):</strong> Umgebungsvariable <code className="font-mono text-xs bg-[var(--accent-light)] px-1 py-0.5 rounded">APP_PASSWORD</code> setzen
+            (z.&nbsp;B. <code className="font-mono text-xs bg-[var(--accent-light)] px-1 py-0.5 rounded">APP_PASSWORD=geheim docker compose up -d</code>) — danach verlangt die App eine Anmeldung. Ohne die Variable bleibt sie offen.
+          </p>
           <p><strong>2. KI-Anbieter anlegen</strong> (Settings → Anbieter):</p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Unterstützt: <strong>OpenAI</strong>, <strong>Anthropic</strong>, <strong>Ollama</strong> und beliebige <strong>OpenAI-kompatible</strong> Endpunkte</li>
@@ -70,8 +75,8 @@ export default function DocsPage() {
           <p><strong>3. Rollen zuweisen</strong> (optional, aber empfohlen). Jede Rolle kann ein eigenes Modell nutzen:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Struktur</strong> — erfasst den Inhalt des Dokuments (Pass 1)</li>
-            <li><strong>Anreicherung</strong> — erzeugt Interaktivität, Lösungen und Wissens-Checks (Pass 2). <em>Hier lohnt sich das stärkste Modell.</em></li>
-            <li><strong>Review</strong> — prüft Antworten und Vollständigkeit (Pass 3, abschaltbar über „Review aktivieren“)</li>
+            <li><strong>Anreicherung</strong> — erzeugt Interaktivität, Lösungen, Wissens-Checks und Probeprüfungen (Pass 2). <em>Hier lohnt sich das stärkste Modell.</em></li>
+            <li><strong>Review</strong> — prüft Antworten und Vollständigkeit (Pass 3, abschaltbar); bewertet auch offene Prüfungsfragen</li>
             <li><strong>Kompendium</strong> — schreibt die Lexikon-Einträge</li>
             <li><strong>Leichtgewicht</strong> — kleine Aufgaben wie die automatische Klassifizierung</li>
           </ul>
@@ -126,6 +131,22 @@ export default function DocsPage() {
             <li>Neue Dokumente zum selben Thema <strong>erweitern</strong> bestehende Einträge, statt Duplikate zu erzeugen</li>
             <li>Arbeitsblätter verlinken passende Einträge direkt bei den Aufgaben</li>
             <li>Einträge lassen sich einzeln neu generieren oder löschen</li>
+          </ul>
+        </Section>
+
+        <Section id="pruefungen" title="Probeprüfungen & Lernziele">
+          <p>
+            Auf jeder Modul-Seite kannst du <strong>Lernziele</strong> hinterlegen — eintippen (ein Ziel pro Zeile) oder aus einer
+            Datei hochladen (die KI extrahiert die Ziele, du bestätigst sie). Aus diesen Zielen generierst du beliebig viele
+            <strong> Probeprüfungen</strong>: Modul wählen, Lernziele ankreuzen, generieren.
+          </p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Fragen decken die gewählten Ziele ab: Multiple Choice, Wahr/Falsch, Kurzantworten und offene Aufgaben im Stil der Arbeitsblätter des Moduls</li>
+            <li>Während der Prüfung gibt es <strong>kein Feedback</strong> — erst nach der Abgabe siehst du Punktzahl und die korrigierte Prüfung (deine Antwort vs. richtige Antwort, mit Erklärungen)</li>
+            <li>Kurzantworten werden mathematisch äquivalent bewertet (3/4 = 0.75), offene Aufgaben bewertet die KI anhand der Musterlösung mit Teilpunkten</li>
+            <li>Prüfungen bleiben gespeichert: beliebig oft wiederholen, alte Versuche vergleichen, neue Prüfungen zu denselben Zielen erstellen</li>
+            <li>Die Generierung läuft im Hintergrund — du kannst die Seite verlassen; die Prüfung erscheint fertig in der Liste</li>
+            <li><strong>Statistik &amp; „Schwächen üben“:</strong> Unter den Prüfungen siehst du pro Modul deine Erfolgsquote je Lernziel. Ein Klick auf „Schwächen üben“ generiert eine neue Prüfung aus deinen schwächsten Zielen</li>
           </ul>
         </Section>
 
