@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeExamData } from '../exam-store';
+import { sanitizeExamData, openAnswerMatchesSolution } from '../exam-store';
 
 describe('sanitizeExamData', () => {
   it('accepts a valid mixed exam and preserves questions', () => {
@@ -48,5 +48,26 @@ describe('sanitizeExamData', () => {
     expect(data!.questions[0].id).not.toBe(data!.questions[1].id);
     expect(data!.questions[0].points).toBeLessThanOrEqual(10);
     expect(data!.questions[1].points).toBeGreaterThan(0);
+  });
+});
+
+describe('openAnswerMatchesSolution — grading rescue', () => {
+  const solution = '1. Steigung: \\( m = \\frac{10-4}{3-1} = 3 \\). 2. Gleichung: \\( y = 3x + b \\). 3. Einsetzen: \\( 4 = 3 \\cdot 1 + b \\Rightarrow b = 1 \\). 4. Funktionsgleichung: \\( h(x) = 3x + 1 \\).';
+
+  it('accepts the final result in any equivalent form', () => {
+    expect(openAnswerMatchesSolution(solution, 'y=3x+1')).toBe(true);
+    expect(openAnswerMatchesSolution(solution, 'h(x)=3x+1')).toBe(true);
+    expect(openAnswerMatchesSolution(solution, '3x+1')).toBe(true);
+  });
+
+  it('rejects wrong or empty answers', () => {
+    expect(openAnswerMatchesSolution(solution, 'y=3x+2')).toBe(false);
+    expect(openAnswerMatchesSolution(solution, 'keine Ahnung')).toBe(false);
+    expect(openAnswerMatchesSolution(solution, '')).toBe(false);
+  });
+
+  it('does not match bare intermediate numbers', () => {
+    // "m = 3" appears in the solution but "3" alone must not earn full credit
+    expect(openAnswerMatchesSolution(solution, '3')).toBe(false);
   });
 });

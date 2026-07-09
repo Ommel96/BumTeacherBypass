@@ -1805,9 +1805,15 @@ Respond with ONLY: {"title": "Probeprüfung: <kurzes Thema>", "questions": [...]
    */
   async gradeOpenAnswers(items: Array<{ id: string; question: string; solution: string; criteria?: string; points: number; studentAnswer: string }>): Promise<Record<string, { points: number; feedback: string }>> {
     if (items.length === 0) return {};
-    const prompt = `You are grading open exam questions for Swiss vocational education. Grade FAIRLY and consistently: full points for a correct, complete answer; partial points for partially correct work; 0 for wrong/empty. Ignore spelling. Accept equivalent formulations and correct alternative solution paths.
+    const prompt = `You are grading open exam questions for Swiss vocational education. Grade FAIRLY, consistently and with PARTIAL CREDIT — points are not all-or-nothing:
+- Correct final result with complete working → full points.
+- Correct final result but working missing or very thin (when the question asks for it) → about 75% of the points.
+- Correct approach/method with a calculation slip → about half the points.
+- Some relevant correct steps → partial points proportional to progress.
+- Wrong approach or empty → 0.
+Halves are allowed (e.g. 2.5 of 4). Ignore spelling. Accept equivalent formulations, equivalent forms (0.75 = 3/4), and correct alternative solution paths. You MUST return a grade for EVERY id listed below.
 
-For each item respond with the awarded points (0 to max, halves allowed) and ONE short German feedback sentence explaining the grading.
+For each item respond with the awarded points and ONE short German feedback sentence naming what was right/missing.
 
 QUESTIONS:
 ${items.map(it => `--- id: ${it.id} (max ${it.points} Punkte)

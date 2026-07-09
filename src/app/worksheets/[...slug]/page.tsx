@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { LernzieleCard } from '@/components/LernzieleCard';
+import { confirmDialog } from '@/components/ConfirmDialog';
 
 interface DocInfo {
   id: string;
@@ -324,7 +325,7 @@ function WorksheetListPage({ year, semester, moduleNumber, topic }: { year: stri
   useEffect(() => { fetchDocs(); }, [fetchDocs]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Dieses Arbeitsblatt löschen?')) return;
+    if (!(await confirmDialog('Dieses Arbeitsblatt löschen?', { confirmLabel: 'Löschen', danger: true }))) return;
     setDeleting(id);
     try { await fetch(`/api/documents/${id}`, { method: 'DELETE' }); setDocs(prev => prev.filter(d => d.id !== id)); } catch {}
     finally { setDeleting(null); }

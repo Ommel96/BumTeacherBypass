@@ -308,4 +308,15 @@ function getOrCreateDb(): Database.Database {
   return db;
 }
 
+/**
+ * Close the shared connection (used by backup restore, which replaces the DB
+ * file on disk). The next getDb() call reopens and re-migrates.
+ */
+export function closeDb(): void {
+  try { globalForDb._db?.close(); } catch {}
+  globalForDb._db = undefined;
+  globalForDb._seeded = undefined;
+  globalForDb._migrated_providers = undefined;
+}
+
 export default getOrCreateDb;

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Tutorial } from '@/components/Tutorial';
 import { AppNav } from '@/components/AppNav';
+import { ConfirmDialogHost } from '@/components/ConfirmDialog';
 
 export const metadata: Metadata = {
   title: 'BumTeacherBypass — Interaktive Arbeitsblätter',
@@ -21,6 +22,7 @@ export default function RootLayout({
           <main className="pb-24 lg:pb-8">{children}</main>
         </div>
         <Tutorial />
+        <ConfirmDialogHost />
       </body>
     </html>
   );

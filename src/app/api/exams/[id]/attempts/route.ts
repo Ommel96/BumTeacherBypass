@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 import { NextRequest, NextResponse } from 'next/server';
-import { getExam, saveAttempt, listAttempts, sanitizeExamData, type GradedQuestion, type ExamQuestion } from '@/lib/exam-store';
+import { getExam, saveAttempt, listAttempts, sanitizeExamData, openAnswerMatchesSolution, type GradedQuestion, type ExamQuestion } from '@/lib/exam-store';
 import { AIProvider } from '@/lib/ai-provider';
 import { getProviderConfigForRole } from '@/lib/providers-store';
 import { getSettings } from '@/lib/settings-store';
@@ -96,22 +96,35 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         settings.enrichmentProviderId ? getProviderConfigForRole('enrichment') : undefined,
         settings.reviewerProviderId ? getProviderConfigForRole('reviewer') : undefined,
       );
+      // Two attempts at the AI batch — a single flaky response must not
+      // zero out correct answers.
       let grades: Record<string, { points: number; feedback: string }> = {};
-      let failed = false;
       try {
         grades = await provider.gradeOpenAnswers(openItems);
       } catch (err) {
-        console.error('AI grading failed:', err);
-        failed = true;
+        console.error('AI grading failed, retrying once:', err);
+        try {
+          grades = await provider.gradeOpenAnswers(openItems);
+        } catch (err2) {
+          console.error('AI grading retry failed:', err2);
+        }
       }
       for (const item of openItems) {
         const q = examData.questions.find(x => x.id === item.id) as Extract<ExamQuestion, { type: 'open' }>;
         const g = grades[item.id];
-        if (g && !failed) {
+        if (g) {
           graded.push({
             questionId: item.id, correct: g.points >= q.points, pointsAwarded: g.points, points: q.points,
             studentAnswer: item.studentAnswer || '(keine Antwort)',
             correctAnswer: q.solution, feedback: g.feedback, aiGraded: true,
+          });
+        } else if (openAnswerMatchesSolution(q.solution, item.studentAnswer)) {
+          // Rescue: the answer matches the solution's final result mathematically
+          graded.push({
+            questionId: item.id, correct: true, pointsAwarded: q.points, points: q.points,
+            studentAnswer: item.studentAnswer,
+            correctAnswer: q.solution,
+            feedback: 'Endergebnis korrekt — automatisch geprüft (KI-Bewertung war nicht verfügbar).',
           });
         } else {
           graded.push({

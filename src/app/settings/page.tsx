@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PROVIDER_DEFAULTS } from '@/lib/ai-provider-constants';
+import { confirmDialog } from '@/components/ConfirmDialog';
 
 type ProviderType = 'openai' | 'anthropic' | 'ollama' | 'ollama-cloud' | 'openai-compatible';
 
@@ -119,6 +120,73 @@ function LoadModelsButton({ type, apiKey, baseUrl, onLoaded }: {
       {count !== null && !error && <span className="text-xs text-[var(--success)] truncate">{count} Modelle geladen</span>}
       {error && <span className="text-xs text-red-500 truncate" title={error}>{error}</span>}
     </div>
+  );
+}
+
+// ─── Backup & restore ───
+
+function DataCard() {
+  const [restoring, setRestoring] = useState(false);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleRestore = async (file: File | null) => {
+    if (!file) return;
+    const ok = await confirmDialog(
+      'Backup wiederherstellen?\nAlle aktuellen Daten (Dokumente, Prüfungen, Einstellungen) werden durch das Backup ERSETZT.',
+      { confirmLabel: 'Wiederherstellen', danger: true },
+    );
+    if (!ok) { if (fileRef.current) fileRef.current.value = ''; return; }
+    setRestoring(true);
+    setMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/backup/restore', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) { setMessage({ ok: false, text: data.error || 'Wiederherstellung fehlgeschlagen' }); return; }
+      setMessage({ ok: true, text: 'Backup wiederhergestellt — Seite wird neu geladen…' });
+      setTimeout(() => window.location.reload(), 1200);
+    } catch {
+      setMessage({ ok: false, text: 'Netzwerkfehler' });
+    } finally {
+      setRestoring(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  return (
+    <section className="bg-white border border-[var(--border)] rounded-xl shadow-sm mb-6">
+      <div className="px-6 py-4 border-b border-[var(--border)]">
+        <h2 className="font-semibold text-base">Daten</h2>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5">Die gesamte Datenbank sichern oder aus einem Backup wiederherstellen.</p>
+      </div>
+      <div className="px-6 py-4 flex flex-wrap items-center gap-3">
+        <a
+          href="/api/backup"
+          className="inline-flex items-center gap-1.5 text-sm text-white px-4 py-2 rounded-xl font-semibold no-underline shadow-[0_2px_10px_rgba(139,92,246,0.35)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.5)] hover:-translate-y-px transition-all"
+          style={{ background: 'var(--accent-grad)' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Backup herunterladen
+        </a>
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={restoring}
+          className="inline-flex items-center gap-1.5 text-sm border border-[var(--border)] text-[var(--text)] px-4 py-2 rounded-xl font-semibold hover:border-[var(--accent)] hover:text-[var(--accent-dark)] transition-colors bg-transparent cursor-pointer disabled:opacity-50"
+        >
+          {restoring ? <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-[var(--accent)]"/> : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          )}
+          {restoring ? 'Wird wiederhergestellt…' : 'Backup wiederherstellen'}
+        </button>
+        <input ref={fileRef} type="file" accept=".db" onChange={e => handleRestore(e.target.files?.[0] || null)} className="hidden" />
+        {message && <span className={`text-sm font-medium ${message.ok ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>{message.text}</span>}
+      </div>
+      <div className="px-6 pb-4 text-xs text-[var(--text-muted)]">
+        Enthält alles: Arbeitsblätter, Kompendium, Lernziele, Prüfungen inkl. Versuche und Einstellungen. Original-PDFs sind nicht enthalten.
+      </div>
+    </section>
   );
 }
 
@@ -511,7 +579,7 @@ export default function SettingsPage() {
     const warning = used.length > 0
       ? `„${provider.name}“ wird von folgenden Rollen verwendet: ${used.join(', ')}.\n\nTrotzdem löschen? Die Rollen fallen dann auf den Standard-Anbieter zurück.`
       : `Anbieter „${provider.name}“ wirklich löschen?`;
-    if (!confirm(warning)) return;
+    if (!(await confirmDialog(warning, { confirmLabel: 'Löschen', danger: true }))) return;
     setDeleting(provider.id);
     try {
       await fetch(`/api/providers?id=${provider.id}`, { method: 'DELETE' });
@@ -680,6 +748,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
+      <DataCard />
 
       <div className="p-4 bg-[var(--accent-light)] rounded-xl text-sm text-[var(--accent-dark)] leading-relaxed">
         <strong>Tipp:</strong> Die Anreicherung (Pass 2) hat den grössten Einfluss auf die Qualität der Arbeitsblätter —

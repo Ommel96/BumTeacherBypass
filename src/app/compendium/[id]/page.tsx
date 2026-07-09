@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import type { GenericComponentProps } from '@/lib/worksheet-schema';
 import { Latex } from '@/components/katex-renderer';
+import { confirmDialog } from '@/components/ConfirmDialog';
 
 import { WorksheetProvider } from '@/components/worksheet/WorksheetProvider';
 
@@ -272,7 +273,7 @@ export default function CompendiumDetailPage() {
   useEffect(() => { fetchEntry(); }, [fetchEntry]);
 
   const handleDelete = async () => {
-    if (!confirm('Diesen Kompendium-Eintrag löschen?')) return;
+    if (!(await confirmDialog('Diesen Kompendium-Eintrag löschen?', { confirmLabel: 'Löschen', danger: true }))) return;
     await fetch(`/api/compendium/${id}`, { method: 'DELETE' });
     window.location.href = '/compendium';
   };

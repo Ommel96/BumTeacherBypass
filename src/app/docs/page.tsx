@@ -66,6 +66,9 @@ export default function DocsPage() {
             <strong>Passwortschutz (empfohlen, wenn die App über localhost hinaus erreichbar ist):</strong> Umgebungsvariable <code className="font-mono text-xs bg-[var(--accent-light)] px-1 py-0.5 rounded">APP_PASSWORD</code> setzen
             (z.&nbsp;B. <code className="font-mono text-xs bg-[var(--accent-light)] px-1 py-0.5 rounded">APP_PASSWORD=geheim docker compose up -d</code>) — danach verlangt die App eine Anmeldung. Ohne die Variable bleibt sie offen.
           </p>
+          <p>
+            <strong>Backups:</strong> Unter Einstellungen → Daten lässt sich die komplette Datenbank als Datei herunterladen und später wiederherstellen.
+          </p>
           <p><strong>2. KI-Anbieter anlegen</strong> (Settings → Anbieter):</p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Unterstützt: <strong>OpenAI</strong>, <strong>Anthropic</strong>, <strong>Ollama</strong> und beliebige <strong>OpenAI-kompatible</strong> Endpunkte</li>

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import getDb from './db';
+import { mathEquals } from './math-eval';
 
 // ─── Exam question format (AI-generated, stored as JSON in exams.exam_data) ───
 
@@ -105,6 +106,32 @@ export function saveAttempt(examId: string, answers: Record<string, string>, gra
 
 export function listAttempts(examId: string): ExamAttemptRow[] {
   return getDb().prepare('SELECT * FROM exam_attempts WHERE exam_id = ? ORDER BY created_at DESC').all(examId) as ExamAttemptRow[];
+}
+
+// ─── Fallback grading for open questions ───
+// When AI grading is unavailable, compare the student's answer against the
+// final expressions of the model solution via math equivalence. Rescues the
+// common case "answer equals the solution's end result" (y=3x+1 vs h(x)=3x+1).
+
+export function extractFinalExpressions(solution: string): string[] {
+  const cleaned = solution.replace(/\\\(|\\\)|\\\[|\\\]|\$\$?/g, ' ');
+  const candidates: string[] = [];
+  const re = /=\s*([^=.;\n]+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(cleaned)) !== null) {
+    const c = m[1].trim().replace(/[.,;:!?]+$/, '').trim();
+    // Structured expressions only — bare numbers/single letters match too easily
+    if (c.length >= 2 && !/^\d+([.,]\d+)?$/.test(c)) candidates.push(c);
+  }
+  return candidates.slice(-4);
+}
+
+export function openAnswerMatchesSolution(solution: string, answer: string): boolean {
+  if (!answer.trim()) return false;
+  for (const candidate of extractFinalExpressions(solution)) {
+    if (mathEquals(candidate, answer) === true) return true;
+  }
+  return false;
 }
 
 // ─── Statistics: per-goal performance across all attempts ───

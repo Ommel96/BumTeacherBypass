@@ -277,7 +277,12 @@ export default function HomePage() {
               </div>
 
               {providers.length > 0 && (
-                <div className="mb-5 space-y-4">
+                <details className="mb-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+                  <summary className="text-sm font-semibold cursor-pointer select-none text-[var(--text)]">
+                    Erweiterte Optionen — Modelle für diesen Upload
+                    <span className="block text-xs font-normal text-[var(--text-muted)] mt-0.5">Standardmässig gelten die Modelle aus den Einstellungen.</span>
+                  </summary>
+                  <div className="mt-4 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-[var(--text)] mb-1.5">
                       Struktur-Modell (Pass 1)
@@ -353,7 +358,8 @@ export default function HomePage() {
                     </select>
                     <p className="text-xs text-[var(--text-muted)] mt-1">Prüft und korrigiert das Arbeitsblatt auf Vollständigkeit und Fehler.</p>
                   </div>
-                </div>
+                  </div>
+                </details>
               )}
 
               <div className="mb-5">

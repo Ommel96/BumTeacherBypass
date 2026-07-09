@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { LatexText } from '@/components/katex-renderer';
 import { exprToLatex, looksLikeMath } from '@/lib/math-eval';
+import { confirmDialog } from '@/components/ConfirmDialog';
 import { Latex } from '@/components/katex-renderer';
 
 // Mirrors the server-side ExamQuestion / GradedQuestion shapes
@@ -125,7 +126,7 @@ export default function ExamPage() {
 
   const handleSubmit = async () => {
     const unanswered = questions.filter(q => !(answers[q.id] || '').trim()).length;
-    if (unanswered > 0 && !confirm(`${unanswered} Frage${unanswered === 1 ? '' : 'n'} noch unbeantwortet. Trotzdem abgeben?`)) return;
+    if (unanswered > 0 && !(await confirmDialog(`${unanswered} Frage${unanswered === 1 ? '' : 'n'} noch unbeantwortet.\nTrotzdem abgeben?`, { confirmLabel: 'Abgeben' }))) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -158,7 +159,7 @@ export default function ExamPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Diese Prüfung und alle Versuche löschen?')) return;
+    if (!(await confirmDialog('Diese Prüfung und alle Versuche löschen?', { confirmLabel: 'Löschen', danger: true }))) return;
     await fetch(`/api/exams/${id}`, { method: 'DELETE' });
     window.location.href = '/exams';
   };

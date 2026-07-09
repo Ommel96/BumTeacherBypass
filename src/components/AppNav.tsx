@@ -10,6 +10,7 @@ const ICONS = {
   gear: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
   upload: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>,
   chevron: <polyline points="9 18 15 12 9 6"/>,
+  menu: <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>,
   exam: <><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
 } as const;
 
@@ -173,6 +174,7 @@ function LibraryTree({ pathname }: { pathname: string }) {
 
 export function AppNav() {
   const pathname = usePathname() || '/';
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <>
@@ -219,17 +221,44 @@ export function AppNav() {
       {/* ── Mobile top bar ── */}
       <header className="lg:hidden sticky top-0 z-40 border-b border-[var(--border)] bg-white/75 backdrop-blur-xl">
         <div className="flex items-center justify-between px-4 py-2.5">
+          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Bibliothek öffnen"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text)] bg-transparent border border-[var(--border)] cursor-pointer"
+          >
+            <Icon name="menu" size={16} />
+          </button>
           <a href="/" className="flex items-center gap-2 no-underline">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-[0_2px_10px_rgba(139,92,246,0.4)]" style={{ background: 'var(--accent-grad)' }}>
               <Icon name="book" size={15} />
             </span>
             <span className="text-sm font-bold tracking-tight text-[var(--text)]">BumTeacher<span className="text-[var(--accent)]">Bypass</span></span>
           </a>
+          </div>
           <a href="/?upload=1" aria-label="Dokument hochladen" className="flex h-8 w-8 items-center justify-center rounded-lg text-white no-underline shadow-[0_2px_10px_rgba(139,92,246,0.4)]" style={{ background: 'var(--accent-grad)' }}>
             <Icon name="upload" size={15} />
           </a>
         </div>
       </header>
+
+      {/* ── Mobile library drawer ── */}
+      {drawerOpen && (
+        <div className="lg:hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] flex flex-col px-4 py-5 overflow-y-auto shadow-2xl" style={{ background: 'linear-gradient(180deg, #12101f 0%, #170f2a 100%)', animation: 'drawerIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)' }}>
+            <div className="flex items-center justify-between mb-6 px-1">
+              <Logo />
+              <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Schließen" className="text-[#8d94b3] hover:text-white bg-transparent border-none cursor-pointer p-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="px-3 text-[0.65rem] font-semibold uppercase tracking-wider text-[#5b6284]">Bibliothek</div>
+            <LibraryTree pathname={pathname} />
+          </div>
+        </div>
+      )}
 
       {/* ── Mobile bottom tabs ── */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-[var(--border)] bg-white/85 backdrop-blur-xl" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} aria-label="Hauptnavigation">

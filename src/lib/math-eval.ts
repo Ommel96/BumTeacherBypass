@@ -306,8 +306,8 @@ export function exprToLatex(input: string): string | null {
 // ─── Equivalence-based grading ───
 
 function stripAssignment(input: string): string {
-  // "x = 3/4" → "3/4" (single leading variable assignment only)
-  const m = input.match(/^\s*[a-zA-ZäöüÄÖÜ_][a-zA-ZäöüÄÖÜ_0-9]*\s*=\s*(.+)$/);
+  // "x = 3/4" or "f(x) = 3x+1" → right-hand side (single leading assignment only)
+  const m = input.match(/^\s*[a-zA-ZäöüÄÖÜ_][a-zA-ZäöüÄÖÜ_0-9]*(?:\s*\([a-zA-ZäöüÄÖÜ_][a-zA-ZäöüÄÖÜ_0-9]*\))?\s*=\s*(.+)$/);
   return m ? m[1] : input;
 }
 
