@@ -2699,6 +2699,26 @@ function FunctionGraphC({ p, ctx }: { p: FunctionGraphPrimitive; ctx: WkCtx }) {
   );
 }
 
+/**
+ * FunctionGraph without a WorksheetProvider — state is handed in/out directly.
+ * Used by the exam player (drawing questions, embedded graphs).
+ */
+export function StandaloneFunctionGraph({ spec, value, onChange }: {
+  spec: Omit<FunctionGraphPrimitive, 'type' | 'fieldId'>;
+  value?: string;
+  onChange?: (v: string) => void;
+}) {
+  const p: FunctionGraphPrimitive = { type: 'functionGraph', fieldId: '__standalone__', ...spec };
+  const ctx: WkCtx = {
+    fields: { __standalone__: value || '[]' },
+    setFieldValue: (_id, v) => onChange?.(v),
+    resetFields: () => onChange?.('[]'),
+    checkFields: () => {},
+    feedbacks: {},
+  };
+  return <FunctionGraphC p={p} ctx={ctx} />;
+}
+
 function renderPrimitive(p: GenericPrimitive, ctx: WkCtx, index: number): React.ReactNode {
   switch (p.type) {
     case 'display': return renderDisplay(p);

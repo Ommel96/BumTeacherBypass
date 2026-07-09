@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 import { NextRequest, NextResponse } from 'next/server';
-import { getExam, saveAttempt, listAttempts, sanitizeExamData, openAnswerMatchesSolution, type GradedQuestion, type ExamQuestion } from '@/lib/exam-store';
+import { getExam, saveAttempt, listAttempts, sanitizeExamData, openAnswerMatchesSolution, gradeDrawnLine, type GradedQuestion, type ExamQuestion } from '@/lib/exam-store';
 import { AIProvider } from '@/lib/ai-provider';
 import { getProviderConfigForRole } from '@/lib/providers-store';
 import { getSettings } from '@/lib/settings-store';
@@ -13,7 +13,10 @@ function shortAnswerCorrect(q: Extract<ExamQuestion, { type: 'short' }>, answer:
   const candidates = [q.expected, ...(q.accept || [])];
   for (const expected of candidates) {
     if (normalize(answer) === normalize(expected)) return true;
-    if (q.math !== false && mathEquals(expected, answer) === true) return true;
+    // Math equivalence — but never for pure digit strings unless explicitly
+    // math-flagged: binary/hex answers like "0101" must keep leading zeros.
+    const bothPureDigits = /^\d+$/.test(answer.trim()) && /^\d+$/.test(expected.trim());
+    if ((q.math === true || !bothPureDigits) && q.math !== false && mathEquals(expected, answer) === true) return true;
   }
   return false;
 }
@@ -83,6 +86,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         }
         case 'open': {
           openItems.push({ id: q.id, question: q.question, solution: q.solution, criteria: q.criteria, points: q.points, studentAnswer: answer });
+          break;
+        }
+        case 'draw': {
+          const { correct, equation } = gradeDrawnLine(answer, q.expectedExpr);
+          graded.push({
+            questionId: q.id, correct, pointsAwarded: correct ? q.points : 0, points: q.points,
+            studentAnswer: equation,
+            correctAnswer: `\\( ${q.expectedExpr} \\)`,
+            feedback: q.solution,
+          });
           break;
         }
       }

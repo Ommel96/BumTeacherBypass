@@ -1,16 +1,26 @@
 import { v4 as uuidv4 } from 'uuid';
 import getDb from './db';
-import { mathEquals } from './math-eval';
+import { mathEquals, evaluateExpression } from './math-eval';
 
 // ─── Exam question format (AI-generated, stored as JSON in exams.exam_data) ───
 
+// Optional coordinate-system display attached to any question ("read the graph")
+export interface GraphSpec {
+  functions?: Array<{ expr: string; label?: string }>;
+  points?: Array<{ x: number; y: number; label?: string }>;
+  xMin?: number; xMax?: number; yMin?: number; yMax?: number;
+}
+
 export type ExamQuestion =
-  | { id: string; type: 'mc'; goal?: string; question: string; options: string[]; correctIndex: number; points: number; explanation?: string }
-  | { id: string; type: 'tf'; goal?: string; statement: string; correct: boolean; points: number; explanation?: string }
+  | { id: string; type: 'mc'; goal?: string; question: string; options: string[]; correctIndex: number; points: number; explanation?: string; graph?: GraphSpec }
+  | { id: string; type: 'tf'; goal?: string; statement: string; correct: boolean; points: number; explanation?: string; graph?: GraphSpec }
   // Short answer, auto-graded (math-equivalence when math=true, else normalized string; accept = additional valid forms)
-  | { id: string; type: 'short'; goal?: string; question: string; expected: string; accept?: string[]; math?: boolean; points: number; solution?: string }
-  // Free-form exercise, AI-graded against solution/criteria after submission
-  | { id: string; type: 'open'; goal?: string; question: string; solution: string; criteria?: string; points: number };
+  | { id: string; type: 'short'; goal?: string; question: string; expected: string; accept?: string[]; math?: boolean; points: number; solution?: string; graph?: GraphSpec }
+  // Free-form exercise, AI-graded against solution/criteria after submission.
+  // math=true renders a Rechenweg line editor with live math preview.
+  | { id: string; type: 'open'; goal?: string; question: string; solution: string; criteria?: string; points: number; math?: boolean; graph?: GraphSpec }
+  // Student DRAWS a line into a coordinate system; graded against expectedExpr
+  | { id: string; type: 'draw'; goal?: string; question: string; expectedExpr: string; xMin?: number; xMax?: number; yMin?: number; yMax?: number; points: number; solution?: string };
 
 export interface ExamData {
   title: string;
@@ -108,6 +118,40 @@ export function listAttempts(examId: string): ExamAttemptRow[] {
   return getDb().prepare('SELECT * FROM exam_attempts WHERE exam_id = ? ORDER BY created_at DESC').all(examId) as ExamAttemptRow[];
 }
 
+// ─── Drawing questions: deterministic grading ───
+
+export function drawnLineEquation(pts: Array<{ x: number; y: number }>): string {
+  if (pts.length < 2) return '(keine Zeichnung)';
+  const [a, b] = pts;
+  if (Math.abs(b.x - a.x) < 1e-9) return `x = ${a.x}`;
+  const m = (b.y - a.y) / (b.x - a.x);
+  const c = a.y - m * a.x;
+  const r = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',');
+  return `y = ${r(m)}x ${c >= 0 ? '+' : '-'} ${r(Math.abs(c))}`;
+}
+
+/** Grade a drawn line (JSON point array) against the expected function. */
+export function gradeDrawnLine(answerJson: string, expectedExpr: string): { correct: boolean; equation: string } {
+  let pts: Array<{ x: number; y: number }> = [];
+  try {
+    const parsed = JSON.parse(answerJson || '[]');
+    if (Array.isArray(parsed)) pts = parsed.filter(p => typeof p?.x === 'number' && typeof p?.y === 'number');
+  } catch {}
+  const equation = drawnLineEquation(pts);
+  if (pts.length < 2 || Math.abs(pts[1].x - pts[0].x) < 1e-9) return { correct: false, equation };
+  const m = (pts[1].y - pts[0].y) / (pts[1].x - pts[0].x);
+  const c = pts[0].y - m * pts[0].x;
+  let samples = 0;
+  let maxDelta = 0;
+  for (const x of [-4, -2, 0, 2, 4]) {
+    const want = evaluateExpression(expectedExpr, { x });
+    if (want === null) continue;
+    samples++;
+    maxDelta = Math.max(maxDelta, Math.abs(m * x + c - want));
+  }
+  return { correct: samples >= 3 && maxDelta <= 0.35, equation };
+}
+
 // ─── Fallback grading for open questions ───
 // When AI grading is unavailable, compare the student's answer against the
 // final expressions of the model solution via math equivalence. Rescues the
@@ -199,6 +243,31 @@ export function computeExamStats(): { modules: ModuleStats[]; recent: Array<{ ex
 
 // ─── Validation of AI-generated exams ───
 
+function clampRange(v: unknown, fallback: number): number {
+  const n = Number(v);
+  return Number.isFinite(n) && Math.abs(n) <= 100 ? n : fallback;
+}
+
+function sanitizeGraphSpec(raw: unknown): GraphSpec | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const g = raw as Record<string, unknown>;
+  const functions = (Array.isArray(g.functions) ? g.functions : [])
+    .filter((f): f is Record<string, unknown> => !!f && typeof f === 'object')
+    .map(f => ({ expr: String(f.expr || ''), label: typeof f.label === 'string' ? f.label : undefined }))
+    .filter(f => f.expr && [-2, 0, 2].some(x => evaluateExpression(f.expr, { x }) !== null));
+  const points = (Array.isArray(g.points) ? g.points : [])
+    .filter((pt): pt is Record<string, unknown> => !!pt && typeof pt === 'object')
+    .map(pt => ({ x: Number(pt.x), y: Number(pt.y), label: typeof pt.label === 'string' ? pt.label : undefined }))
+    .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.y));
+  if (functions.length === 0 && points.length === 0) return undefined;
+  return {
+    functions: functions.length > 0 ? functions : undefined,
+    points: points.length > 0 ? points : undefined,
+    xMin: clampRange(g.xMin, -10), xMax: clampRange(g.xMax, 10),
+    yMin: clampRange(g.yMin, -10), yMax: clampRange(g.yMax, 10),
+  };
+}
+
 export function sanitizeExamData(raw: unknown): ExamData | null {
   if (!raw || typeof raw !== 'object') return null;
   const data = raw as Record<string, unknown>;
@@ -213,18 +282,19 @@ export function sanitizeExamData(raw: unknown): ExamData | null {
     while (seenIds.has(id)) id = `${id}_x`;
     const points = Math.max(0.5, Math.min(10, Number(item.points) || 1));
     const goal = typeof item.goal === 'string' ? item.goal : undefined;
+    const graph = sanitizeGraphSpec(item.graph);
 
     switch (item.type) {
       case 'mc': {
         const options = (Array.isArray(item.options) ? item.options : []).map(String).filter(Boolean);
         const correctIndex = Number(item.correctIndex);
         if (typeof item.question !== 'string' || options.length < 2 || !Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= options.length) return;
-        questions.push({ id, type: 'mc', goal, question: item.question, options, correctIndex, points, explanation: typeof item.explanation === 'string' ? item.explanation : undefined });
+        questions.push({ id, type: 'mc', goal, question: item.question, options, correctIndex, points, explanation: typeof item.explanation === 'string' ? item.explanation : undefined, graph });
         break;
       }
       case 'tf': {
         if (typeof item.statement !== 'string' || typeof item.correct !== 'boolean') return;
-        questions.push({ id, type: 'tf', goal, statement: item.statement, correct: item.correct, points, explanation: typeof item.explanation === 'string' ? item.explanation : undefined });
+        questions.push({ id, type: 'tf', goal, statement: item.statement, correct: item.correct, points, explanation: typeof item.explanation === 'string' ? item.explanation : undefined, graph });
         break;
       }
       case 'short': {
@@ -234,12 +304,26 @@ export function sanitizeExamData(raw: unknown): ExamData | null {
           accept: Array.isArray(item.accept) ? item.accept.map(String).filter(Boolean) : undefined,
           math: item.math === true, points,
           solution: typeof item.solution === 'string' ? item.solution : undefined,
+          graph,
         });
         break;
       }
       case 'open': {
         if (typeof item.question !== 'string' || typeof item.solution !== 'string' || !item.solution.trim()) return;
-        questions.push({ id, type: 'open', goal, question: item.question, solution: item.solution, criteria: typeof item.criteria === 'string' ? item.criteria : undefined, points });
+        questions.push({ id, type: 'open', goal, question: item.question, solution: item.solution, criteria: typeof item.criteria === 'string' ? item.criteria : undefined, points, math: item.math === true, graph });
+        break;
+      }
+      case 'draw': {
+        const expectedExpr = typeof item.expectedExpr === 'string' ? item.expectedExpr : '';
+        // Expression must evaluate at at least one sample point
+        const evaluable = [-2, 0, 2].some(x => evaluateExpression(expectedExpr, { x }) !== null);
+        if (typeof item.question !== 'string' || !expectedExpr || !evaluable) return;
+        questions.push({
+          id, type: 'draw', goal, question: item.question, expectedExpr, points,
+          xMin: clampRange(item.xMin, -10), xMax: clampRange(item.xMax, 10),
+          yMin: clampRange(item.yMin, -10), yMax: clampRange(item.yMax, 10),
+          solution: typeof item.solution === 'string' ? item.solution : undefined,
+        });
         break;
       }
       default: return;

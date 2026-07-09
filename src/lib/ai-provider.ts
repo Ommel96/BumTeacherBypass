@@ -1782,6 +1782,13 @@ Create 8-14 questions mixing these types:
 - "short": short answer with an exact, checkable result (numbers, terms, expressions). {"id":"q3","type":"short","goal":"...","question":"...","expected":"42","accept":["zweiundvierzig"],"math":true,"points":2,"solution":"worked solution (German)"}
   Set "math": true for numeric/algebraic answers (grading is equivalence-based: 0.75 == 3/4). "expected" as plain expression syntax (3/4, 2^5, x=3), NOT LaTeX.
 - "open": exercise requiring working/explanation, like the tasks in the module's worksheets. {"id":"q4","type":"open","goal":"...","question":"...","solution":"complete model solution (German)","criteria":"what earns the points","points":4}
+  For MATHEMATICAL open exercises set "math": true — the student then gets a step-by-step working editor with live formula preview.
+- "draw" (MATH MODULES ONLY): the student DRAWS a line into a coordinate system, graded automatically. {"id":"q5","type":"draw","goal":"...","question":"Zeichne die Funktion \\( f(x) = 2x - 1 \\) ein.","expectedExpr":"2x - 1","xMin":-8,"xMax":8,"yMin":-8,"yMax":8,"points":3,"solution":"Steigung 2, y-Achsenabschnitt -1"}
+  "expectedExpr" is plain expression syntax (2x-1, -2/3x+4), NOT LaTeX.
+- ANY question may include a coordinate system to READ from: add "graph": {"functions":[{"expr":"0.5x+2","label":"g"}],"points":[{"x":2,"y":3,"label":"P"}],"xMin":-6,"xMax":6,"yMin":-6,"yMax":6}. Perfect for "Bestimme die Funktionsgleichung der abgebildeten Geraden" (graph shown, "short" answer with math:true) or "Liegt P auf g?" (tf).
+
+FOR MATHEMATICAL MATERIAL (functions, geometry, equations): USE these tools — at least one "graph"-based reading question and one "draw" question when the goals involve graphs. A maths exam without a single coordinate system wastes the app's potential.
+FOR IT/OTHER MATERIAL: graphs/draw usually do not apply — instead use "short" answers for concrete results (binary/hex encodings, protocol names, port numbers; exact expected strings, "math": false for digit strings with leading zeros) and "open" exercises mirroring the module's worksheet tasks (encode this string with RLE/LZ77, design this truth table, explain this protocol flow — with a complete model solution for grading).
 
 RULES:
 - German throughout. Use inline LaTeX \\( ... \\) for math in question/statement/solution texts.

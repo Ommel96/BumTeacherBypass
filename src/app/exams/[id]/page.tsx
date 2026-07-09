@@ -5,15 +5,79 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { LatexText } from '@/components/katex-renderer';
 import { exprToLatex, looksLikeMath } from '@/lib/math-eval';
+import dynamicImport from 'next/dynamic';
 import { confirmDialog } from '@/components/ConfirmDialog';
+
+const StandaloneFunctionGraph = dynamicImport(() => import('@/components/worksheet/InteractiveComponents').then(m => m.StandaloneFunctionGraph), { ssr: false });
 import { Latex } from '@/components/katex-renderer';
 
 // Mirrors the server-side ExamQuestion / GradedQuestion shapes
+interface GraphSpec {
+  functions?: Array<{ expr: string; label?: string }>;
+  points?: Array<{ x: number; y: number; label?: string }>;
+  xMin?: number; xMax?: number; yMin?: number; yMax?: number;
+}
+
 type Question =
-  | { id: string; type: 'mc'; goal?: string; question: string; options: string[]; correctIndex: number; points: number; explanation?: string }
-  | { id: string; type: 'tf'; goal?: string; statement: string; correct: boolean; points: number; explanation?: string }
-  | { id: string; type: 'short'; goal?: string; question: string; expected: string; math?: boolean; points: number; solution?: string }
-  | { id: string; type: 'open'; goal?: string; question: string; solution: string; points: number };
+  | { id: string; type: 'mc'; goal?: string; question: string; options: string[]; correctIndex: number; points: number; explanation?: string; graph?: GraphSpec }
+  | { id: string; type: 'tf'; goal?: string; statement: string; correct: boolean; points: number; explanation?: string; graph?: GraphSpec }
+  | { id: string; type: 'short'; goal?: string; question: string; expected: string; math?: boolean; points: number; solution?: string; graph?: GraphSpec }
+  | { id: string; type: 'open'; goal?: string; question: string; solution: string; points: number; math?: boolean; graph?: GraphSpec }
+  | { id: string; type: 'draw'; goal?: string; question: string; expectedExpr: string; xMin?: number; xMax?: number; yMin?: number; yMax?: number; points: number; solution?: string };
+
+function parsePoints(json: string | undefined): Array<{ x: number; y: number }> {
+  try {
+    const parsed = JSON.parse(json || '[]');
+    return Array.isArray(parsed) ? parsed.filter((pt: { x?: unknown; y?: unknown }) => typeof pt?.x === 'number' && typeof pt?.y === 'number') : [];
+  } catch { return []; }
+}
+
+function isAnswered(q: Question, answer: string): boolean {
+  if (q.type === 'draw') return parsePoints(answer).length >= 2;
+  return answer.trim() !== '';
+}
+
+// Rechenweg line editor for mathematical open questions — live preview per line
+function MathStepsInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const lines = value ? value.split('\n') : [];
+  while (lines.length < 3) lines.push('');
+  const setLine = (i: number, v: string) => {
+    const next = [...lines];
+    next[i] = v.replace(/\n/g, '');
+    onChange(next.join('\n'));
+  };
+  return (
+    <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3">
+      <div className="text-xs text-[var(--text-muted)] mb-2">Rechenweg — Schritt für Schritt (wird mitbewertet)</div>
+      <div className="flex flex-col gap-1.5">
+        {lines.map((line, i) => (
+          <div key={i} className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-[var(--text-muted)] w-4 text-right shrink-0">{i + 1}.</span>
+            <input
+              type="text"
+              value={line}
+              onChange={e => setLine(i, e.target.value)}
+              placeholder={i === 0 ? 'z.B. m = (y2-y1)/(x2-x1)' : ''}
+              className="flex-1 min-w-[10rem] px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-sm font-mono outline-none focus:border-[var(--accent)] transition-all"
+            />
+            <MathHint value={line} />
+          </div>
+        ))}
+      </div>
+      <button type="button" onClick={() => onChange([...lines, ''].join('\n'))} className="mt-2 text-xs border border-[var(--border)] text-[var(--text-muted)] px-2.5 py-1 rounded-lg hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors bg-transparent cursor-pointer">
+        + Zeile
+      </button>
+    </div>
+  );
+}
+
+function QuestionGraph({ graph }: { graph: GraphSpec }) {
+  return (
+    <div className="mb-3">
+      <StandaloneFunctionGraph spec={{ ...graph, drawMode: 'none' }} />
+    </div>
+  );
+}
 
 interface Graded {
   questionId: string;
@@ -62,6 +126,7 @@ export default function ExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ graded: Graded[]; score: number; maxScore: number } | null>(null);
+  const [reviewAnswers, setReviewAnswers] = useState<Record<string, string>>({});
 
   const fetchExam = useCallback(() => {
     fetch(`/api/exams/${id}`)
@@ -125,7 +190,7 @@ export default function ExamPage() {
   };
 
   const handleSubmit = async () => {
-    const unanswered = questions.filter(q => !(answers[q.id] || '').trim()).length;
+    const unanswered = questions.filter(q => !isAnswered(q, answers[q.id] || '')).length;
     if (unanswered > 0 && !(await confirmDialog(`${unanswered} Frage${unanswered === 1 ? '' : 'n'} noch unbeantwortet.\nTrotzdem abgeben?`, { confirmLabel: 'Abgeben' }))) return;
     setSubmitting(true);
     setError(null);
@@ -138,6 +203,7 @@ export default function ExamPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Abgabe fehlgeschlagen'); return; }
       setResult({ graded: data.graded, score: data.score, maxScore: data.maxScore });
+      setReviewAnswers({ ...answers });
       setMode('result');
       try { localStorage.removeItem(storageKey); } catch {}
       fetchExam();
@@ -152,6 +218,7 @@ export default function ExamPage() {
   const viewAttempt = (attempt: Attempt) => {
     try {
       const graded: Graded[] = JSON.parse(attempt.graded);
+      try { setReviewAnswers(JSON.parse((attempt as Attempt & { answers?: string }).answers || '{}')); } catch { setReviewAnswers({}); }
       setResult({ graded, score: attempt.score, maxScore: attempt.max_score });
       setMode('result');
       window.scrollTo({ top: 0 });
@@ -172,7 +239,7 @@ export default function ExamPage() {
     </div>
   );
 
-  const answeredCount = questions.filter(q => (answers[q.id] || '').trim()).length;
+  const answeredCount = questions.filter(q => isAnswered(q, answers[q.id] || '')).length;
 
   // ── Generation in progress / failed ──
   if (exam.status !== 'ready') {
@@ -296,6 +363,7 @@ export default function ExamPage() {
                   <span className="text-xs font-semibold text-[var(--text-muted)]">Frage {i + 1}</span>
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--accent-light)] text-[var(--accent-dark)]">{q.points} {q.points === 1 ? 'Punkt' : 'Punkte'}</span>
                 </div>
+                {q.type !== 'draw' && q.graph && <QuestionGraph graph={q.graph} />}
                 <QuestionText q={q} />
 
                 {q.type === 'mc' && (
@@ -338,12 +406,24 @@ export default function ExamPage() {
                 )}
 
                 {q.type === 'open' && (
-                  <textarea
-                    value={answers[q.id] || ''}
-                    onChange={e => setAnswer(q.id, e.target.value)}
-                    rows={5}
-                    placeholder="Deine Antwort mit Rechenweg / Begründung…"
-                    className="w-full p-3 border border-[var(--border)] rounded-xl bg-[var(--input-bg)] text-sm leading-relaxed outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-light)] resize-y"
+                  q.math ? (
+                    <MathStepsInput value={answers[q.id] || ''} onChange={v => setAnswer(q.id, v)} />
+                  ) : (
+                    <textarea
+                      value={answers[q.id] || ''}
+                      onChange={e => setAnswer(q.id, e.target.value)}
+                      rows={5}
+                      placeholder="Deine Antwort mit Rechenweg / Begründung…"
+                      className="w-full p-3 border border-[var(--border)] rounded-xl bg-[var(--input-bg)] text-sm leading-relaxed outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-light)] resize-y"
+                    />
+                  )
+                )}
+
+                {q.type === 'draw' && (
+                  <StandaloneFunctionGraph
+                    spec={{ xMin: q.xMin, xMax: q.xMax, yMin: q.yMin, yMax: q.yMax, drawMode: 'line' }}
+                    value={answers[q.id] || '[]'}
+                    onChange={v => setAnswer(q.id, v)}
                   />
                 )}
               </div>
@@ -393,7 +473,20 @@ export default function ExamPage() {
                       {g.pointsAwarded} / {g.points} P.
                     </span>
                   </div>
+                  {q && q.type !== 'draw' && q.graph && <QuestionGraph graph={q.graph} />}
                   {q && <QuestionText q={q} />}
+
+                  {q?.type === 'draw' && (
+                    <div className="mb-3">
+                      <StandaloneFunctionGraph
+                        spec={{
+                          xMin: q.xMin, xMax: q.xMax, yMin: q.yMin, yMax: q.yMax, drawMode: 'none',
+                          functions: [{ expr: q.expectedExpr, label: 'Lösung' }],
+                          points: parsePoints(reviewAnswers[q.id]).map((pt, pi) => ({ ...pt, label: pi === 0 ? 'Deine Punkte' : undefined })),
+                        }}
+                      />
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div className={`rounded-xl p-3 border ${g.correct ? 'border-[var(--success)] bg-[var(--success-bg)]' : 'border-[var(--error)] bg-[var(--error-bg)]'}`}>

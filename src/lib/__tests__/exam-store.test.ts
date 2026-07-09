@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeExamData, openAnswerMatchesSolution } from '../exam-store';
+import { sanitizeExamData, openAnswerMatchesSolution, gradeDrawnLine } from '../exam-store';
 
 describe('sanitizeExamData', () => {
   it('accepts a valid mixed exam and preserves questions', () => {
@@ -69,5 +69,40 @@ describe('openAnswerMatchesSolution — grading rescue', () => {
   it('does not match bare intermediate numbers', () => {
     // "m = 3" appears in the solution but "3" alone must not earn full credit
     expect(openAnswerMatchesSolution(solution, '3')).toBe(false);
+  });
+});
+
+describe('draw questions', () => {
+  it('sanitizes valid draw questions and rejects unparseable expressions', () => {
+    const data = sanitizeExamData({ questions: [
+      { id: 'd1', type: 'draw', question: 'Zeichne f', expectedExpr: '2x - 1', points: 3 },
+      { id: 'd2', type: 'draw', question: 'Kaputt', expectedExpr: '###', points: 3 },
+    ] });
+    expect(data!.questions).toHaveLength(1);
+    expect(data!.questions[0].id).toBe('d1');
+  });
+
+  it('grades a correctly drawn line', () => {
+    // f(x) = 2x - 1 through (0,-1) and (2,3)
+    const { correct, equation } = gradeDrawnLine(JSON.stringify([{ x: 0, y: -1 }, { x: 2, y: 3 }]), '2x - 1');
+    expect(correct).toBe(true);
+    expect(equation).toContain('y = 2x');
+  });
+
+  it('rejects wrong lines, too few points, vertical lines', () => {
+    expect(gradeDrawnLine(JSON.stringify([{ x: 0, y: 0 }, { x: 2, y: 4 }]), '2x - 1').correct).toBe(false);
+    expect(gradeDrawnLine(JSON.stringify([{ x: 0, y: -1 }]), '2x - 1').correct).toBe(false);
+    expect(gradeDrawnLine('[]', '2x - 1').correct).toBe(false);
+    expect(gradeDrawnLine(JSON.stringify([{ x: 1, y: 0 }, { x: 1, y: 5 }]), '2x - 1').correct).toBe(false);
+  });
+
+  it('sanitizes graph specs: drops unparseable curves, keeps valid ones', () => {
+    const data = sanitizeExamData({ questions: [
+      { id: 'g1', type: 'short', question: 'Lies ab', expected: '0.5x+2', math: true, points: 2,
+        graph: { functions: [{ expr: '0.5x+2', label: 'g' }, { expr: '%%%' }], points: [{ x: 2, y: 3 }] } },
+    ] });
+    const q = data!.questions[0] as { graph?: { functions?: unknown[]; points?: unknown[] } };
+    expect(q.graph?.functions).toHaveLength(1);
+    expect(q.graph?.points).toHaveLength(1);
   });
 });
